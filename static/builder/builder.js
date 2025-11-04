@@ -31,7 +31,7 @@ const DISPLAY_FIELD_LABELS = new Map([
   ['first name', 'Prénom'],
   ['last name', 'Nom'],
   ['birthday', 'Date de naissance'],
-  ['death', 'Décès'],
+  ['death', 'Date de Décès'],
   ['gender', 'Genre'],
   ['avatar', 'Photo de profil'],
   ['photo', 'Photo'],
@@ -56,7 +56,7 @@ const DISPLAY_DEFAULTS = {
   ],
   2: [
     { value: 'birthday', checked: true },
-    { value: 'death', checked: false },
+    { value: 'death', label: 'Date de Décès', checked: false },
     { value: 'avatar', checked: false },
     { value: 'gender', checked: false }
   ]
@@ -68,7 +68,7 @@ const EDITABLE_DEFAULTS = [
   { value: 'birthday', label: 'Date de naissance', checked: true },
   { value: 'avatar', label: 'Avatar', checked: true },
   { value: 'gender', label: 'Genre', checked: true },
-  { value: 'death', label: 'Décès', checked: false },
+  { value: 'death', label: 'Date de Décès', checked: false },
   { value: 'bio', label: 'Biographie', checked: false }
 ]
 
@@ -92,7 +92,8 @@ const DEFAULT_CHART_CONFIG = Object.freeze({
   singleParentEmptyCard: true,
   singleParentEmptyCardLabel: 'Inconnu',
   editableFields: [...DEFAULT_EDITABLE_FIELDS],
-  cardDisplay: DEFAULT_CARD_DISPLAY.map(row => [...row])
+  cardDisplay: DEFAULT_CARD_DISPLAY.map(row => [...row]),
+  mainId: null
 })
 
 function normalizeCardDisplay(rows) {
@@ -133,7 +134,8 @@ function buildChartConfig(overrides = {}) {
     singleParentEmptyCard: DEFAULT_CHART_CONFIG.singleParentEmptyCard,
     singleParentEmptyCardLabel: DEFAULT_CHART_CONFIG.singleParentEmptyCardLabel,
     editableFields: [...DEFAULT_EDITABLE_FIELDS],
-    cardDisplay: cloneCardDisplay(DEFAULT_CARD_DISPLAY)
+    cardDisplay: cloneCardDisplay(DEFAULT_CARD_DISPLAY),
+    mainId: DEFAULT_CHART_CONFIG.mainId
   }
 
   if (typeof overrides.transitionTime === 'number' && Number.isFinite(overrides.transitionTime)) {
@@ -174,6 +176,11 @@ function buildChartConfig(overrides = {}) {
 
   if (Array.isArray(overrides.cardDisplay) || (overrides.cardDisplay && typeof overrides.cardDisplay === 'object')) {
     base.cardDisplay = cloneCardDisplay(overrides.cardDisplay, [[], []])
+  }
+
+  if (typeof overrides.mainId === 'string') {
+    const trimmed = overrides.mainId.trim()
+    if (trimmed) base.mainId = trimmed
   }
 
   return base
@@ -264,6 +271,11 @@ function normaliseChartConfig(rawConfig = {}) {
   const rawCardDisplay = rawConfig.cardDisplay ?? rawConfig.card_display
   if (Array.isArray(rawCardDisplay) || (rawCardDisplay && typeof rawCardDisplay === 'object')) {
     config.cardDisplay = cloneCardDisplay(rawCardDisplay, [[], []])
+  }
+
+  const rawMainId = rawConfig.mainId ?? rawConfig.main_id ?? rawConfig.mainPersonId ?? rawConfig.main_person_id
+  if (typeof rawMainId === 'string' && rawMainId.trim().length > 0) {
+    config.mainId = rawMainId.trim()
   }
 
   return config
@@ -393,6 +405,9 @@ function setupChart(payload) {
     .setCardDisplay(initialCardDisplay)
     .setCardImageField('avatar')
 
+  let panelControlAPI = null
+  const dataArray = Array.isArray(data) ? data : []
+
   editTreeInstance = chart.editTree()
     .setFields([
       'first name',
@@ -407,10 +422,43 @@ function setupChart(payload) {
     .setCardClickOpen(card)
     .setOnChange(() => {
       lastSnapshotString = null
+      if (panelControlAPI) {
+        panelControlAPI.refreshMainProfileOptions({ keepSelection: true })
+        panelControlAPI.syncMainProfileSelection({ scheduleSaveIfChanged: false })
+      }
       scheduleAutoSave()
     })
 
-  attachPanelControls({ chart, card })
+  panelControlAPI = attachPanelControls({ chart, card }) || {
+    refreshMainProfileOptions: () => {},
+    syncMainProfileSelection: () => {}
+  }
+
+  const initialMainId = resolveInitialMainId(dataArray, chart)
+  if (initialMainId) {
+    chart.updateMainId(initialMainId)
+  }
+
+  chart.setAfterUpdate(() => {
+    if (!chart.store || typeof chart.store.getMainId !== 'function') return
+    const storeMainId = chart.store.getMainId()
+    if (!storeMainId) return
+    if (chartConfig.mainId !== storeMainId) {
+      chartConfig = { ...chartConfig, mainId: storeMainId }
+      lastSnapshotString = null
+      if (!isApplyingConfig) {
+        scheduleAutoSave()
+      }
+    }
+    if (panelControlAPI) {
+      panelControlAPI.syncMainProfileSelection({ scheduleSaveIfChanged: false })
+    }
+  })
+
+  if (panelControlAPI) {
+    panelControlAPI.refreshMainProfileOptions({ keepSelection: false })
+    panelControlAPI.syncMainProfileSelection({ scheduleSaveIfChanged: false })
+  }
 
   chart.updateTree({ initial: true, tree_position: 'fit' })
 
@@ -421,12 +469,47 @@ function setupChart(payload) {
 
   const initialSnapshot = getSnapshot()
   lastSnapshotString = initialSnapshot ? JSON.stringify(initialSnapshot) : null
-  const totalPersons = Array.isArray(data) ? data.length : 0
+  const totalPersons = dataArray.length
   setStatus(totalPersons > 0 ? `Éditeur prêt ✅ – ${totalPersons} personne(s) chargée(s)` : 'Fichier de données vide', totalPersons > 0 ? 'success' : 'error')
+
+  function resolveInitialMainId(persons, chartInstance) {
+    if (!Array.isArray(persons) || persons.length === 0) {
+      chartConfig = { ...chartConfig, mainId: null }
+      return null
+    }
+
+    const availableIds = new Set(persons.map(person => person && person.id).filter(Boolean))
+    const desiredId = typeof chartConfig.mainId === 'string' ? chartConfig.mainId.trim() : ''
+    if (desiredId && availableIds.has(desiredId)) {
+      return desiredId
+    }
+
+    const storeMainId = chartInstance?.store && typeof chartInstance.store.getMainId === 'function'
+      ? chartInstance.store.getMainId()
+      : null
+
+    if (storeMainId && availableIds.has(storeMainId)) {
+      if (chartConfig.mainId !== storeMainId) {
+        chartConfig = { ...chartConfig, mainId: storeMainId }
+      }
+      return storeMainId
+    }
+
+    const fallbackId = persons[0]?.id || null
+    if (fallbackId && chartConfig.mainId !== fallbackId) {
+      chartConfig = { ...chartConfig, mainId: fallbackId }
+    }
+    return fallbackId
+  }
 }
 
 function attachPanelControls({ chart, card }) {
-  if (!panel) return
+  if (!panel) {
+    return {
+      refreshMainProfileOptions: () => {},
+      syncMainProfileSelection: () => {}
+    }
+  }
 
   const editableFieldset = panel.querySelector('[data-role="editable-fields"]')
   const editableList = editableFieldset?.querySelector('.editable-list')
@@ -468,6 +551,152 @@ function attachPanelControls({ chart, card }) {
   const imgX = panel.querySelector('#imgX')
   const imgY = panel.querySelector('#imgY')
   const resetDimensions = panel.querySelector('#resetDimensions')
+  const mainProfileFieldset = panel.querySelector('[data-role="main-profile"]')
+  const mainProfileSelect = mainProfileFieldset?.querySelector('#mainProfileSelect')
+  const mainProfileName = mainProfileFieldset?.querySelector('[data-role="main-profile-name"]')
+  if (mainProfileSelect) mainProfileSelect.disabled = true
+  const imageUploader = panel.querySelector('[data-role="image-uploader"]')
+  const assetUploadInput = imageUploader?.querySelector('#assetUpload')
+  const assetUploadFeedback = imageUploader?.querySelector('[data-role="upload-feedback"]')
+  const assetUploadResult = imageUploader?.querySelector('[data-role="upload-result"]')
+  const assetUploadUrlOutput = imageUploader?.querySelector('[data-role="upload-url"]')
+  const assetUploadOpenLink = imageUploader?.querySelector('[data-role="open-upload"]')
+  const copyUploadUrlBtn = imageUploader?.querySelector('[data-action="copy-upload-url"]')
+  const manualUrlInput = imageUploader?.querySelector('#assetUrl')
+  const copyManualUrlBtn = imageUploader?.querySelector('[data-action="copy-manual-url"]')
+
+  const MAX_UPLOAD_SIZE = 5 * 1024 * 1024
+
+  function formatBytes(bytes) {
+    if (!Number.isFinite(bytes)) return ''
+    if (bytes < 1024) return `${bytes} o`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`
+    return `${(bytes / (1024 * 1024)).toFixed(2)} Mo`
+  }
+
+  function setUploadFeedback(message, status = 'info') {
+    if (!assetUploadFeedback) return
+    assetUploadFeedback.textContent = message
+    assetUploadFeedback.dataset.status = status
+  }
+
+  function clearUploadResult() {
+    if (!assetUploadResult) return
+    assetUploadResult.classList.add('hidden')
+    assetUploadResult.dataset.url = ''
+    if (assetUploadUrlOutput) assetUploadUrlOutput.textContent = ''
+    if (assetUploadOpenLink) {
+      assetUploadOpenLink.href = '#'
+      assetUploadOpenLink.classList.add('hidden')
+    }
+  }
+
+  function showUploadResult(url) {
+    if (!assetUploadResult) return
+    const absoluteUrl = (() => {
+      try {
+        return new URL(url, window.location.origin).toString()
+      } catch (error) {
+        return url
+      }
+    })()
+
+    assetUploadResult.dataset.url = absoluteUrl
+    if (assetUploadUrlOutput) assetUploadUrlOutput.textContent = absoluteUrl
+    if (assetUploadOpenLink) {
+      assetUploadOpenLink.href = absoluteUrl
+      assetUploadOpenLink.classList.remove('hidden')
+    }
+    assetUploadResult.classList.remove('hidden')
+    if (manualUrlInput) manualUrlInput.value = absoluteUrl
+  }
+
+  async function copyToClipboard(value, { successMessage = 'Copié dans le presse-papiers ✅', errorMessage = 'Impossible de copier.' } = {}) {
+    if (!value) {
+      setUploadFeedback('Aucune URL à copier.', 'error')
+      return
+    }
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value)
+      } else {
+        const temp = document.createElement('textarea')
+        temp.value = value
+        temp.setAttribute('readonly', '')
+        temp.style.position = 'absolute'
+        temp.style.left = '-9999px'
+        document.body.append(temp)
+        temp.select()
+        document.execCommand('copy')
+        temp.remove()
+      }
+      setStatus(successMessage, 'success')
+      setUploadFeedback(successMessage, 'success')
+    } catch (error) {
+      console.error(error)
+      setStatus(errorMessage, 'error')
+      setUploadFeedback(errorMessage, 'error')
+    }
+  }
+
+  async function handleFileUpload(file) {
+    if (!file) return
+    clearUploadResult()
+
+    if (!file.type || !file.type.startsWith('image/')) {
+      setUploadFeedback('Format non pris en charge. Sélectionnez une image (JPEG, PNG, WebP…).', 'error')
+      return
+    }
+
+    if (file.size > MAX_UPLOAD_SIZE) {
+      setUploadFeedback(`Fichier trop volumineux (${formatBytes(file.size)}). Limite 5 Mo.`, 'error')
+      return
+    }
+
+    setUploadFeedback('Téléversement en cours…', 'saving')
+    setStatus('Téléversement de l’image…', 'saving')
+
+    const formData = new FormData()
+    formData.append('file', file, file.name)
+
+    try {
+      const response = await fetch('/api/uploads', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!response.ok) {
+        let message = `Erreur serveur (${response.status})`
+        try {
+          const payload = await response.json()
+          if (payload?.message) message = payload.message
+        } catch (error) {
+          // ignore JSON parse errors
+        }
+        throw new Error(message)
+      }
+
+      const payload = await response.json()
+      const uploadedUrl = payload?.url
+      if (!uploadedUrl) {
+        throw new Error('Réponse du serveur invalide (URL manquante).')
+      }
+
+      showUploadResult(uploadedUrl)
+      setUploadFeedback(`Image téléversée (${formatBytes(file.size)}).`, 'success')
+      setStatus('Image téléversée ✅', 'success')
+    } catch (error) {
+      console.error(error)
+      setUploadFeedback(error.message || 'Échec du téléversement.', 'error')
+      setStatus(`Téléversement échoué: ${error.message || 'Erreur inconnue'}`, 'error')
+      clearUploadResult()
+    }
+  }
+
+  clearUploadResult()
+  if (assetUploadFeedback) {
+    setUploadFeedback(assetUploadFeedback.textContent || 'Formats recommandés : JPG, PNG, WebP.', 'info')
+  }
 
   function setOrientationButtonsState(orientation) {
     orientationButtons.forEach(button => {
@@ -510,13 +739,187 @@ function attachPanelControls({ chart, card }) {
   }
 
   function ensureFieldLabel(value, label) {
-  const key = normalizeFieldKey(value)
+    const key = normalizeFieldKey(value)
     if (label) {
       fieldLabelStore.set(key, label.trim() || value)
     } else if (!fieldLabelStore.has(key)) {
       fieldLabelStore.set(key, value)
     }
     return fieldLabelStore.get(key) || value
+  }
+
+  function safeTrim(value) {
+    return typeof value === 'string' ? value.trim() : ''
+  }
+
+  function getAllPersons() {
+    if (!editTreeInstance || !editTreeInstance.store || typeof editTreeInstance.store.getData !== 'function') {
+      return []
+    }
+    const persons = editTreeInstance.store.getData()
+    return Array.isArray(persons) ? persons : []
+  }
+
+  function buildPersonLabel(datum) {
+    if (!datum) return 'Profil sans nom'
+    const person = datum.data || {}
+    const first = safeTrim(person['first name'])
+    const last = safeTrim(person['last name'])
+    const base = (first || last) ? [first, last].filter(Boolean).join(' ').trim() : `Profil ${datum.id}`
+    const birth = safeTrim(person['birthday'])
+    return birth ? `${base} (${birth})` : base
+  }
+
+  function updateMainProfileDisplay(id) {
+    if (!mainProfileName) return
+    if (!id) {
+      mainProfileName.textContent = '—'
+      return
+    }
+    const datum = editTreeInstance?.store?.getDatum?.(id)
+    if (!datum) {
+      mainProfileName.textContent = '—'
+      return
+    }
+    mainProfileName.textContent = buildPersonLabel(datum)
+  }
+
+  function refreshMainProfileOptions({ keepSelection = true } = {}) {
+    if (!mainProfileSelect) return
+    const persons = getAllPersons()
+    const previousValue = keepSelection ? mainProfileSelect.value : ''
+    mainProfileSelect.innerHTML = ''
+
+    if (!persons.length) {
+      const placeholder = document.createElement('option')
+      placeholder.value = ''
+      placeholder.textContent = 'Aucune personne disponible'
+      mainProfileSelect.append(placeholder)
+      mainProfileSelect.disabled = true
+      updateMainProfileDisplay(null)
+      return
+    }
+
+    const fragment = document.createDocumentFragment()
+    persons.forEach(datum => {
+      if (!datum || !datum.id) return
+      const option = document.createElement('option')
+      option.value = datum.id
+      option.textContent = buildPersonLabel(datum)
+      fragment.append(option)
+    })
+    mainProfileSelect.append(fragment)
+    mainProfileSelect.disabled = false
+
+    const availableIds = new Set(persons.map(d => d.id))
+    const preferred = []
+    if (keepSelection && previousValue && availableIds.has(previousValue)) preferred.push(previousValue)
+
+    const configMain = typeof chartConfig.mainId === 'string' ? chartConfig.mainId : ''
+    if (configMain && availableIds.has(configMain)) preferred.push(configMain)
+
+    const storeMainId = chart.store && typeof chart.store.getMainId === 'function' ? chart.store.getMainId() : ''
+    if (storeMainId && availableIds.has(storeMainId)) preferred.push(storeMainId)
+
+    if (persons[0]?.id) preferred.push(persons[0].id)
+
+    const targetValue = preferred.find(Boolean) || ''
+    if (targetValue) {
+      mainProfileSelect.value = targetValue
+    } else {
+      mainProfileSelect.selectedIndex = 0
+    }
+
+    updateMainProfileDisplay(mainProfileSelect.value || null)
+  }
+
+  function syncMainProfileSelection({ scheduleSaveIfChanged = false } = {}) {
+    if (!chart.store || typeof chart.store.getMainId !== 'function') {
+      return
+    }
+
+    const storeMainId = chart.store.getMainId()
+
+    if (mainProfileSelect) {
+      const persons = getAllPersons()
+      const availableIds = new Set(persons.map(d => d.id))
+
+      if (storeMainId && !availableIds.has(storeMainId)) {
+        refreshMainProfileOptions({ keepSelection: false })
+      }
+
+      if (storeMainId) {
+        const hasOption = [...mainProfileSelect.options].some(option => option.value === storeMainId)
+        if (!hasOption) {
+          refreshMainProfileOptions({ keepSelection: false })
+        }
+        mainProfileSelect.value = storeMainId
+        mainProfileSelect.disabled = false
+      }
+
+      if (!storeMainId && !mainProfileSelect.options.length) {
+        refreshMainProfileOptions({ keepSelection: false })
+      }
+    }
+
+    updateMainProfileDisplay(storeMainId || null)
+
+    if (chartConfig.mainId !== storeMainId) {
+      chartConfig = { ...chartConfig, mainId: storeMainId || null }
+      lastSnapshotString = null
+      if (scheduleSaveIfChanged && !isApplyingConfig) {
+        scheduleAutoSave()
+      }
+    }
+  }
+
+  function setMainProfile(id, { openEditor = true, treePosition = 'main_to_middle', suppressSave = false } = {}) {
+    if (!id) return
+    const persons = getAllPersons()
+    if (!persons.some(person => person.id === id)) {
+      refreshMainProfileOptions({ keepSelection: false })
+      return
+    }
+
+    const storeMainId = chart.store && typeof chart.store.getMainId === 'function' ? chart.store.getMainId() : null
+    const mainChanged = storeMainId !== id
+
+    if (mainChanged) {
+      chart.updateMainId(id)
+      chart.updateTree({ initial: false, tree_position: treePosition })
+    }
+
+    const configChanged = chartConfig.mainId !== id
+    if (configChanged) {
+      chartConfig = { ...chartConfig, mainId: id }
+    }
+
+    if ((configChanged || mainChanged) && !suppressSave) {
+      lastSnapshotString = null
+      if (!isApplyingConfig) {
+        scheduleAutoSave()
+      }
+    }
+
+    if (mainProfileSelect && mainProfileSelect.value !== id) {
+      mainProfileSelect.value = id
+      mainProfileSelect.disabled = false
+    }
+
+    updateMainProfileDisplay(id)
+
+    if (openEditor && editTreeInstance) {
+      const datum = editTreeInstance.store?.getDatum?.(id)
+      if (datum) editTreeInstance.open(datum)
+    }
+  }
+
+  if (mainProfileSelect) {
+    mainProfileSelect.addEventListener('change', event => {
+      const { value } = event.target
+      if (!value) return
+      setMainProfile(value, { openEditor: true, treePosition: 'main_to_middle' })
+    })
   }
 
   function escapeSelector(value) {
@@ -977,6 +1380,28 @@ function attachPanelControls({ chart, card }) {
     applyCardDimensions()
   })
 
+  assetUploadInput?.addEventListener('change', (event) => {
+    const file = event.target.files && event.target.files[0]
+    if (file) handleFileUpload(file)
+    event.target.value = ''
+  })
+
+  copyUploadUrlBtn?.addEventListener('click', () => {
+    const storedUrl = assetUploadResult?.dataset?.url || assetUploadUrlOutput?.textContent?.trim()
+    copyToClipboard(storedUrl, {
+      successMessage: 'URL du téléversement copiée ✅',
+      errorMessage: 'Impossible de copier l’URL du téléversement.'
+    })
+  })
+
+  copyManualUrlBtn?.addEventListener('click', () => {
+    const value = manualUrlInput?.value?.trim()
+    copyToClipboard(value, {
+      successMessage: 'Lien copié ✅',
+      errorMessage: 'Impossible de copier ce lien.'
+    })
+  })
+
   const previousApplyingState = isApplyingConfig
   isApplyingConfig = true
   ensureConfigEditableItems()
@@ -986,6 +1411,11 @@ function attachPanelControls({ chart, card }) {
   isApplyingConfig = previousApplyingState
 
   applyEditableFields({ suppressSave: true })
+
+  return {
+    refreshMainProfileOptions,
+    syncMainProfileSelection
+  }
 }
 
 async function initialise() {

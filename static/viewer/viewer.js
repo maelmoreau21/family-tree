@@ -45,7 +45,7 @@ const FIELD_LABELS = {
   'nickname': 'Surnom',
   'maiden name': 'Nom de jeune fille',
   'birthday': 'Date de naissance',
-  'death': 'Décès',
+  'death': 'Date de Décès',
   'gender': 'Genre',
   'location': 'Localisation',
   'birthplace': 'Lieu de naissance',
@@ -82,7 +82,8 @@ const DEFAULT_CHART_CONFIG = Object.freeze({
   showSiblingsOfMain: true,
   singleParentEmptyCard: true,
   singleParentEmptyCardLabel: 'Inconnu',
-  cardDisplay: DEFAULT_CARD_DISPLAY.map(row => [...row])
+  cardDisplay: DEFAULT_CARD_DISPLAY.map(row => [...row]),
+  mainId: null
 })
 
 function normalizeCardDisplay(rows) {
@@ -163,6 +164,11 @@ function normaliseChartConfig(rawConfig = {}) {
       ]
     }
     config.cardDisplay = normalizeCardDisplay(source)
+  }
+
+  const rawMainId = rawConfig.mainId ?? rawConfig.main_id ?? rawConfig.mainPersonId ?? rawConfig.main_person_id
+  if (typeof rawMainId === 'string' && rawMainId.trim().length > 0) {
+    config.mainId = rawMainId.trim()
   }
 
   return config
@@ -467,6 +473,12 @@ function renderChart(payload) {
   const appliedConfig = applyConfigToChart(chart, config)
 
   chartInstance = chart
+
+  const dataArray = Array.isArray(data) ? data : []
+  const desiredMainId = typeof appliedConfig.mainId === 'string' ? appliedConfig.mainId.trim() : ''
+  if (desiredMainId && dataArray.some(person => person && person.id === desiredMainId)) {
+    chart.updateMainId(desiredMainId)
+  }
 
   const initialCardDisplay = appliedConfig.cardDisplay && appliedConfig.cardDisplay.length
     ? appliedConfig.cardDisplay.map(row => [...row])

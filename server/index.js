@@ -3,6 +3,8 @@ import cors from 'cors'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import fs from 'node:fs/promises'
+import multer from 'multer'
+import { randomUUID } from 'node:crypto'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -10,6 +12,7 @@ const __dirname = path.dirname(__filename)
 const ROOT_DIR = path.resolve(__dirname, '..')
 const DIST_DIR = path.resolve(ROOT_DIR, 'dist')
 const STATIC_DIR = path.resolve(ROOT_DIR, 'static')
+const UPLOAD_DIR = path.resolve(ROOT_DIR, 'uploads')
 
 const DEFAULT_DATA_PATHS = [
   path.resolve(ROOT_DIR, 'examples', 'data', 'data.json'),
@@ -19,6 +22,57 @@ const DEFAULT_DATA_PATHS = [
 const TREE_DATA_PATH = process.env.TREE_DATA_PATH || path.resolve('/data/tree.json')
 const VIEWER_PORT = Number.parseInt(process.env.VIEWER_PORT || '7920', 10)
 const BUILDER_PORT = Number.parseInt(process.env.BUILDER_PORT || '7921', 10)
+const MAX_UPLOAD_SIZE = 5 * 1024 * 1024
+
+const uploadStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, UPLOAD_DIR)
+  },
+  filename: (req, file, cb) => {
+    const ext = resolveFileExtension(file)
+    const baseName = sanitizeFileName(path.parse(file.originalname || '').name) || 'image'
+    const uniqueId = `${Date.now()}-${randomUUID().slice(0, 8)}`
+    cb(null, `${baseName}-${uniqueId}${ext}`)
+  }
+})
+
+const uploadMiddleware = multer({
+  storage: uploadStorage,
+  limits: { fileSize: MAX_UPLOAD_SIZE },
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype || !file.mimetype.startsWith('image/')) {
+      const error = new Error('UNSUPPORTED_FILE_TYPE')
+      error.code = 'UNSUPPORTED_FILE_TYPE'
+      return cb(error)
+    }
+    cb(null, true)
+  }
+})
+
+const uploadSingleImage = uploadMiddleware.single('file')
+
+function sanitizeFileName(value = '') {
+  return value
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9._-]/g, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase()
+}
+
+function resolveFileExtension(file) {
+  const originalExt = path.extname(file.originalname || '').toLowerCase()
+  if (originalExt) return originalExt
+  const map = {
+    'image/jpeg': '.jpg',
+    'image/png': '.png',
+    'image/webp': '.webp',
+    'image/gif': '.gif',
+    'image/svg+xml': '.svg'
+  }
+  return map[file.mimetype] || ''
+}
 
 async function ensureDataFile() {
   try {
@@ -29,6 +83,10 @@ async function ensureDataFile() {
     await fs.writeFile(TREE_DATA_PATH, JSON.stringify(fallbackData, null, 2), 'utf8')
     console.log(`[server] Created missing data file at ${TREE_DATA_PATH}`)
   }
+}
+
+async function ensureUploadDir() {
+  await fs.mkdir(UPLOAD_DIR, { recursive: true })
 }
 
 async function loadDefaultData() {
@@ -98,7 +156,41 @@ function createStaticApp(staticFolder, { canWrite }) {
 
   app.use('/lib', express.static(DIST_DIR))
   app.use('/assets', express.static(path.resolve(ROOT_DIR, 'src', 'styles')))
+  app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '1d' }))
   app.use('/api', createTreeApi({ canWrite }))
+
+  if (canWrite) {
+    app.post('/api/uploads', (req, res) => {
+      uploadSingleImage(req, res, (error) => {
+        if (error) {
+          if (error.code === 'LIMIT_FILE_SIZE') {
+            res.status(413).json({ message: 'Fichier trop volumineux (limite 5 Mo).' })
+            return
+          }
+          if (error.code === 'UNSUPPORTED_FILE_TYPE') {
+            res.status(415).json({ message: 'Format non pris en charge. Téléversez une image (JPEG, PNG, WebP, GIF, SVG).' })
+            return
+          }
+          console.error('[server] Upload failed', error)
+          res.status(500).json({ message: 'Impossible de téléverser ce fichier.' })
+          return
+        }
+
+        if (!req.file) {
+          res.status(400).json({ message: 'Aucun fichier reçu.' })
+          return
+        }
+
+        res.status(201).json({
+          url: `/uploads/${req.file.filename}`,
+          originalName: req.file.originalname,
+          size: req.file.size,
+          mimeType: req.file.mimetype
+        })
+      })
+    })
+  }
+
   app.use(express.static(staticFolder, { extensions: ['html'] }))
 
   app.get('*', (req, res) => {
@@ -110,6 +202,7 @@ function createStaticApp(staticFolder, { canWrite }) {
 
 async function start() {
   await ensureDataFile()
+  await ensureUploadDir()
   try {
     await fs.access(DIST_DIR)
   } catch (error) {
