@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Family Tree &ndash; Éditeur</title>
+  <link rel="stylesheet" href="/lib/styles/family-tree.css">
+  <link rel="stylesheet" href="/builder.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "d3": "https://cdn.jsdelivr.net/npm/d3@7.9.0/+esm"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div class="layout">
+    <main class="workspace">
+        <aside class="controls" id="controlPanel">
+          <details class="panel" open>
+            <summary>Panneau de détails</summary>
+            <div class="panel-body">
+              <fieldset data-role="editable-fields">
+                <legend>Champs modifiables</legend>
+                <p class="group-hint">Sélectionnez les champs éditables ou ajoutez vos propres champs personnalisés.</p>
+                <div class="editable-list" role="group" aria-label="Champs modifiables disponibles"></div>
+                <div class="field-actions">
+                  <button type="button" class="ghost small" data-action="add-editable">Ajouter un champ</button>
+                </div>
+              </fieldset>
+
+              <fieldset class="display-fields">
+                <legend>Champs affichés</legend>
+                <div class="display-group" data-display-row="1">
+                  <span class="group-label">Ligne&nbsp;1</span>
+                  <p class="group-hint">Cochez les champs à afficher pour la première ligne.</p>
+                  <div class="field-list" role="group" aria-label="Champs affichés pour la ligne 1"></div>
+                </div>
+                <div class="display-group" data-display-row="2">
+                  <span class="group-label">Ligne&nbsp;2</span>
+                  <p class="group-hint">Les champs cochés s’affichent en dessous de la ligne principale.</p>
+                  <div class="field-list" role="group" aria-label="Champs affichés pour la ligne 2"></div>
+                </div>
+              </fieldset>
+            </div>
+          </details>
+
+          <details class="panel" open>
+            <summary>Éléments de carte</summary>
+            <div class="panel-body">
+              <label for="imageField">Champ image</label>
+              <select id="imageField">
+                <option value="avatar" selected>Avatar</option>
+                <option value="photo">Photo</option>
+                <option value="picture">Portrait</option>
+              </select>
+
+              <label for="cardStyle">Style de carte</label>
+              <select id="cardStyle">
+                <option value="default" selected>Défaut</option>
+                <option value="imageCircle">Image cercle</option>
+                <option value="imageCircleRect">Image cercle rect.</option>
+                <option value="imageRect">Image rect.</option>
+                <option value="rect">Rect.</option>
+              </select>
+            </div>
+          </details>
+
+          <details class="panel" open>
+            <summary>Options de mise en page</summary>
+            <div class="panel-body">
+              <label for="transitionInput">Durée de transition (ms)</label>
+              <input type="number" id="transitionInput" min="0" max="5000" step="50" value="350">
+
+              <label for="cardYSpacing">Espacement vertical</label>
+              <input type="number" id="cardYSpacing" min="80" max="400" step="10" value="160">
+
+              <label for="cardXSpacing">Espacement horizontal</label>
+              <input type="number" id="cardXSpacing" min="120" max="400" step="10" value="240">
+
+              <label for="emptyLabel">Libellé carte vide</label>
+              <input type="text" id="emptyLabel" placeholder="Inconnu" value="Inconnu">
+
+              <div class="option-row">
+                <span>Orientation</span>
+                <div class="button-group" role="group" aria-label="Orientation">
+                  <button data-orientation="vertical" type="button" class="active">Verticale</button>
+                  <button data-orientation="horizontal" type="button">Horizontale</button>
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <details class="panel" open>
+            <summary>Dimensions de la carte</summary>
+            <div class="panel-body">
+              <p class="hint">Modifier ces valeurs impacte directement la mise en page.</p>
+              <div class="dimension-grid">
+                <label for="cardWidth">Largeur de la carte</label>
+                <input type="number" id="cardWidth" min="160" max="400" step="10" value="240">
+
+                <label for="cardHeight">Hauteur de la carte</label>
+                <input type="number" id="cardHeight" min="100" max="300" step="10" value="150">
+
+                <label for="imgWidth">Largeur de l'image</label>
+                <input type="number" id="imgWidth" min="40" max="160" step="5" value="80">
+
+                <label for="imgHeight">Hauteur de l'image</label>
+                <input type="number" id="imgHeight" min="40" max="160" step="5" value="80">
+
+                <label for="imgX">Position X de l'image</label>
+                <input type="number" id="imgX" min="0" max="200" step="5" value="16">
+
+                <label for="imgY">Position Y de l'image</label>
+                <input type="number" id="imgY" min="0" max="200" step="5" value="16">
+              </div>
+              <button id="resetDimensions" class="ghost" type="button">Réinitialiser</button>
+            </div>
+          </details>
+
+          <details class="panel resources" open>
+            <summary>Ressources</summary>
+            <div class="panel-body">
+              <ul>
+                <li><a href="https://donatso.github.io/family-chart-doc/create-tree/" target="_blank" rel="noopener">Éditeur d’origine</a></li>
+                <li><a href="https://github.com/donatso/family-chart" target="_blank" rel="noopener">Dépôt GitHub d’origine</a></li>
+              </ul>
+            </div>
+          </details>
+        </aside>
+      <section class="canvas">
+        <div id="FamilyChart" class="f3"></div>
+      </section>
+    </main>
+
+    <footer id="status" role="status" aria-live="assertive"></footer>
+  </div>
+
+  <script type="module" src="/builder.js"></script>
+</body>
+</html>

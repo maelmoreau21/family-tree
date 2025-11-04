@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Family Tree &ndash; Visualisation</title>
+  <link rel="stylesheet" href="/lib/styles/family-tree.css">
+  <link rel="stylesheet" href="/viewer.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "d3": "https://cdn.jsdelivr.net/npm/d3@7.9.0/+esm"
+      }
+    }
+  </script>
+</head>
+<body>
+  <main class="layout">
+    <section class="canvas">
+      <div id="FamilyChart" class="f3"></div>
+      <aside id="personDetails" class="details" aria-live="polite">
+        <section class="search-block" aria-label="Recherche de personne">
+          <label for="personSearchInput">Rechercher une personne</label>
+          <div id="personSearch"></div>
+        </section>
+
+        <section class="info-section" aria-labelledby="infoSectionTitle">
+          <h2 id="infoSectionTitle">Informations complémentaires</h2>
+          <div class="details-content">
+            <p class="summary hidden"></p>
+            <p class="empty">Sélectionnez une personne pour afficher les informations.</p>
+            <div class="detail-list"></div>
+          </div>
+        </section>
+      </aside>
+    </section>
+    <footer id="status" role="status" aria-live="polite"></footer>
+  </main>
+  <script type="module" src="/viewer.js"></script>
+</body>
+</html>
