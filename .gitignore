@@ -5,3 +5,4 @@
 /tests/debugging/
 cypress/screenshots
 docs/api
+data/

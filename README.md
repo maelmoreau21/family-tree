@@ -34,12 +34,19 @@ npm run build
 npm start
 ```
 
-The dev server exposes the viewer on `http://localhost:7920` and the builder on `http://localhost:7921`. Data is stored in `C:\data\tree.json` by default; override `TREE_DATA_PATH` to target another file.
+The dev server exposes the viewer on `http://localhost:7920` and the builder on `http://localhost:7921`. Data is stored in `<repo>/data/tree.json` by default; override `TREE_DATA_PATH` to target another file or mount a different folder.
+
+### Persistent Storage & Backups
+
+- `TREE_DATA_PATH` points to the live JSON file written by the builder (defaults to `/data/tree.json`).
+- `TREE_DATA_DIR` overrides the folder where data is stored (defaults to the directory of `TREE_DATA_PATH`).
+- Every successful save now drops a timestamped snapshot in `<data-dir>/backups`. Limit the rolling history with `TREE_BACKUP_LIMIT` (default: 50 files) or change the folder via `TREE_BACKUP_DIR`.
+- Snapshots are exposed over `/api/backups` (JSON list) and `/api/backups/<filename>` (raw download) so you can script exports or restore points.
 
 ## Docker
 
 ```powershell
-$dataPath = "C:\path\to\my-tree.json"
+$dataDir = "C:\path\to\tree-data"
 docker build -t family-tree .
 docker run `
   --rm `
@@ -48,17 +55,17 @@ docker run `
   -e TREE_DATA_PATH=/data/tree.json `
   -e VIEWER_PORT=7920 `
   -e BUILDER_PORT=7921 `
-  -v ${dataPath}:/data/tree.json `
+  -v ${dataDir}:/data `
   family-tree
 ```
 
-- The container creates `/data/tree.json` if it does not exist (seeded with sample data).
+- The container creates `/data/tree.json` if it does not exist (seeded with sample data) and stores rolling backups under `/data/backups` so mount a folder, not a single file.
 - Override `VIEWER_PORT` and `BUILDER_PORT` to publish alternate ports.
 
 ### Docker Compose (Windows PowerShell)
 
 ```powershell
-$env:TREE_JSON = "C:\path\to\my-tree.json"
+$env:TREE_DATA_DIR = "C:\path\to\tree-data"
 docker compose up --build
 ```
 

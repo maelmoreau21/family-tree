@@ -28,6 +28,7 @@ export default [
       file: `dist/${meta.name}.js`,
       name: "f3",
       format: "umd",
+      exports: "named",
       banner: banner,
       globals: globals
     },
@@ -53,6 +54,7 @@ export default [
       file: `dist/${meta.name}.min.js`,
       name: "f3",
       format: "umd",
+      exports: "named",
       banner: banner,
       globals: globals
     },

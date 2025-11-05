@@ -4,7 +4,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import fs from 'node:fs/promises'
 import multer from 'multer'
-import { randomUUID } from 'node:crypto'
+import { randomUUID, createHash } from 'node:crypto'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -19,10 +19,16 @@ const DEFAULT_DATA_PATHS = [
   path.resolve(ROOT_DIR, 'examples', 'data', 'data-first-node.json')
 ]
 
-const TREE_DATA_PATH = process.env.TREE_DATA_PATH || path.resolve('/data/tree.json')
+const DEFAULT_STORAGE_PATH = path.resolve(ROOT_DIR, 'data', 'tree.json')
+const TREE_DATA_PATH = path.resolve(process.env.TREE_DATA_PATH || DEFAULT_STORAGE_PATH)
+const TREE_DATA_DIR = path.resolve(process.env.TREE_DATA_DIR || path.dirname(TREE_DATA_PATH))
+const TREE_BACKUP_DIR = path.resolve(process.env.TREE_BACKUP_DIR || path.join(TREE_DATA_DIR, 'backups'))
+const TREE_BACKUP_LIMIT = Math.max(0, Number.parseInt(process.env.TREE_BACKUP_LIMIT || '50', 10))
 const VIEWER_PORT = Number.parseInt(process.env.VIEWER_PORT || '7920', 10)
 const BUILDER_PORT = Number.parseInt(process.env.BUILDER_PORT || '7921', 10)
 const MAX_UPLOAD_SIZE = 5 * 1024 * 1024
+
+let lastBackupHash = null
 
 const uploadStorage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -79,7 +85,7 @@ async function ensureDataFile() {
     await fs.access(TREE_DATA_PATH)
   } catch (error) {
     const fallbackData = await loadDefaultData()
-    await fs.mkdir(path.dirname(TREE_DATA_PATH), { recursive: true })
+    await fs.mkdir(TREE_DATA_DIR, { recursive: true })
     await fs.writeFile(TREE_DATA_PATH, JSON.stringify(fallbackData, null, 2), 'utf8')
     console.log(`[server] Created missing data file at ${TREE_DATA_PATH}`)
   }
@@ -87,6 +93,10 @@ async function ensureDataFile() {
 
 async function ensureUploadDir() {
   await fs.mkdir(UPLOAD_DIR, { recursive: true })
+}
+
+async function ensureBackupDir() {
+  await fs.mkdir(TREE_BACKUP_DIR, { recursive: true })
 }
 
 async function loadDefaultData() {
@@ -109,9 +119,101 @@ async function readTreeData() {
 }
 
 async function writeTreeData(data) {
+  const payloadString = JSON.stringify(data, null, 2)
   const tempPath = `${TREE_DATA_PATH}.tmp`
-  await fs.writeFile(tempPath, JSON.stringify(data, null, 2), 'utf8')
+  await fs.writeFile(tempPath, payloadString, 'utf8')
   await fs.rename(tempPath, TREE_DATA_PATH)
+  await writeBackupSnapshot(payloadString)
+}
+
+function sanitizeBackupName(value = '') {
+  if (typeof value !== 'string') return ''
+  const normalized = value.trim().toLowerCase()
+  if (!/^[a-z0-9_-]+\.json$/.test(normalized)) return ''
+  return normalized
+}
+
+function formatTimestampForFile(date = new Date()) {
+  const iso = date.toISOString()
+  return iso.replace(/[:.]/g, '-').replace('T', '_').toLowerCase()
+}
+
+async function writeBackupSnapshot(payloadString) {
+  if (typeof payloadString !== 'string' || !payloadString.length) return
+  await ensureBackupDir()
+  const hash = createHash('sha256').update(payloadString).digest('hex')
+  if (hash === lastBackupHash) return
+
+  const backupName = `tree-${formatTimestampForFile()}.json`
+  const backupPath = path.join(TREE_BACKUP_DIR, backupName)
+  await fs.writeFile(backupPath, payloadString, 'utf8')
+  lastBackupHash = hash
+  await pruneBackups()
+}
+
+async function pruneBackups() {
+  if (!TREE_BACKUP_LIMIT || TREE_BACKUP_LIMIT <= 0) return
+
+  let entries
+  try {
+    entries = await fs.readdir(TREE_BACKUP_DIR, { withFileTypes: true })
+  } catch (error) {
+    return
+  }
+
+  const files = await Promise.all(entries
+    .filter(entry => entry.isFile() && entry.name.endsWith('.json'))
+    .map(async entry => {
+      const fullPath = path.join(TREE_BACKUP_DIR, entry.name)
+      const stats = await fs.stat(fullPath)
+      return { name: entry.name, path: fullPath, mtimeMs: stats.mtimeMs }
+    }))
+
+  if (files.length <= TREE_BACKUP_LIMIT) return
+
+  files.sort((a, b) => a.mtimeMs - b.mtimeMs)
+
+  const filesToRemove = files.slice(0, files.length - TREE_BACKUP_LIMIT)
+  await Promise.allSettled(filesToRemove.map(file => fs.unlink(file.path)))
+}
+
+async function listBackups() {
+  try {
+    await ensureBackupDir()
+    const entries = await fs.readdir(TREE_BACKUP_DIR, { withFileTypes: true })
+    const files = await Promise.all(entries
+      .filter(entry => entry.isFile() && entry.name.endsWith('.json'))
+      .map(async entry => {
+        const fullPath = path.join(TREE_BACKUP_DIR, entry.name)
+        const stats = await fs.stat(fullPath)
+        return {
+          name: entry.name,
+          size: stats.size,
+          modifiedAt: stats.mtime.toISOString()
+        }
+      }))
+    files.sort((a, b) => (a.modifiedAt < b.modifiedAt ? 1 : -1))
+    return files
+  } catch (error) {
+    console.error('[server] Unable to list backups', error)
+    return []
+  }
+}
+
+async function resolveBackupPath(name) {
+  const safeName = sanitizeBackupName(name)
+  if (!safeName) return null
+  const candidatePath = path.join(TREE_BACKUP_DIR, safeName)
+  const absoluteBackupDir = path.resolve(TREE_BACKUP_DIR)
+  const absoluteCandidate = path.resolve(candidatePath)
+  if (!absoluteCandidate.startsWith(absoluteBackupDir)) return null
+
+  try {
+    await fs.access(absoluteCandidate)
+    return absoluteCandidate
+  } catch (error) {
+    return null
+  }
 }
 
 function createTreeApi({ canWrite }) {
@@ -125,6 +227,28 @@ function createTreeApi({ canWrite }) {
     } catch (error) {
       console.error('[server] Failed to read tree data', error)
       res.status(500).json({ message: 'Unable to read tree data file' })
+    }
+  })
+
+  router.get('/backups', async (req, res) => {
+    try {
+      const backups = await listBackups()
+      res.json(backups)
+    } catch (error) {
+      res.status(500).json({ message: 'Unable to list backups' })
+    }
+  })
+
+  router.get('/backups/:name', async (req, res) => {
+    try {
+      const backupPath = await resolveBackupPath(req.params.name)
+      if (!backupPath) {
+        res.status(404).json({ message: 'Backup not found' })
+        return
+      }
+      res.sendFile(backupPath)
+    } catch (error) {
+      res.status(500).json({ message: 'Unable to retrieve backup' })
     }
   })
 
@@ -203,6 +327,7 @@ function createStaticApp(staticFolder, { canWrite }) {
 async function start() {
   await ensureDataFile()
   await ensureUploadDir()
+  await ensureBackupDir()
   try {
     await fs.access(DIST_DIR)
   } catch (error) {

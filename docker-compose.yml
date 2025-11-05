@@ -12,4 +12,4 @@ services:
       - "7920:7920"
       - "7921:7921"
     volumes:
-      - ${TREE_JSON:-./examples/data/data.json}:/data/tree.json
+      - ${TREE_DATA_DIR:-./data}:/data
