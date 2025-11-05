@@ -18,8 +18,8 @@ export interface CalculateTreeOptions {
   one_level_rels?: boolean;
   sortChildrenFunction?: ((a: Datum, b: Datum) => number) | undefined;
   sortSpousesFunction?: ((d: Datum, data: Data) => void) | undefined;
-  ancestry_depth?: number | undefined;
-  progeny_depth?: number | undefined;
+  ancestry_depth?: number | null;
+  progeny_depth?: number | null;
   show_siblings_of_main?: boolean;
   modifyTreeHierarchy?: (tree: HN, is_ancestry: boolean) => void;
   private_cards_config?: any;

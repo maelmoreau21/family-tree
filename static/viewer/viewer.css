@@ -62,6 +62,7 @@ body {
   gap: 0.65rem;
   flex: 1 1 auto;
   min-height: 0;
+  position: relative;
 }
 
 .info-section h2 {
@@ -70,6 +71,183 @@ body {
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.performance-controls {
+  position: relative;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 10px;
+  padding: 0;
+  flex: 0 0 auto;
+}
+
+.performance-controls summary {
+  list-style: none;
+  cursor: pointer;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #cbd5f5;
+  user-select: none;
+}
+
+.performance-controls summary::-webkit-details-marker {
+  display: none;
+}
+
+.performance-controls summary::after {
+  content: '+';
+  font-size: 0.95rem;
+  transition: transform 0.2s ease;
+}
+
+.performance-controls[open] summary::after {
+  content: '-';
+}
+
+.performance-controls[open] summary {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.performance-controls .performance-body {
+  display: none;
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  right: 0;
+  background: rgba(15, 23, 42, 0.93);
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.45);
+  padding: 0.65rem 0.75rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  max-height: clamp(220px, 45vh, 360px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  z-index: 10;
+}
+
+.performance-controls[open] .performance-body {
+  display: flex;
+}
+
+.performance-controls .performance-body::-webkit-scrollbar {
+  width: 0.5rem;
+}
+
+.performance-controls .performance-body::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.performance-controls .performance-body::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.45);
+  border-radius: 999px;
+}
+
+.performance-controls summary:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.5);
+  outline-offset: 2px;
+}
+
+.performance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.control-group label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.control-group select {
+  width: 100%;
+  padding: 0.45rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: rgba(15, 23, 42, 0.75);
+  color: inherit;
+}
+
+.toggle-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.2rem 0;
+}
+
+.toggle-row input[type="checkbox"] {
+  appearance: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 4px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(30, 41, 59, 0.65);
+  display: grid;
+  place-items: center;
+  transition: background 0.2s ease, border 0.2s ease;
+}
+
+.toggle-row input[type="checkbox"]::after {
+  content: '';
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 2px;
+  background: transparent;
+  transition: background 0.2s ease;
+}
+
+.toggle-row input[type="checkbox"]:checked {
+  border-color: rgba(59, 130, 246, 0.7);
+  background: rgba(59, 130, 246, 0.35);
+}
+
+.toggle-row input[type="checkbox"]:checked::after {
+  background: #93c5fd;
+}
+
+.dataset-meta {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(226, 232, 240, 0.85);
+}
+
+.dataset-meta strong {
+  color: #facc15;
+  font-weight: 600;
+}
+
+.dataset-meta.is-loading::after {
+  content: ' · chargement...';
+  font-style: italic;
+  color: rgba(148, 163, 184, 0.75);
+}
+
+#personSearch[data-state="loading"] .f3-autocomplete-input-cont input::placeholder {
+  color: rgba(148, 163, 184, 0.6);
+}
+
+#personSearch[data-state="error"] .f3-autocomplete {
+  border-color: rgba(248, 113, 113, 0.6);
 }
 
 .details .f3-autocomplete-cont {

@@ -83,14 +83,45 @@ const DEFAULT_EDITABLE_FIELDS = sanitizeFieldValues(
     .map(def => def.value)
 )
 
+const TEXTAREA_FIELD_KEYS = new Set(['bio', 'notes', 'biographie', 'description'])
+
+function createBaseFieldLabelStore() {
+  const store = new Map(DISPLAY_FIELD_LABELS)
+  EDITABLE_DEFAULTS.forEach(def => {
+    store.set(normalizeFieldKey(def.value), def.label)
+  })
+  Object.values(DISPLAY_DEFAULTS).forEach(defs => {
+    defs.forEach(def => {
+      if (def.label) {
+        store.set(normalizeFieldKey(def.value), def.label)
+      }
+    })
+  })
+  return store
+}
+
+function buildFieldDescriptors(fields, labelStore = createBaseFieldLabelStore()) {
+  const store = labelStore || createBaseFieldLabelStore()
+  return sanitizeFieldValues(fields).map(value => {
+    const key = normalizeFieldKey(value)
+    const label = store.get(key) || value
+    const type = TEXTAREA_FIELD_KEYS.has(key) ? 'textarea' : 'text'
+    return { id: value, label, type }
+  })
+}
+
 const DEFAULT_CHART_CONFIG = Object.freeze({
-  transitionTime: 250,
-  cardXSpacing: 240,
-  cardYSpacing: 160,
+  transitionTime: 200,
+  cardXSpacing: 200,
+  cardYSpacing: 140,
   orientation: 'vertical',
   showSiblingsOfMain: true,
   singleParentEmptyCard: true,
   singleParentEmptyCardLabel: 'Inconnu',
+  ancestryDepth: 4,
+  progenyDepth: 4,
+  miniTree: true,
+  duplicateBranchToggle: true,
   editableFields: [...DEFAULT_EDITABLE_FIELDS],
   cardDisplay: DEFAULT_CARD_DISPLAY.map(row => [...row]),
   mainId: null
@@ -133,6 +164,10 @@ function buildChartConfig(overrides = {}) {
     showSiblingsOfMain: DEFAULT_CHART_CONFIG.showSiblingsOfMain,
     singleParentEmptyCard: DEFAULT_CHART_CONFIG.singleParentEmptyCard,
     singleParentEmptyCardLabel: DEFAULT_CHART_CONFIG.singleParentEmptyCardLabel,
+    ancestryDepth: DEFAULT_CHART_CONFIG.ancestryDepth,
+    progenyDepth: DEFAULT_CHART_CONFIG.progenyDepth,
+    miniTree: DEFAULT_CHART_CONFIG.miniTree,
+    duplicateBranchToggle: DEFAULT_CHART_CONFIG.duplicateBranchToggle,
     editableFields: [...DEFAULT_EDITABLE_FIELDS],
     cardDisplay: cloneCardDisplay(DEFAULT_CARD_DISPLAY),
     mainId: DEFAULT_CHART_CONFIG.mainId
@@ -165,6 +200,26 @@ function buildChartConfig(overrides = {}) {
   if (typeof overrides.singleParentEmptyCardLabel === 'string') {
     const trimmed = overrides.singleParentEmptyCardLabel.trim()
     if (trimmed) base.singleParentEmptyCardLabel = trimmed
+  }
+
+  if (overrides.ancestryDepth === null) {
+    base.ancestryDepth = null
+  } else if (typeof overrides.ancestryDepth === 'number' && Number.isFinite(overrides.ancestryDepth) && overrides.ancestryDepth >= 0) {
+    base.ancestryDepth = Math.floor(overrides.ancestryDepth)
+  }
+
+  if (overrides.progenyDepth === null) {
+    base.progenyDepth = null
+  } else if (typeof overrides.progenyDepth === 'number' && Number.isFinite(overrides.progenyDepth) && overrides.progenyDepth >= 0) {
+    base.progenyDepth = Math.floor(overrides.progenyDepth)
+  }
+
+  if (typeof overrides.miniTree === 'boolean') {
+    base.miniTree = overrides.miniTree
+  }
+
+  if (typeof overrides.duplicateBranchToggle === 'boolean') {
+    base.duplicateBranchToggle = overrides.duplicateBranchToggle
   }
 
   if (Array.isArray(overrides.editableFields)) {
@@ -278,6 +333,36 @@ function normaliseChartConfig(rawConfig = {}) {
     config.mainId = rawMainId.trim()
   }
 
+  const rawAncestryDepth = rawConfig.ancestryDepth ?? rawConfig.ancestry_depth
+  if (rawAncestryDepth === null) {
+    config.ancestryDepth = null
+  } else if (rawAncestryDepth !== undefined) {
+    const value = Number(rawAncestryDepth)
+    if (Number.isFinite(value) && value >= 0) {
+      config.ancestryDepth = Math.floor(value)
+    }
+  }
+
+  const rawProgenyDepth = rawConfig.progenyDepth ?? rawConfig.progeny_depth
+  if (rawProgenyDepth === null) {
+    config.progenyDepth = null
+  } else if (rawProgenyDepth !== undefined) {
+    const value = Number(rawProgenyDepth)
+    if (Number.isFinite(value) && value >= 0) {
+      config.progenyDepth = Math.floor(value)
+    }
+  }
+
+  const rawMiniTree = rawConfig.miniTree ?? rawConfig.mini_tree
+  if (typeof rawMiniTree === 'boolean') {
+    config.miniTree = rawMiniTree
+  }
+
+  const rawDuplicateToggle = rawConfig.duplicateBranchToggle ?? rawConfig.duplicate_branch_toggle
+  if (typeof rawDuplicateToggle === 'boolean') {
+    config.duplicateBranchToggle = rawDuplicateToggle
+  }
+
   return config
 }
 
@@ -296,6 +381,20 @@ function applyChartConfigToChart(chart) {
   chart.setSingleParentEmptyCard(chartConfig.singleParentEmptyCard, {
     label: chartConfig.singleParentEmptyCardLabel
   })
+
+  if (typeof chartConfig.ancestryDepth === 'number' && Number.isFinite(chartConfig.ancestryDepth)) {
+    chart.setAncestryDepth(chartConfig.ancestryDepth)
+  } else {
+    chart.setAncestryDepth(null)
+  }
+
+  if (typeof chartConfig.progenyDepth === 'number' && Number.isFinite(chartConfig.progenyDepth)) {
+    chart.setProgenyDepth(chartConfig.progenyDepth)
+  } else {
+    chart.setProgenyDepth(null)
+  }
+
+  chart.setDuplicateBranchToggle(chartConfig.duplicateBranchToggle !== false)
 }
 
 async function loadTree() {
@@ -393,6 +492,12 @@ function setupChart(payload) {
   const { data, config } = normaliseTreePayload(payload)
   chartConfig = buildChartConfig(normaliseChartConfig(config))
   currentEditableFields = [...chartConfig.editableFields]
+  if (!currentEditableFields.length) {
+    currentEditableFields = [...DEFAULT_EDITABLE_FIELDS]
+  }
+
+  const initialEditableFields = [...currentEditableFields]
+  const initialFieldDescriptors = buildFieldDescriptors(initialEditableFields)
 
   const chart = f3.createChart(chartSelector, data)
   applyChartConfigToChart(chart)
@@ -404,20 +509,13 @@ function setupChart(payload) {
   const card = chart.setCardHtml()
     .setCardDisplay(initialCardDisplay)
     .setCardImageField('avatar')
+    .setMiniTree(chartConfig.miniTree !== false)
 
   let panelControlAPI = null
   const dataArray = Array.isArray(data) ? data : []
 
   editTreeInstance = chart.editTree()
-    .setFields([
-      'first name',
-      'last name',
-      'birthday',
-      'death',
-      'gender',
-      'avatar',
-      'bio'
-    ])
+    .setFields(initialFieldDescriptors)
     .setEditFirst(true)
     .setCardClickOpen(card)
     .setOnChange(() => {
@@ -516,19 +614,7 @@ function attachPanelControls({ chart, card }) {
   const addEditableBtn = editableFieldset?.querySelector('[data-action="add-editable"]')
   const displayGroups = [...panel.querySelectorAll('[data-display-row]')]
   const displayGroupMap = new Map(displayGroups.map(group => [group.dataset.displayRow, group]))
-  const fieldLabelStore = new Map(DISPLAY_FIELD_LABELS)
-
-  EDITABLE_DEFAULTS.forEach(def => {
-    fieldLabelStore.set(normalizeFieldKey(def.value), def.label)
-  })
-
-  Object.values(DISPLAY_DEFAULTS).forEach(defs => {
-    defs.forEach(def => {
-      if (def.label) {
-        fieldLabelStore.set(normalizeFieldKey(def.value), def.label)
-      }
-    })
-  })
+  const fieldLabelStore = createBaseFieldLabelStore()
 
   const displayDefaultsByRow = new Map(
     Object.entries(DISPLAY_DEFAULTS).map(([row, defs]) => [
@@ -543,6 +629,10 @@ function attachPanelControls({ chart, card }) {
   const cardYSpacing = panel.querySelector('#cardYSpacing')
   const cardXSpacing = panel.querySelector('#cardXSpacing')
   const emptyLabel = panel.querySelector('#emptyLabel')
+  const ancestryDepthSelect = panel.querySelector('#ancestryDepth')
+  const progenyDepthSelect = panel.querySelector('#progenyDepth')
+  const miniTreeToggle = panel.querySelector('#miniTreeToggle')
+  const duplicateToggle = panel.querySelector('#duplicateToggle')
   const orientationButtons = panel.querySelectorAll('[data-orientation]')
   const cardWidth = panel.querySelector('#cardWidth')
   const cardHeight = panel.querySelector('#cardHeight')
@@ -713,12 +803,19 @@ function attachPanelControls({ chart, card }) {
       const label = chartConfig.singleParentEmptyCardLabel ?? DEFAULT_CHART_CONFIG.singleParentEmptyCardLabel
       emptyLabel.value = label
     }
+    if (ancestryDepthSelect) ancestryDepthSelect.value = depthToSelectValue(chartConfig.ancestryDepth, DEFAULT_CHART_CONFIG.ancestryDepth)
+    if (progenyDepthSelect) progenyDepthSelect.value = depthToSelectValue(chartConfig.progenyDepth, DEFAULT_CHART_CONFIG.progenyDepth)
+    if (miniTreeToggle) miniTreeToggle.checked = chartConfig.miniTree !== false
+    if (duplicateToggle) duplicateToggle.checked = chartConfig.duplicateBranchToggle !== false
     setOrientationButtonsState(chartConfig.orientation || DEFAULT_CHART_CONFIG.orientation)
   }
 
   function commitConfigUpdate(partialConfig = {}, { treePosition = 'inherit', refresh = true } = {}) {
     chartConfig = { ...chartConfig, ...partialConfig }
     applyChartConfigToChart(chart)
+    if (card && typeof card.setMiniTree === 'function') {
+      card.setMiniTree(chartConfig.miniTree !== false)
+    }
     if (refresh) {
       const prevState = isApplyingConfig
       isApplyingConfig = true
@@ -738,6 +835,27 @@ function attachPanelControls({ chart, card }) {
     return Number.isFinite(value) ? value : fallback
   }
 
+  function depthToSelectValue(value, fallback) {
+    if (value === null) return ''
+    if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+      return String(Math.floor(value))
+    }
+    if (typeof fallback === 'number' && Number.isFinite(fallback) && fallback >= 0) {
+      return String(Math.floor(fallback))
+    }
+    return ''
+  }
+
+  function parseDepthSelectValue(select, fallback) {
+    if (!select) return fallback
+    if (select.value === '') return null
+    const value = Number(select.value)
+    if (Number.isFinite(value) && value >= 0) {
+      return Math.floor(value)
+    }
+    return fallback
+  }
+
   function ensureFieldLabel(value, label) {
     const key = normalizeFieldKey(value)
     if (label) {
@@ -746,6 +864,15 @@ function attachPanelControls({ chart, card }) {
       fieldLabelStore.set(key, value)
     }
     return fieldLabelStore.get(key) || value
+  }
+
+  function createFieldDescriptors(fieldValues) {
+    return sanitizeFieldValues(fieldValues).map(value => {
+      const key = normalizeFieldKey(value)
+      const label = ensureFieldLabel(value, fieldLabelStore.get(key))
+      const type = TEXTAREA_FIELD_KEYS.has(key) ? 'textarea' : 'text'
+      return { id: value, label, type }
+    })
   }
 
   function safeTrim(value) {
@@ -1206,7 +1333,8 @@ function attachPanelControls({ chart, card }) {
     }
 
     currentEditableFields = [...applied]
-    editTreeInstance.setFields(applied)
+    const fieldDescriptors = createFieldDescriptors(applied)
+    editTreeInstance.setFields(fieldDescriptors)
 
     const activeKeys = new Set(applied.map(normalizeFieldKey))
     syncDisplayItemsWithEditable(activeKeys)
@@ -1317,6 +1445,38 @@ function attachPanelControls({ chart, card }) {
     const safeValue = value > 0 ? value : fallback
     if (safeValue === chartConfig.cardXSpacing) return
     commitConfigUpdate({ cardXSpacing: safeValue })
+  })
+
+  ancestryDepthSelect?.addEventListener('change', () => {
+    if (isApplyingConfig) return
+    const fallback = chartConfig.ancestryDepth ?? DEFAULT_CHART_CONFIG.ancestryDepth ?? null
+    const value = parseDepthSelectValue(ancestryDepthSelect, fallback)
+    if (value === chartConfig.ancestryDepth) return
+    commitConfigUpdate({ ancestryDepth: value }, { treePosition: 'main_to_middle' })
+  })
+
+  progenyDepthSelect?.addEventListener('change', () => {
+    if (isApplyingConfig) return
+    const fallback = chartConfig.progenyDepth ?? DEFAULT_CHART_CONFIG.progenyDepth ?? null
+    const value = parseDepthSelectValue(progenyDepthSelect, fallback)
+    if (value === chartConfig.progenyDepth) return
+    commitConfigUpdate({ progenyDepth: value }, { treePosition: 'main_to_middle' })
+  })
+
+  miniTreeToggle?.addEventListener('change', () => {
+    if (isApplyingConfig) return
+    const enabled = miniTreeToggle.checked
+    const previous = chartConfig.miniTree !== false
+    if (enabled === previous) return
+    commitConfigUpdate({ miniTree: enabled })
+  })
+
+  duplicateToggle?.addEventListener('change', () => {
+    if (isApplyingConfig) return
+    const enabled = duplicateToggle.checked
+    const previous = chartConfig.duplicateBranchToggle !== false
+    if (enabled === previous) return
+    commitConfigUpdate({ duplicateBranchToggle: enabled }, { treePosition: 'inherit' })
   })
 
   emptyLabel?.addEventListener('change', () => {

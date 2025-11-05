@@ -32,14 +32,6 @@ export interface BaseFormCreator {
   onCancel: () => void;
   onFormCreation: FormCreatorSetupProps['onFormCreation']
   no_edit: boolean;
-  gender_field: {
-    id: 'gender';
-    type: 'switch';
-    label: 'Gender';
-    initial_value: 'M' | 'F';
-    disabled: boolean;
-    options: {value: 'M' | 'F'; label: string}[];
-  };
   linkExistingRelative?: any;
 }
 

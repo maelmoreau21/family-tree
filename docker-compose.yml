@@ -4,6 +4,7 @@ services:
   family-tree:
     build: .
     image: family-tree:latest
+    restart: unless-stopped
     environment:
       TREE_DATA_PATH: /data/tree.json
       VIEWER_PORT: 7920
@@ -12,4 +13,4 @@ services:
       - "7920:7920"
       - "7921:7921"
     volumes:
-      - /home/admin/family-tree:/data
+      - /home/admin/family-tree-backups:/data

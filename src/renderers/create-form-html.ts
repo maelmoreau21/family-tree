@@ -7,13 +7,12 @@ export function getHtmlNew(form_creator: NewRelFormCreator) {
     <form id="familyForm" class="f3-form">
       ${closeBtn()}
       <h3 class="f3-form-title">${form_creator.title}</h3>
-      ${genderRadio(form_creator)}
 
       ${fields(form_creator)}
       
       <div class="f3-form-buttons">
-        <button type="button" class="f3-cancel-btn">Cancel</button>
-        <button type="submit">Submit</button>
+        <button type="button" class="f3-cancel-btn">Annuler</button>
+        <button type="submit">Enregistrer</button>
       </div>
 
       ${form_creator.linkExistingRelative ? addLinkExistingRelative(form_creator) : ''}
@@ -30,13 +29,11 @@ export function getHtmlEdit(form_creator: EditDatumFormCreator) {
         ${form_creator.no_edit ? spaceDiv() : editBtn(form_creator)}
       </div>
 
-      ${genderRadio(form_creator)}
-
       ${fields(form_creator)}
       
       <div class="f3-form-buttons">
-        <button type="button" class="f3-cancel-btn">Cancel</button>
-        <button type="submit">Submit</button>
+        <button type="button" class="f3-cancel-btn">Annuler</button>
+        <button type="submit">Enregistrer</button>
       </div>
 
       ${form_creator.linkExistingRelative ? addLinkExistingRelative(form_creator) : ''}
@@ -55,7 +52,7 @@ function deleteBtn(form_creator: EditDatumFormCreator) {
   return (`
     <div>
       <button type="button" class="f3-delete-btn" ${form_creator.can_delete ? '' : 'disabled'}>
-        Delete
+        Supprimer
       </button>
     </div>
   `)
@@ -65,7 +62,7 @@ function removeRelativeBtn(form_creator: EditDatumFormCreator) {
   return (`
     <div>
       <button type="button" class="f3-remove-relative-btn${form_creator.removeRelativeActive ? ' active' : ''}">
-        ${form_creator.removeRelativeActive ? 'Cancel Remove Relation' : 'Remove Relation'}
+        ${form_creator.removeRelativeActive ? 'Annuler la suppression du lien' : 'Supprimer le lien'}
       </button>
     </div>
   `)
@@ -84,24 +81,6 @@ function editBtn(form_creator: EditDatumFormCreator) {
     <span class="f3-edit-btn">
       ${form_creator.editable ? icons.pencilOffSvgIcon() : icons.pencilSvgIcon()}
     </span>
-  `)
-}
-
-function genderRadio(form_creator: EditDatumFormCreator | NewRelFormCreator) {
-  if (!form_creator.editable) return ''
-  return (`
-    <div class="f3-radio-group">
-      ${form_creator.gender_field.options.map(option => (`
-        <label>
-          <input type="radio" name="${form_creator.gender_field.id}" 
-            value="${option.value}" 
-            ${option.value === form_creator.gender_field.initial_value ? 'checked' : ''}
-            ${form_creator.gender_field.disabled ? 'disabled' : ''}
-          >
-          ${option.label}
-        </label>
-      `)).join('')}
-    </div>
   `)
 }
 
@@ -131,7 +110,7 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
       <div class="f3-form-field">
         <label>${select_field.label}</label>
         <select name="${select_field.id}" value="${select_field.initial_value || ''}">
-          <option value="">${select_field.placeholder || `Select ${select_field.label}`}</option>
+          <option value="">${select_field.placeholder || `Sélectionnez ${select_field.label}`}</option>
           ${select_field.options.map((option) => `<option ${option.value === select_field.initial_value ? 'selected' : ''} value="${option.value}">${option.label}</option>`).join('')}
         </select>
       </div>`
@@ -179,8 +158,8 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
 }
 
 function addLinkExistingRelative(form_creator: EditDatumFormCreator | NewRelFormCreator) {
-  const title = form_creator.linkExistingRelative.hasOwnProperty('title') ? form_creator.linkExistingRelative.title : 'Profile already exists?'
-  const select_placeholder = form_creator.linkExistingRelative.hasOwnProperty('select_placeholder') ? form_creator.linkExistingRelative.select_placeholder : 'Select profile'
+  const title = form_creator.linkExistingRelative.hasOwnProperty('title') ? form_creator.linkExistingRelative.title : 'Profil déjà présent ?'
+  const select_placeholder = form_creator.linkExistingRelative.hasOwnProperty('select_placeholder') ? form_creator.linkExistingRelative.select_placeholder : 'Sélectionnez un profil'
   const options = form_creator.linkExistingRelative.options as SelectField['options']
   return (`
     <div>

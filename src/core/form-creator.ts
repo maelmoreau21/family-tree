@@ -44,7 +44,6 @@ export function formCreatorSetup({
     onCancel: onCancel,
     onFormCreation: onFormCreation,
     no_edit: no_edit,
-    gender_field: getGenderField(),
   }
 
   // Existing datum form creator
@@ -94,17 +93,6 @@ export function formCreatorSetup({
   })
 
   return form_creator
-
-  function getGenderField(): BaseFormCreator['gender_field'] {
-    return {
-      id: 'gender', 
-      type: 'switch',
-      label: 'Gender',
-      initial_value: datum.data.gender,
-      disabled: false,
-      options: [{value: 'M', label: 'Male'}, {value: 'F', label: 'Female'}]
-    }
-  }
 
   function addRelReferenceField(field: RelReferenceFieldCreator) {
     if (!field.getRelLabel) console.error('getRelLabel is not set')

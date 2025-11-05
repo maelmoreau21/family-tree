@@ -16,8 +16,8 @@ export type ShowSiblingsOfMain = boolean;
 export type ModifyTreeHierarchy = CalculateTreeOptions['modifyTreeHierarchy'];
 export type SortChildrenFunction = ((a: Datum, b: Datum) => number);
 export type SortSpousesFunction = ((d: Datum, data: Data) => void);
-export type AncestryDepth = number;
-export type ProgenyDepth = number;
+export type AncestryDepth = number | null;
+export type ProgenyDepth = number | null;
 
 export interface StoreState extends CalculateTreeOptions {
   data: Data;

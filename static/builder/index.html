@@ -116,6 +116,49 @@
               <label for="emptyLabel">Libellé carte vide</label>
               <input type="text" id="emptyLabel" placeholder="Inconnu" value="Inconnu">
 
+              <div class="depth-grid">
+                <div class="depth-control">
+                  <label for="ancestryDepth">Générations ancêtres visibles</label>
+                  <select id="ancestryDepth">
+                    <option value="0">0 (profil seul)</option>
+                    <option value="1">1 génération</option>
+                    <option value="2">2 générations</option>
+                    <option value="3">3 générations</option>
+                    <option value="4">4 générations</option>
+                    <option value="5">5 générations</option>
+                    <option value="6">6 générations</option>
+                    <option value="8">8 générations</option>
+                    <option value="10">10 générations</option>
+                    <option value="">Illimité</option>
+                  </select>
+                </div>
+                <div class="depth-control">
+                  <label for="progenyDepth">Générations descendants visibles</label>
+                  <select id="progenyDepth">
+                    <option value="0">0 (profil seul)</option>
+                    <option value="1">1 génération</option>
+                    <option value="2">2 générations</option>
+                    <option value="3">3 générations</option>
+                    <option value="4">4 générations</option>
+                    <option value="5">5 générations</option>
+                    <option value="6">6 générations</option>
+                    <option value="8">8 générations</option>
+                    <option value="10">10 générations</option>
+                    <option value="">Illimité</option>
+                  </select>
+                </div>
+              </div>
+
+              <label class="toggle-row" for="miniTreeToggle">
+                <input type="checkbox" id="miniTreeToggle" checked>
+                <span>Activer les cartes compactes (Mini Tree)</span>
+              </label>
+
+              <label class="toggle-row" for="duplicateToggle">
+                <input type="checkbox" id="duplicateToggle" checked>
+                <span>Fusionner les branches dupliquées</span>
+              </label>
+
               <div class="option-row">
                 <span>Orientation</span>
                 <div class="button-group" role="group" aria-label="Orientation">

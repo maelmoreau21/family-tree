@@ -26,6 +26,56 @@
 
         <section class="info-section" aria-labelledby="infoSectionTitle">
           <h2 id="infoSectionTitle">Informations complémentaires</h2>
+          <details class="performance-controls" aria-label="Options d’affichage rapides">
+            <summary>Affichage rapide</summary>
+            <div class="performance-body">
+              <div class="performance-grid">
+              <div class="control-group">
+                <label for="viewerAncestryDepth">Ancêtres visibles</label>
+                <select id="viewerAncestryDepth">
+                  <option value="0">0 (profil seul)</option>
+                  <option value="1">1 génération</option>
+                  <option value="2">2 générations</option>
+                  <option value="3">3 générations</option>
+                  <option value="4">4 générations</option>
+                  <option value="5">5 générations</option>
+                  <option value="6">6 générations</option>
+                  <option value="8">8 générations</option>
+                  <option value="10">10 générations</option>
+                  <option value="">Illimité</option>
+                </select>
+              </div>
+              <div class="control-group">
+                <label for="viewerProgenyDepth">Descendants visibles</label>
+                <select id="viewerProgenyDepth">
+                  <option value="0">0 (profil seul)</option>
+                  <option value="1">1 génération</option>
+                  <option value="2">2 générations</option>
+                  <option value="3">3 générations</option>
+                  <option value="4">4 générations</option>
+                  <option value="5">5 générations</option>
+                  <option value="6">6 générations</option>
+                  <option value="8">8 générations</option>
+                  <option value="10">10 générations</option>
+                  <option value="">Illimité</option>
+                </select>
+              </div>
+              </div>
+              <label class="toggle-row" for="viewerMiniTree">
+                <input type="checkbox" id="viewerMiniTree" checked>
+                <span>Cartes compactes (Mini Tree)</span>
+              </label>
+              <label class="toggle-row" for="viewerDuplicateToggle">
+                <input type="checkbox" id="viewerDuplicateToggle" checked>
+                <span>Fusionner les branches dupliquées</span>
+              </label>
+              <p class="dataset-meta" data-role="dataset-meta">
+                <strong data-role="visible-count">0</strong> cartes visibles ·
+                <span data-role="branch-count">0</span> profils dans la branche ·
+                <span data-role="total-count">0</span> profils au total
+              </p>
+            </div>
+          </details>
           <div class="details-content">
             <p class="summary hidden"></p>
             <p class="empty">Sélectionnez une personne pour afficher les informations.</p>

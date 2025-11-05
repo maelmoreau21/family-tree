@@ -36,6 +36,19 @@ The dev server exposes the viewer on `http://localhost:7920` and the builder on 
 - `TREE_PAYLOAD_LIMIT` controls the maximum request size accepted when saving (default: `25mb`). Bump it if your tree exceeds that size.
 - Snapshots are exposed over `/api/backups` (JSON list) and `/api/backups/<filename>` (raw download) so you can script exports or restore points.
 
+### Large Trees & Performance
+
+- Viewer & builder now load in **compact mode**: mini cards, 4 générations d’ancêtres/descendants visibles et fusion automatique des branches dupliquées. Ces réglages sont sauvegardés dans `config`.
+- Ajustez la profondeur affichée ou désactivez les cartes compactes grâce aux nouveaux sélecteurs (panneau “Options de mise en page” dans le builder, encart “Affichage rapide” dans le viewer). Passez à “Illimité” pour tout montrer, ou réduisez la profondeur pour garder un rendu fluide au-delà de 2 000 profils.
+- Pour optimiser les très gros arbres (>5 000 profils) :
+  - réduisez les espacements (`cardXSpacing` / `cardYSpacing`) et laissez Mini Tree activé ;
+  - travaillez branche par branche via la recherche (le tree se recalcule autour du profil principal) ;
+  - ajustez `TREE_PAYLOAD_LIMIT` si vos sauvegardes dépassent la taille par défaut.
+- Le viewer affiche en direct le nombre de cartes visibles vs profils totaux pour vous aider à dimensionner l’affichage avant d’exporter/prendre une capture.
+- Le serveur découpe désormais automatiquement l’arbre : le viewer charge une branche locale (profondeurs ancêtres/descendants configurées) puis recharge dès que vous changez de profil principal ou de profondeur.
+- L’API `/api/tree` accepte `mode=subtree`, `mainId`, `ancestryDepth`, `progenyDepth`, `includeSiblings`, `includeSpouses` et renvoie un bloc `meta` (`total`, `returned`, profondeurs appliquées) pour suivre la taille de la branche.
+- Pour la recherche globale sans rapatrier tout le JSON, utilisez `/api/tree/summary` : l’endpoint renvoie `{ total, updatedAt, mainId, persons[] }` avec les noms/infos clés nécessaires à l’autocomplétion.
+
 ## Docker
 
 ```powershell

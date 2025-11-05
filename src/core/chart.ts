@@ -335,7 +335,11 @@ export class Chart {
    * @returns The CreateChart instance
    */
   setAncestryDepth(ancestry_depth: ST.AncestryDepth) {
-    this.store.state.ancestry_depth = ancestry_depth
+    if (typeof ancestry_depth === 'number' && Number.isFinite(ancestry_depth) && ancestry_depth >= 0) {
+      this.store.state.ancestry_depth = ancestry_depth
+    } else {
+      delete this.store.state.ancestry_depth
+    }
 
     return this
   }
@@ -346,7 +350,11 @@ export class Chart {
    * @returns The CreateChart instance
    */
   setProgenyDepth(progeny_depth: ST.ProgenyDepth) {
-    this.store.state.progeny_depth = progeny_depth
+    if (typeof progeny_depth === 'number' && Number.isFinite(progeny_depth) && progeny_depth >= 0) {
+      this.store.state.progeny_depth = progeny_depth
+    } else {
+      delete this.store.state.progeny_depth
+    }
 
     return this
   }

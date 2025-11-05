@@ -30,6 +30,7 @@ const VIEWER_PORT = Number.parseInt(process.env.VIEWER_PORT || '7920', 10)
 const BUILDER_PORT = Number.parseInt(process.env.BUILDER_PORT || '7921', 10)
 const MAX_UPLOAD_SIZE = 5 * 1024 * 1024
 const TREE_PAYLOAD_LIMIT = process.env.TREE_PAYLOAD_LIMIT || '25mb'
+const DEFAULT_SUBTREE_DEPTH = 4
 
 let lastBackupHash = null
 
@@ -129,6 +130,310 @@ async function writeTreeData(data) {
   await writeBackupSnapshot(payloadString)
 }
 
+function normaliseTreePayloadRoot(payload) {
+  if (Array.isArray(payload)) {
+    return { data: payload, config: {}, meta: {} }
+  }
+
+  if (payload && typeof payload === 'object') {
+    if (Array.isArray(payload.data)) {
+      return {
+        data: payload.data,
+        config: payload.config || {},
+        meta: payload.meta || {}
+      }
+    }
+
+    if (Array.isArray(payload.tree)) {
+      return {
+        data: payload.tree,
+        config: payload.config || {},
+        meta: payload.meta || {}
+      }
+    }
+  }
+
+  return { data: [], config: {}, meta: {} }
+}
+
+function parseDepthParam(value, fallback) {
+  if (value === undefined) return fallback
+  if (value === null) return null
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value >= 0 ? Math.floor(value) : fallback
+  }
+
+  const normalized = String(value).trim().toLowerCase()
+  if (!normalized || ['all', 'infinite', 'infinity', 'illimite', 'none', 'null'].includes(normalized)) {
+    return null
+  }
+
+  const parsed = Number(normalized)
+  if (Number.isFinite(parsed) && parsed >= 0) {
+    return Math.floor(parsed)
+  }
+
+  return fallback
+}
+
+function parseBooleanParam(value, fallback) {
+  if (value === undefined) return fallback
+  if (typeof value === 'boolean') return value
+  const normalized = String(value).trim().toLowerCase()
+  if (['1', 'true', 'yes', 'y', 'on'].includes(normalized)) return true
+  if (['0', 'false', 'no', 'n', 'off'].includes(normalized)) return false
+  return fallback
+}
+
+function toIdArray(value) {
+  if (!value) return []
+  const raw = Array.isArray(value) ? value : [value]
+  return raw
+    .map(id => typeof id === 'string' ? id.trim() : '')
+    .filter(Boolean)
+}
+
+function clonePersonForSubset(person, includeSet) {
+  const rels = person?.rels || {}
+  const clone = { ...person }
+  if (clone.data && typeof clone.data === 'object') {
+    clone.data = { ...clone.data }
+  }
+  clone.rels = {
+    parents: toIdArray(rels.parents).filter(id => includeSet.has(id)),
+    children: toIdArray(rels.children).filter(id => includeSet.has(id)),
+    spouses: toIdArray(rels.spouses).filter(id => includeSet.has(id))
+  }
+  return clone
+}
+
+function buildSubtree(payload, options = {}) {
+  const { data, config } = payload
+  const persons = Array.isArray(data) ? data : []
+  const total = persons.length
+
+  if (total === 0) {
+    const meta = { total: 0, returned: 0, mainId: null, ancestryDepth: null, progenyDepth: null }
+    return { data: [], config: { ...config, mainId: null }, meta }
+  }
+
+  const byId = new Map()
+  persons.forEach(person => {
+    if (person && typeof person.id === 'string') {
+      byId.set(person.id, person)
+    }
+  })
+
+  if (byId.size === 0) {
+    const meta = { total, returned: 0, mainId: null, ancestryDepth: null, progenyDepth: null }
+    return { data: [], config: { ...config, mainId: null }, meta }
+  }
+
+  const fallbackMainId = persons.find(person => person && byId.has(person.id))?.id || null
+  const configMainId = typeof config?.mainId === 'string' && byId.has(config.mainId) ? config.mainId : null
+  const requestedMainId = typeof options.mainId === 'string' && byId.has(options.mainId) ? options.mainId : null
+  const mainId = requestedMainId || configMainId || fallbackMainId
+
+  if (!mainId) {
+    const meta = { total, returned: 0, mainId: null, ancestryDepth: null, progenyDepth: null }
+    return { data: [], config: { ...config, mainId: null }, meta }
+  }
+
+  const defaultAncestry = typeof config?.ancestryDepth === 'number' && Number.isFinite(config.ancestryDepth)
+    ? Math.max(0, Math.floor(config.ancestryDepth))
+    : DEFAULT_SUBTREE_DEPTH
+
+  const defaultProgeny = typeof config?.progenyDepth === 'number' && Number.isFinite(config.progenyDepth)
+    ? Math.max(0, Math.floor(config.progenyDepth))
+    : DEFAULT_SUBTREE_DEPTH
+
+  const ancestryDepth = options.ancestryDepth === undefined ? defaultAncestry : options.ancestryDepth
+  const progenyDepth = options.progenyDepth === undefined ? defaultProgeny : options.progenyDepth
+
+  const ancestryLimit = ancestryDepth === null ? Infinity : Math.max(0, ancestryDepth)
+  const progenyLimit = progenyDepth === null ? Infinity : Math.max(0, progenyDepth)
+
+  const include = new Set()
+  const ancestryDepthMap = new Map()
+  const progenyDepthMap = new Map()
+
+  const includePerson = (id) => {
+    if (!id || include.has(id) || !byId.has(id)) return
+    include.add(id)
+  }
+
+  includePerson(mainId)
+
+  function collectAncestors(startId) {
+    const queue = [{ id: startId, depth: 0 }]
+    while (queue.length) {
+      const { id, depth } = queue.shift()
+      if (!byId.has(id)) continue
+      const recordedDepth = ancestryDepthMap.get(id)
+      if (recordedDepth !== undefined && depth >= recordedDepth) continue
+      ancestryDepthMap.set(id, depth)
+      includePerson(id)
+      if (depth >= ancestryLimit) continue
+      const person = byId.get(id)
+      const parents = toIdArray(person?.rels?.parents)
+      parents.forEach(parentId => {
+        if (!byId.has(parentId)) return
+        queue.push({ id: parentId, depth: depth + 1 })
+      })
+    }
+  }
+
+  function collectDescendants(startId, startDepth = 0) {
+    const queue = [{ id: startId, depth: startDepth }]
+    while (queue.length) {
+      const { id, depth } = queue.shift()
+      if (!byId.has(id)) continue
+      const recordedDepth = progenyDepthMap.get(id)
+      if (recordedDepth !== undefined && depth >= recordedDepth) continue
+      progenyDepthMap.set(id, depth)
+      includePerson(id)
+      if (depth >= progenyLimit) continue
+      const person = byId.get(id)
+      const children = toIdArray(person?.rels?.children)
+      children.forEach(childId => {
+        if (!byId.has(childId)) return
+        queue.push({ id: childId, depth: depth + 1 })
+      })
+    }
+  }
+
+  if (ancestryLimit > 0 || ancestryDepth === null) {
+    collectAncestors(mainId)
+  }
+
+  collectDescendants(mainId, 0)
+
+  if (options.includeSiblings !== false) {
+    const mainPerson = byId.get(mainId)
+    if (mainPerson) {
+      const parents = toIdArray(mainPerson.rels?.parents)
+      parents.forEach(parentId => {
+        const parent = byId.get(parentId)
+        if (!parent) return
+        const siblings = toIdArray(parent.rels?.children)
+        siblings.forEach(siblingId => includePerson(siblingId))
+      })
+    }
+  }
+
+  const parentsToAdd = new Set()
+  include.forEach(id => {
+    const depth = progenyDepthMap.get(id)
+    if (depth === undefined) return
+    const person = byId.get(id)
+    if (!person) return
+    const parents = toIdArray(person.rels?.parents)
+    parents.forEach(parentId => {
+      if (!include.has(parentId) && byId.has(parentId)) {
+        parentsToAdd.add(parentId)
+      }
+    })
+  })
+  parentsToAdd.forEach(parentId => includePerson(parentId))
+
+  if (options.includeSpouses !== false) {
+    const spousesToAdd = new Set()
+    include.forEach(id => {
+      const person = byId.get(id)
+      if (!person) return
+      const spouses = toIdArray(person.rels?.spouses)
+      spouses.forEach(spouseId => {
+        if (!include.has(spouseId) && byId.has(spouseId)) {
+          spousesToAdd.add(spouseId)
+        }
+      })
+    })
+    spousesToAdd.forEach(spouseId => includePerson(spouseId))
+  }
+
+  const filtered = persons
+    .filter(person => include.has(person.id))
+    .map(person => clonePersonForSubset(person, include))
+
+  const resultConfig = {
+    ...config,
+    mainId
+  }
+
+  if (ancestryDepth === null) {
+    resultConfig.ancestryDepth = null
+  } else {
+    resultConfig.ancestryDepth = Math.max(0, ancestryDepth)
+  }
+
+  if (progenyDepth === null) {
+    resultConfig.progenyDepth = null
+  } else {
+    resultConfig.progenyDepth = Math.max(0, progenyDepth)
+  }
+
+  const meta = {
+    total,
+    returned: filtered.length,
+    mainId,
+    ancestryDepth: ancestryDepth === null ? null : Math.max(0, ancestryDepth),
+    progenyDepth: progenyDepth === null ? null : Math.max(0, progenyDepth),
+    includeSiblings: options.includeSiblings !== false,
+    includeSpouses: options.includeSpouses !== false
+  }
+
+  return { data: filtered, config: resultConfig, meta }
+}
+
+function getDataFieldValue(person, targetKey) {
+  if (!person || typeof person !== 'object') return ''
+  const data = person.data
+  if (!data || typeof data !== 'object') return ''
+  const normalizedTarget = targetKey.toLowerCase()
+  for (const [key, value] of Object.entries(data)) {
+    if (typeof value !== 'string') continue
+    if (key.toLowerCase() === normalizedTarget) {
+      const trimmed = value.trim()
+      if (trimmed) return trimmed
+    }
+  }
+  return ''
+}
+
+function buildPersonSummaryEntry(person) {
+  const firstName = getDataFieldValue(person, 'first name')
+  const lastName = getDataFieldValue(person, 'last name')
+  const nickname = getDataFieldValue(person, 'nickname')
+  const maidenName = getDataFieldValue(person, 'maiden name')
+  const parts = []
+  if (firstName) parts.push(firstName)
+  if (lastName) parts.push(lastName)
+  const baseLabel = parts.join(' ').replace(/\s+/g, ' ').trim()
+  const label = baseLabel || nickname || person.id || 'Profil'
+
+  const summary = { id: person.id, label }
+  const birthday = getDataFieldValue(person, 'birthday')
+  if (birthday) summary.birthday = birthday
+  const death = getDataFieldValue(person, 'death')
+  if (death) summary.death = death
+  const location = getDataFieldValue(person, 'location') || getDataFieldValue(person, 'residence')
+  if (location) summary.location = location
+  if (maidenName) summary.maidenName = maidenName
+  const gender = getDataFieldValue(person, 'gender')
+  if (gender) summary.gender = gender
+  const occupation = getDataFieldValue(person, 'occupation')
+  if (occupation) summary.occupation = occupation
+  return summary
+}
+
+function buildPeopleSummary(persons) {
+  const summaries = persons
+    .filter(person => person && typeof person.id === 'string')
+    .map(person => buildPersonSummaryEntry(person))
+  summaries.sort((a, b) => a.label.localeCompare(b.label, 'fr', { sensitivity: 'base' }))
+  return summaries
+}
+
 function sanitizeBackupName(value = '') {
   if (typeof value !== 'string') return ''
   const normalized = value.trim().toLowerCase()
@@ -224,22 +529,94 @@ function createTreeApi({ canWrite }) {
   router.use(cors())
 
   router.get('/tree', async (req, res) => {
+    const subsetRequested =
+      (typeof req.query.mode === 'string' && req.query.mode.toLowerCase() === 'subtree') ||
+      typeof req.query.mainId === 'string' ||
+      typeof req.query.main_id === 'string' ||
+      req.query.ancestryDepth !== undefined ||
+      req.query.ancestry_depth !== undefined ||
+      req.query.progenyDepth !== undefined ||
+      req.query.progeny_depth !== undefined ||
+      req.query.includeSiblings !== undefined ||
+      req.query.include_siblings !== undefined ||
+      req.query.includeSpouses !== undefined ||
+      req.query.include_spouses !== undefined
+
+    if (!subsetRequested) {
+      try {
+        await fs.access(TREE_DATA_PATH)
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        const stream = createReadStream(TREE_DATA_PATH, { encoding: 'utf8' })
+        stream.on('error', (error) => {
+          console.error('[server] Failed to stream tree data', error)
+          if (!res.headersSent) {
+            res.status(500).json({ message: 'Unable to read tree data file' })
+          } else {
+            res.destroy(error)
+          }
+        })
+        stream.pipe(res)
+      } catch (error) {
+        console.error('[server] Failed to access tree data', error)
+        res.status(500).json({ message: 'Unable to read tree data file' })
+      }
+      return
+    }
+
     try {
-      await fs.access(TREE_DATA_PATH)
-      res.setHeader('Content-Type', 'application/json; charset=utf-8')
-      const stream = createReadStream(TREE_DATA_PATH, { encoding: 'utf8' })
-      stream.on('error', (error) => {
-        console.error('[server] Failed to stream tree data', error)
-        if (!res.headersSent) {
-          res.status(500).json({ message: 'Unable to read tree data file' })
-        } else {
-          res.destroy(error)
-        }
+      const payload = await readTreeData()
+      const normalised = normaliseTreePayloadRoot(payload)
+
+      const ancestryDepthParam = req.query.ancestryDepth ?? req.query.ancestry_depth
+      const progenyDepthParam = req.query.progenyDepth ?? req.query.progeny_depth
+      const includeSiblingsParam = req.query.includeSiblings ?? req.query.include_siblings
+      const includeSpousesParam = req.query.includeSpouses ?? req.query.include_spouses
+      const mainIdParam = req.query.mainId ?? req.query.main_id
+
+      const ancestryDepth = parseDepthParam(ancestryDepthParam, undefined)
+      const progenyDepth = parseDepthParam(progenyDepthParam, undefined)
+      const includeSiblings = parseBooleanParam(includeSiblingsParam, true)
+      const includeSpouses = parseBooleanParam(includeSpousesParam, true)
+      const mainId = typeof mainIdParam === 'string' && mainIdParam.trim() ? mainIdParam.trim() : null
+
+      const subtree = buildSubtree(normalised, {
+        mainId,
+        ancestryDepth,
+        progenyDepth,
+        includeSiblings,
+        includeSpouses
       })
-      stream.pipe(res)
+
+      res.json(subtree)
     } catch (error) {
-      console.error('[server] Failed to access tree data', error)
-      res.status(500).json({ message: 'Unable to read tree data file' })
+      console.error('[server] Failed to build subtree response', error)
+      res.status(500).json({ message: 'Unable to build subtree response' })
+    }
+  })
+
+  router.get('/tree/summary', async (req, res) => {
+    try {
+      const payload = await readTreeData()
+      const normalised = normaliseTreePayloadRoot(payload)
+      const persons = Array.isArray(normalised.data) ? normalised.data : []
+      const summaries = buildPeopleSummary(persons)
+      let updatedAt = null
+      try {
+        const stats = await fs.stat(TREE_DATA_PATH)
+        updatedAt = stats.mtime.toISOString()
+      } catch (statsError) {
+        // ignore inability to read file stats
+      }
+
+      res.json({
+        total: persons.length,
+        updatedAt,
+        mainId: typeof normalised.config?.mainId === 'string' ? normalised.config.mainId : null,
+        persons: summaries
+      })
+    } catch (error) {
+      console.error('[server] Failed to build tree summary', error)
+      res.status(500).json({ message: 'Unable to summarise tree data' })
     }
   })
 
