@@ -1,13 +1,5 @@
 # Family Tree
 
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![MIT License][license-shield]][license-url]
-[![TypeScript][typescript-shield]][typescript-url]
-[![Bundle Size][bundle-shield]][bundle-url]
-
 ![Family Tree logo](examples/logo.svg)
 
 Family Tree is a D3.js based visualization library for building rich, interactive family trees. Forked from Family Chart, it ships with a bilingual builder UI, TypeScript typings, and ready-to-use HTML/SVG card renderers so you can focus on your data instead of layout plumbing.
@@ -136,22 +128,4 @@ Distributed under the MIT License. See `LICENSE.txt` for details.
 
 ## Contact
 
-- Email: [donatso.dev@gmail.com](mailto:donatso.dev@gmail.com)
 - Projet amont : [https://github.com/donatso/family-chart](https://github.com/donatso/family-chart)
-
-<!-- Badge references -->
-[contributors-shield]: https://img.shields.io/github/contributors/donatso/family-chart.svg?style=for-the-badge
-[contributors-url]: https://github.com/donatso/family-chart/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/donatso/family-chart.svg?style=for-the-badge
-[forks-url]: https://github.com/donatso/family-chart/network/members
-[stars-shield]: https://img.shields.io/github/stars/donatso/family-chart.svg?style=for-the-badge
-[stars-url]: https://github.com/donatso/family-chart/stargazers
-[issues-shield]: https://img.shields.io/github/issues/donatso/family-chart.svg?style=for-the-badge
-[issues-url]: https://github.com/donatso/family-chart/issues
-[license-shield]: https://img.shields.io/github/license/donatso/family-chart.svg?style=for-the-badge
-[license-url]: https://github.com/donatso/family-chart/blob/master/LICENSE.txt
-[typescript-shield]: https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white
-[typescript-url]: https://www.typescriptlang.org/
-[bundle-shield]: https://img.shields.io/bundlephobia/minzip/family-chart?style=for-the-badge
-[bundle-url]: https://bundlephobia.com/package/family-chart
-
