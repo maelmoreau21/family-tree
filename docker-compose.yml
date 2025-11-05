@@ -12,4 +12,4 @@ services:
       - "7920:7920"
       - "7921:7921"
     volumes:
-      - ${TREE_DATA_DIR:-./data}:/data
+      - /home/admin/family-tree:/data

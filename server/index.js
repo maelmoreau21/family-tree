@@ -1,8 +1,10 @@
 import express from 'express'
 import cors from 'cors'
+import compression from 'compression'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import fs from 'node:fs/promises'
+import { createReadStream } from 'node:fs'
 import multer from 'multer'
 import { randomUUID, createHash } from 'node:crypto'
 
@@ -27,6 +29,7 @@ const TREE_BACKUP_LIMIT = Math.max(0, Number.parseInt(process.env.TREE_BACKUP_LI
 const VIEWER_PORT = Number.parseInt(process.env.VIEWER_PORT || '7920', 10)
 const BUILDER_PORT = Number.parseInt(process.env.BUILDER_PORT || '7921', 10)
 const MAX_UPLOAD_SIZE = 5 * 1024 * 1024
+const TREE_PAYLOAD_LIMIT = process.env.TREE_PAYLOAD_LIMIT || '25mb'
 
 let lastBackupHash = null
 
@@ -222,10 +225,20 @@ function createTreeApi({ canWrite }) {
 
   router.get('/tree', async (req, res) => {
     try {
-      const data = await readTreeData()
-      res.json(data)
+      await fs.access(TREE_DATA_PATH)
+      res.setHeader('Content-Type', 'application/json; charset=utf-8')
+      const stream = createReadStream(TREE_DATA_PATH, { encoding: 'utf8' })
+      stream.on('error', (error) => {
+        console.error('[server] Failed to stream tree data', error)
+        if (!res.headersSent) {
+          res.status(500).json({ message: 'Unable to read tree data file' })
+        } else {
+          res.destroy(error)
+        }
+      })
+      stream.pipe(res)
     } catch (error) {
-      console.error('[server] Failed to read tree data', error)
+      console.error('[server] Failed to access tree data', error)
       res.status(500).json({ message: 'Unable to read tree data file' })
     }
   })
@@ -253,7 +266,7 @@ function createTreeApi({ canWrite }) {
   })
 
   if (canWrite) {
-    router.use(express.json({ limit: '5mb' }))
+  router.use(express.json({ limit: TREE_PAYLOAD_LIMIT }))
 
     router.put('/tree', async (req, res) => {
       try {
@@ -278,6 +291,7 @@ function createTreeApi({ canWrite }) {
 function createStaticApp(staticFolder, { canWrite }) {
   const app = express()
 
+  app.use(compression({ threshold: 1024 }))
   app.use('/lib', express.static(DIST_DIR))
   app.use('/assets', express.static(path.resolve(ROOT_DIR, 'src', 'styles')))
   app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '1d' }))

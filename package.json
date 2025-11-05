@@ -21,12 +21,12 @@
   "exports": {
     ".": {
       "import": {
-  "types": "./dist/types/index.d.ts",
-  "default": "./dist/family-tree.esm.js"
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/family-tree.esm.js"
       },
       "require": {
-  "types": "./dist/types/index.d.ts",
-  "default": "./dist/family-tree.js"
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/family-tree.js"
       }
     },
     "./styles/*": "./dist/styles/*"
@@ -52,6 +52,7 @@
   },
   "sideEffects": false,
   "dependencies": {
+    "compression": "^1.8.1",
     "cors": "^2.8.5",
     "d3": "^7.9.0",
     "express": "^4.21.1",
