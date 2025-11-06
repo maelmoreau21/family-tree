@@ -249,6 +249,7 @@ let queuedSave = null
 let chartConfig = buildChartConfig()
 let isApplyingConfig = false
 let currentEditableFields = [...DEFAULT_EDITABLE_FIELDS]
+let activePanelTeardown = null
 
 function setStatus(message, type = 'info') {
   if (!statusEl) return
@@ -489,6 +490,11 @@ function setupChart(payload) {
 
   container.innerHTML = ''
 
+  if (typeof activePanelTeardown === 'function') {
+    activePanelTeardown()
+    activePanelTeardown = null
+  }
+
   const { data, config } = normaliseTreePayload(payload)
   chartConfig = buildChartConfig(normaliseChartConfig(config))
   currentEditableFields = [...chartConfig.editableFields]
@@ -529,7 +535,19 @@ function setupChart(payload) {
 
   panelControlAPI = attachPanelControls({ chart, card }) || {
     refreshMainProfileOptions: () => {},
-    syncMainProfileSelection: () => {}
+    syncMainProfileSelection: () => {},
+    handleFormCreation: () => {},
+    teardown: () => {}
+  }
+
+  if (typeof panelControlAPI.teardown === 'function') {
+    activePanelTeardown = panelControlAPI.teardown
+  } else {
+    activePanelTeardown = null
+  }
+
+  if (typeof panelControlAPI.handleFormCreation === 'function') {
+    editTreeInstance.setOnFormCreation(panelControlAPI.handleFormCreation)
   }
 
   const initialMainId = resolveInitialMainId(dataArray, chart)
@@ -605,7 +623,9 @@ function attachPanelControls({ chart, card }) {
   if (!panel) {
     return {
       refreshMainProfileOptions: () => {},
-      syncMainProfileSelection: () => {}
+      syncMainProfileSelection: () => {},
+      handleFormCreation: () => {},
+      teardown: () => {}
     }
   }
 
@@ -655,6 +675,182 @@ function attachPanelControls({ chart, card }) {
   const manualUrlInput = imageUploader?.querySelector('#assetUrl')
   const copyManualUrlBtn = imageUploader?.querySelector('[data-action="copy-manual-url"]')
 
+  const imageUploaderHome = imageUploader ? {
+    parent: imageUploader.parentElement,
+    nextSibling: imageUploader.nextSibling
+  } : null
+
+  let imageUploaderCurrentForm = null
+  let imageUploaderCurrentDatumId = null
+
+  function getActiveImageFieldId() {
+    const value = imageField?.value?.trim()
+    return value || 'avatar'
+  }
+
+  function getActiveDatum() {
+    if (!imageUploaderCurrentDatumId || !editTreeInstance?.store?.getDatum) return null
+    try {
+      return editTreeInstance.store.getDatum(imageUploaderCurrentDatumId) || null
+    } catch (error) {
+      console.error('Impossible de récupérer le profil actif pour le téléversement', error)
+      return null
+    }
+  }
+
+  function normaliseUrl(rawUrl) {
+    if (!rawUrl) return ''
+    try {
+      return new URL(rawUrl, window.location.origin).toString()
+    } catch (error) {
+      return String(rawUrl)
+    }
+  }
+
+  function applyImageToActiveProfile(rawUrl, { origin = 'manual', sizeBytes } = {}) {
+    const absoluteUrl = normaliseUrl(rawUrl)
+    if (!absoluteUrl) return
+
+    const targetFieldId = getActiveImageFieldId()
+    const escapedFieldId = targetFieldId.replace(/"/g, '\\"')
+    let formUpdated = false
+    let datumUpdated = false
+
+    if (imageUploaderCurrentForm) {
+      const targetInput = imageUploaderCurrentForm.querySelector(`[name="${escapedFieldId}"]`)
+      if (targetInput && targetInput instanceof HTMLInputElement) {
+        if (targetInput.value !== absoluteUrl) {
+          targetInput.value = absoluteUrl
+          targetInput.dispatchEvent(new Event('input', { bubbles: true }))
+        }
+        formUpdated = true
+      } else if (targetInput && targetInput instanceof HTMLTextAreaElement) {
+        if (targetInput.value !== absoluteUrl) {
+          targetInput.value = absoluteUrl
+          targetInput.dispatchEvent(new Event('input', { bubbles: true }))
+        }
+        formUpdated = true
+      }
+    }
+
+    const activeDatum = getActiveDatum()
+    if (activeDatum) {
+      if (!activeDatum.data) activeDatum.data = {}
+      if (activeDatum.data[targetFieldId] !== absoluteUrl) {
+        activeDatum.data[targetFieldId] = absoluteUrl
+        datumUpdated = true
+      }
+    }
+
+    if (datumUpdated) {
+      try {
+        chart.updateTree({ initial: false, tree_position: 'inherit' })
+      } catch (error) {
+        console.error('Impossible de rafraîchir le graphique après mise à jour de l’image', error)
+      }
+      scheduleAutoSave()
+    }
+
+    if (manualUrlInput) manualUrlInput.value = absoluteUrl
+
+    const appliedSomewhere = formUpdated || datumUpdated
+    if (origin === 'upload') {
+      if (appliedSomewhere) {
+        const sizeMessage = sizeBytes ? ` (${formatBytes(sizeBytes)})` : ''
+        setUploadFeedback(`Image téléversée${sizeMessage} et appliquée au profil.`, 'success')
+        setStatus('Image appliquée au profil ✅', 'success')
+      } else {
+        const sizeMessage = sizeBytes ? ` (${formatBytes(sizeBytes)})` : ''
+        setUploadFeedback(`Image téléversée${sizeMessage}. Sélectionnez un profil éditable pour l’appliquer.`, 'info')
+      }
+    } else if (appliedSomewhere) {
+      setUploadFeedback('Image appliquée au profil.', 'success')
+      setStatus('Image appliquée au profil ✅', 'success')
+    } else {
+      setUploadFeedback('Sélectionnez un profil éditable pour appliquer l’image.', 'info')
+    }
+  }
+
+  function populateUploaderFromDatum() {
+    const targetFieldId = getActiveImageFieldId()
+    const activeDatum = getActiveDatum()
+    const existingValue = activeDatum?.data?.[targetFieldId] || ''
+
+    if (!existingValue) {
+      clearUploadResult()
+      if (manualUrlInput) manualUrlInput.value = ''
+      setUploadFeedback('Formats recommandés : JPG, PNG, WebP.', 'info')
+      return
+    }
+
+    const absoluteUrl = showUploadResult(existingValue, { silent: true })
+    if (manualUrlInput) manualUrlInput.value = absoluteUrl
+    setUploadFeedback('Image actuelle du profil chargée.', 'info')
+  }
+
+  function restoreImageUploaderToPanel() {
+    if (!imageUploader || !imageUploaderHome?.parent) return
+    if (imageUploaderCurrentForm) {
+      imageUploaderCurrentForm = null
+    }
+    imageUploaderCurrentDatumId = null
+    const { parent, nextSibling } = imageUploaderHome
+    if (nextSibling && parent.contains(nextSibling)) {
+      parent.insertBefore(imageUploader, nextSibling)
+    } else {
+      parent.appendChild(imageUploader)
+    }
+    imageUploader.classList.remove('is-modal-context')
+    clearUploadResult()
+    if (manualUrlInput) manualUrlInput.value = ''
+    setUploadFeedback('Importez une image ou collez une URL publique. Formats recommandés : JPG, PNG, WebP.', 'info')
+  }
+
+  function injectImageUploaderIntoForm(form) {
+    if (!imageUploader || !form) return
+    if (imageUploaderCurrentForm === form) return
+
+    restoreImageUploaderToPanel()
+
+    const buttons = form.querySelector('.f3-form-buttons')
+    if (buttons && buttons.parentNode) {
+      buttons.parentNode.insertBefore(imageUploader, buttons)
+    } else {
+      form.appendChild(imageUploader)
+    }
+    imageUploader.classList.add('is-modal-context')
+    imageUploaderCurrentForm = form
+  }
+
+  function handleFormCreation({ cont, form_creator }) {
+    if (!imageUploader) return
+    const form = cont?.querySelector?.('form')
+    if (!form) {
+      restoreImageUploaderToPanel()
+      return
+    }
+
+    const isEditable = form_creator?.editable !== false && !form_creator?.no_edit
+    if (!isEditable) {
+      if (form.contains(imageUploader)) {
+        restoreImageUploaderToPanel()
+      }
+      return
+    }
+
+    injectImageUploaderIntoForm(form)
+    imageUploaderCurrentDatumId = form_creator?.datum_id || null
+    populateUploaderFromDatum()
+  }
+
+  function teardownImageUploader() {
+    restoreImageUploaderToPanel()
+  }
+
+  if (imageUploader && imageUploaderHome?.parent && imageUploader.parentElement !== imageUploaderHome.parent) {
+    restoreImageUploaderToPanel()
+  }
+
   const MAX_UPLOAD_SIZE = 5 * 1024 * 1024
 
   function formatBytes(bytes) {
@@ -681,15 +877,9 @@ function attachPanelControls({ chart, card }) {
     }
   }
 
-  function showUploadResult(url) {
-    if (!assetUploadResult) return
-    const absoluteUrl = (() => {
-      try {
-        return new URL(url, window.location.origin).toString()
-      } catch (error) {
-        return url
-      }
-    })()
+  function showUploadResult(url, { silent = false } = {}) {
+    if (!assetUploadResult) return ''
+    const absoluteUrl = normaliseUrl(url)
 
     assetUploadResult.dataset.url = absoluteUrl
     if (assetUploadUrlOutput) assetUploadUrlOutput.textContent = absoluteUrl
@@ -699,6 +889,9 @@ function attachPanelControls({ chart, card }) {
     }
     assetUploadResult.classList.remove('hidden')
     if (manualUrlInput) manualUrlInput.value = absoluteUrl
+    if (!silent) setUploadFeedback('Image prête à être appliquée.', 'info')
+
+    return absoluteUrl
   }
 
   async function copyToClipboard(value, { successMessage = 'Copié dans le presse-papiers ✅', errorMessage = 'Impossible de copier.' } = {}) {
@@ -772,9 +965,8 @@ function attachPanelControls({ chart, card }) {
         throw new Error('Réponse du serveur invalide (URL manquante).')
       }
 
-      showUploadResult(uploadedUrl)
-      setUploadFeedback(`Image téléversée (${formatBytes(file.size)}).`, 'success')
-      setStatus('Image téléversée ✅', 'success')
+      const absoluteUrl = showUploadResult(uploadedUrl)
+      applyImageToActiveProfile(absoluteUrl, { origin: 'upload', sizeBytes: file.size })
     } catch (error) {
       console.error(error)
       setUploadFeedback(error.message || 'Échec du téléversement.', 'error')
@@ -1413,6 +1605,7 @@ function attachPanelControls({ chart, card }) {
   imageField?.addEventListener('change', () => {
     card.setCardImageField(imageField.value)
     chart.updateTree({ initial: false, tree_position: 'inherit' })
+    populateUploaderFromDatum()
   })
 
   cardStyle?.addEventListener('change', () => {
@@ -1548,6 +1741,7 @@ function attachPanelControls({ chart, card }) {
 
   copyUploadUrlBtn?.addEventListener('click', () => {
     const storedUrl = assetUploadResult?.dataset?.url || assetUploadUrlOutput?.textContent?.trim()
+    if (storedUrl) applyImageToActiveProfile(storedUrl, { origin: 'manual' })
     copyToClipboard(storedUrl, {
       successMessage: 'URL du téléversement copiée ✅',
       errorMessage: 'Impossible de copier l’URL du téléversement.'
@@ -1556,8 +1750,9 @@ function attachPanelControls({ chart, card }) {
 
   copyManualUrlBtn?.addEventListener('click', () => {
     const value = manualUrlInput?.value?.trim()
+    if (value) applyImageToActiveProfile(value, { origin: 'manual' })
     copyToClipboard(value, {
-      successMessage: 'Lien copié ✅',
+      successMessage: 'Image appliquée et URL copiée ✅',
       errorMessage: 'Impossible de copier ce lien.'
     })
   })
@@ -1574,7 +1769,9 @@ function attachPanelControls({ chart, card }) {
 
   return {
     refreshMainProfileOptions,
-    syncMainProfileSelection
+    syncMainProfileSelection,
+    handleFormCreation,
+    teardown: teardownImageUploader
   }
 }
 
