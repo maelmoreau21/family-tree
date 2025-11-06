@@ -7,10 +7,12 @@ services:
     restart: unless-stopped
     environment:
       TREE_DATA_PATH: /data/tree.json
+      TREE_BACKUP_LIMIT: 50
       VIEWER_PORT: 7920
       BUILDER_PORT: 7921
     ports:
       - "7920:7920"
       - "7921:7921"
     volumes:
-      - /home/admin/family-tree-backups:/data
+      - ./data:/data
+      - ./uploads:/app/uploads

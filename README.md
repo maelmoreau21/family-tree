@@ -9,6 +9,7 @@ Family Tree is a D3.js based visualization library for building rich, interactiv
 - 🌳 Interactive tree navigation with zoom, pan, and history controls
 - 🧩 HTML & SVG card renderers with configurable layouts and image slots
 - 🛠️ Visual builder (FR) with live preview, auto-save, and undo/redo
+- 🖼️ Integrated image uploads: drag-and-drop, auto-apply to profiles, served from `/uploads`
 - ⚙️ Layout tuning: orientation, spacing, siblings visibility, custom sorters
 
 ## Web Interfaces
@@ -35,6 +36,14 @@ The dev server exposes the viewer on `http://localhost:7920` and the builder on 
 - Every successful save now drops a timestamped snapshot in `<data-dir>/backups`. Limit the rolling history with `TREE_BACKUP_LIMIT` (default: 50 files) or change the folder via `TREE_BACKUP_DIR`.
 - `TREE_PAYLOAD_LIMIT` controls the maximum request size accepted when saving (default: `25mb`). Bump it if your tree exceeds that size.
 - Snapshots are exposed over `/api/backups` (JSON list) and `/api/backups/<filename>` (raw download) so you can script exports or restore points.
+- Uploaded media is stored in `<repo>/uploads` (or `/app/uploads` inside Docker) and served from `/uploads/<filename>`. Mount that directory in production to keep assets across restarts.
+
+### Image Uploads
+
+- The builder’s **Images** panel now streams files to `POST /api/uploads` (5 MB limit, JPEG/PNG/WebP/GIF/SVG).
+- When you upload or paste an URL while editing a profile, the active image field is filled automatically and the card preview refreshes immediately.
+- The same uploader is available from the edit modal, so you can manage media without leaving the profile.
+- Clean up orphan files by pruning `<repo>/uploads` (or your mounted volume) as needed; the builder simply stores the absolute URL in the person data.
 
 ### Large Trees & Performance
 
@@ -52,7 +61,8 @@ The dev server exposes the viewer on `http://localhost:7920` and the builder on 
 ## Docker
 
 ```powershell
-$dataDir = "C:\path\to\tree-data"
+$dataDir   = "C:\\path\\to\\tree-data"
+$uploadsDir = "C:\\path\\to\\tree-uploads"
 docker build -t family-tree .
 docker run `
   --rm `
@@ -62,10 +72,12 @@ docker run `
   -e VIEWER_PORT=7920 `
   -e BUILDER_PORT=7921 `
   -v ${dataDir}:/data `
+  -v ${uploadsDir}:/app/uploads `
   family-tree
 ```
 
-- The container creates `/data/tree.json` if it does not exist (seeded with sample data) and stores rolling backups under `/data/backups` so mount a folder, not a single file.
+- The container creates `/data/tree.json` if it does not exist (seeded with sample data) and stores rolling backups under `/data/backups`; mount a folder, not a single file.
+- Mount `/app/uploads` to persist pictures dropped through the builder uploader.
 - Override `VIEWER_PORT` and `BUILDER_PORT` to publish alternate ports.
 - For very large datasets, adjust `TREE_PAYLOAD_LIMIT` (save size ceiling) or mount a faster disk via the `/data` volume.
 
@@ -75,6 +87,8 @@ docker run `
 $env:TREE_DATA_DIR = "C:\path\to\tree-data"
 docker compose up --build
 ```
+
+> The default `docker-compose.yml` binds `./data` to `/data` and `./uploads` to `/app/uploads` so assets and backups survive restarts. Adjust those paths if you keep data elsewhere.
 
 ### ARM64 (Raspberry Pi)
 
