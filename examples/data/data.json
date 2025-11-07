@@ -1,185 +1,139 @@
 {
   "meta": {
-    "name": "Sample Dupont Tree",
-    "generatedAt": "2024-05-27T00:00:00.000Z",
-    "description": "Lightweight demo tree for local testing"
+    "name": "Sample Garnier Tree",
+    "generatedAt": "2025-11-07T00:00:00.000Z",
+    "description": "Lightweight demo tree showcasing the default Garnier/Roux family"
   },
   "data": [
     {
-      "id": "marc-dupont",
+      "id": "alex-garnier",
       "data": {
-        "first name": "Marc",
-        "last name": "Dupont",
-        "birthday": "1975-03-12",
+        "first name": "Alex",
+        "last name": "Garnier",
+        "birthday": "1983-03-15",
         "gender": "M",
-        "occupation": "Architect"
+        "occupation": "Ingénieur"
       },
       "rels": {
-        "spouses": ["jeanne-martin"],
-        "children": ["lucas-dupont", "emma-dupont"],
-        "parents": ["andre-dupont", "colette-dupont"]
+        "spouses": ["lea-roux"],
+        "children": ["chloe-garnier", "matteo-garnier", "ines-garnier"],
+        "parents": ["pierre-garnier", "julie-garnier"]
       }
     },
     {
-      "id": "jeanne-martin",
+      "id": "lea-roux",
       "data": {
-        "first name": "Jeanne",
-        "last name": "Martin",
-        "birthday": "1977-07-05",
+        "first name": "Léa",
+        "last name": "Roux",
+        "birthday": "1985-08-22",
         "gender": "F",
-        "occupation": "Teacher"
+        "occupation": "Médecin"
       },
       "rels": {
-        "spouses": ["marc-dupont"],
-        "children": ["lucas-dupont", "emma-dupont"],
-        "parents": ["paul-martin", "claire-martin"]
+        "spouses": ["alex-garnier"],
+        "children": ["chloe-garnier", "matteo-garnier", "ines-garnier"],
+        "parents": ["luc-roux", "amelie-roux"]
       }
     },
     {
-      "id": "lucas-dupont",
+      "id": "chloe-garnier",
       "data": {
-        "first name": "Lucas",
-        "last name": "Dupont",
-        "birthday": "2001-09-01",
-        "gender": "M",
-        "occupation": "Developer"
-      },
-      "rels": {
-        "spouses": ["sophie-martin"],
-        "children": ["mia-dupont"],
-        "parents": ["marc-dupont", "jeanne-martin"]
-      }
-    },
-    {
-      "id": "emma-dupont",
-      "data": {
-        "first name": "Emma",
-        "last name": "Dupont",
-        "birthday": "2004-02-17",
-        "gender": "F",
-        "occupation": "Designer"
-      },
-      "rels": {
-        "spouses": ["noah-leroy"],
-        "children": ["leo-leroy"],
-        "parents": ["marc-dupont", "jeanne-martin"]
-      }
-    },
-    {
-      "id": "sophie-martin",
-      "data": {
-        "first name": "Sophie",
-        "last name": "Martin",
-        "birthday": "2002-11-09",
-        "gender": "F",
-        "occupation": "Researcher"
-      },
-      "rels": {
-        "spouses": ["lucas-dupont"],
-        "children": ["mia-dupont"],
-        "parents": ["paul-martin", "claire-martin"]
-      }
-    },
-    {
-      "id": "noah-leroy",
-      "data": {
-        "first name": "Noah",
-        "last name": "Leroy",
-        "birthday": "2003-06-28",
-        "gender": "M",
-        "occupation": "Student"
-      },
-      "rels": {
-        "spouses": ["emma-dupont"],
-        "children": ["leo-leroy"],
-        "parents": []
-      }
-    },
-    {
-      "id": "mia-dupont",
-      "data": {
-        "first name": "Mia",
-        "last name": "Dupont",
-        "birthday": "2023-05-14",
+        "first name": "Chloé",
+        "last name": "Garnier",
+        "birthday": "2010-04-11",
         "gender": "F"
       },
       "rels": {
-        "parents": ["lucas-dupont", "sophie-martin"],
+        "parents": ["alex-garnier", "lea-roux"],
         "spouses": [],
         "children": []
       }
     },
     {
-      "id": "leo-leroy",
+      "id": "matteo-garnier",
       "data": {
-        "first name": "Leo",
-        "last name": "Leroy",
-        "birthday": "2022-01-30",
+        "first name": "Matteo",
+        "last name": "Garnier",
+        "birthday": "2013-09-05",
         "gender": "M"
       },
       "rels": {
-        "parents": ["emma-dupont", "noah-leroy"],
+        "parents": ["alex-garnier", "lea-roux"],
         "spouses": [],
         "children": []
       }
     },
     {
-      "id": "andre-dupont",
+      "id": "ines-garnier",
       "data": {
-        "first name": "Andre",
-        "last name": "Dupont",
-        "birthday": "1950-08-21",
+        "first name": "Inès",
+        "last name": "Garnier",
+        "birthday": "2016-01-19",
+        "gender": "F"
+      },
+      "rels": {
+        "parents": ["alex-garnier", "lea-roux"],
+        "spouses": [],
+        "children": []
+      }
+    },
+    {
+      "id": "pierre-garnier",
+      "data": {
+        "first name": "Pierre",
+        "last name": "Garnier",
+        "birthday": "1954-07-02",
         "gender": "M",
-        "occupation": "Retired"
+        "occupation": "Retraité"
       },
       "rels": {
-        "spouses": ["colette-dupont"],
-        "children": ["marc-dupont"],
+        "spouses": ["julie-garnier"],
+        "children": ["alex-garnier"],
         "parents": []
       }
     },
     {
-      "id": "colette-dupont",
+      "id": "julie-garnier",
       "data": {
-        "first name": "Colette",
-        "last name": "Dupont",
-        "birthday": "1952-12-02",
+        "first name": "Julie",
+        "last name": "Garnier",
+        "birthday": "1956-12-18",
         "gender": "F",
-        "occupation": "Retired"
+        "occupation": "Retraitée"
       },
       "rels": {
-        "spouses": ["andre-dupont"],
-        "children": ["marc-dupont"],
+        "spouses": ["pierre-garnier"],
+        "children": ["alex-garnier"],
         "parents": []
       }
     },
     {
-      "id": "paul-martin",
+      "id": "luc-roux",
       "data": {
-        "first name": "Paul",
-        "last name": "Martin",
-        "birthday": "1953-04-16",
+        "first name": "Luc",
+        "last name": "Roux",
+        "birthday": "1955-05-27",
         "gender": "M",
-        "occupation": "Physician"
+        "occupation": "Professeur"
       },
       "rels": {
-        "spouses": ["claire-martin"],
-        "children": ["jeanne-martin", "sophie-martin"],
+        "spouses": ["amelie-roux"],
+        "children": ["lea-roux"],
         "parents": []
       }
     },
     {
-      "id": "claire-martin",
+      "id": "amelie-roux",
       "data": {
-        "first name": "Claire",
-        "last name": "Martin",
-        "birthday": "1954-09-08",
+        "first name": "Amélie",
+        "last name": "Roux",
+        "birthday": "1957-02-08",
         "gender": "F",
-        "occupation": "Bookseller"
+        "occupation": "Bibliothécaire"
       },
       "rels": {
-        "spouses": ["paul-martin"],
-        "children": ["jeanne-martin", "sophie-martin"],
+        "spouses": ["luc-roux"],
+        "children": ["lea-roux"],
         "parents": []
       }
     }
