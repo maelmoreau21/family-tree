@@ -1,4 +1,4 @@
-import * as d3 from "d3"
+import * as d3 from "../d3"
 import { formCreatorSetup } from "./form-creator"
 import { createHistory, createHistoryControls, HistoryWithControls } from "../features/history"
 import { createFormEdit, createFormNew } from "../renderers/create-form"

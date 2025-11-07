@@ -1,4 +1,4 @@
-import * as d3 from "d3"
+import * as d3 from "../d3"
 import {calculateEnterAndExitPositions} from "../layout/handlers"
 import {calculateDelay} from "../handlers/general"
 import { Tree } from "../layout/calculate-tree"

@@ -1,4 +1,4 @@
-import * as d3 from "d3"
+import * as d3 from "../../d3"
 import {appendTemplate, CardBodyOutline, CardBodyAddNewRel, CardBody} from "./templates"
 import cardElements, {appendElement} from "./elements"
 import setupCardSvgDefs from "./defs"

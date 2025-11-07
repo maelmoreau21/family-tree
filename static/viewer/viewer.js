@@ -82,7 +82,7 @@ const DEFAULT_CARD_DISPLAY = [
 
 const DEFAULT_CHART_CONFIG = Object.freeze({
   transitionTime: 200,
-  cardXSpacing: 200,
+  cardXSpacing: 240,
   cardYSpacing: 140,
   orientation: 'vertical',
   showSiblingsOfMain: true,
@@ -95,6 +95,9 @@ const DEFAULT_CHART_CONFIG = Object.freeze({
   cardDisplay: DEFAULT_CARD_DISPLAY.map(row => [...row]),
   mainId: null
 })
+
+const PROGRESSIVE_DEPTH_STEP = 4
+const PROGRESSIVE_MAX_STEPS = 12
 
 let chartInstance = null
 let cardInstance = null
@@ -121,6 +124,9 @@ let peopleSummary = null
 let searchOptions = []
 let lastSelectionContext = { source: 'initial', label: null }
 let peopleSummaryIndex = new Map()
+let pendingMetaFrame = null
+const lastMetaSnapshot = { visible: -1, branch: -1, total: -1 }
+let lastStatusSnapshot = { message: '', type: '' }
 
 function normalizeCardDisplay(rows) {
   const safeRows = Array.isArray(rows) ? rows : []
@@ -283,7 +289,8 @@ function applyConfigToChart(chart, rawConfig) {
 }
 
 function serialiseDepthParam(value) {
-  if (value === null) return 'all'
+  if (value === 'auto') return undefined
+  if (value === 'all' || value === null) return 'all'
   if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
     return String(Math.floor(value))
   }
@@ -457,25 +464,35 @@ function updateSearchOptionsForChart(chart) {
 
 function setStatus(message, type = 'info') {
   if (!statusEl) return
+  if (lastStatusSnapshot.message === message && lastStatusSnapshot.type === type) {
+    return
+  }
+  lastStatusSnapshot = { message, type }
   statusEl.textContent = message
   statusEl.dataset.status = type
 }
 
 function depthToSelectValue(value, fallback) {
-  if (value === null) return ''
+  if (value === 'auto') return 'auto'
+  if (value === 'all') return 'all'
+  if (value === null) return 'all'
   if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
     return String(Math.floor(value))
   }
   if (typeof fallback === 'number' && Number.isFinite(fallback) && fallback >= 0) {
     return String(Math.floor(fallback))
   }
-  return ''
+  if (fallback === 'auto') return 'auto'
+  if (fallback === 'all' || fallback === null) return 'all'
+  return 'auto'
 }
 
 function parseDepthSelectValue(select, fallback) {
   if (!select) return fallback
-  if (select.value === '') return null
-  const value = Number(select.value)
+  const raw = select.value
+  if (raw === 'auto') return 'auto'
+  if (raw === 'all' || raw === '') return 'all'
+  const value = Number(raw)
   if (Number.isFinite(value) && value >= 0) {
     return Math.floor(value)
   }
@@ -490,16 +507,30 @@ function updatePerformanceControlsUI(config) {
 }
 
 function updateDatasetMeta() {
-  const visible = chartInstance?.store?.getTree?.()?.data?.length ?? 0
-  const branchCount = Number.isFinite(latestMeta.returned) ? latestMeta.returned : visible
-  if (visibleCountEl) visibleCountEl.textContent = String(visible)
-  if (branchCountEl) branchCountEl.textContent = String(branchCount)
-  if (totalCountEl) totalCountEl.textContent = String(totalPersons)
-  if (datasetMeta) {
-    datasetMeta.dataset.visible = String(visible)
-    datasetMeta.dataset.total = String(totalPersons)
-    datasetMeta.dataset.branch = String(branchCount)
-  }
+  if (pendingMetaFrame !== null) return
+  const schedule = typeof requestAnimationFrame === 'function' ? requestAnimationFrame : (cb) => setTimeout(cb, 16)
+  pendingMetaFrame = schedule(() => {
+    pendingMetaFrame = null
+    const visible = chartInstance?.store?.getTree?.()?.data?.length ?? 0
+    const branchCount = Number.isFinite(latestMeta.returned) ? latestMeta.returned : visible
+
+    if (lastMetaSnapshot.visible === visible && lastMetaSnapshot.branch === branchCount && lastMetaSnapshot.total === totalPersons) {
+      return
+    }
+
+    lastMetaSnapshot.visible = visible
+    lastMetaSnapshot.branch = branchCount
+    lastMetaSnapshot.total = totalPersons
+
+    if (visibleCountEl) visibleCountEl.textContent = String(visible)
+    if (branchCountEl) branchCountEl.textContent = String(branchCount)
+    if (totalCountEl) totalCountEl.textContent = String(totalPersons)
+    if (datasetMeta) {
+      datasetMeta.dataset.visible = String(visible)
+      datasetMeta.dataset.total = String(totalPersons)
+      datasetMeta.dataset.branch = String(branchCount)
+    }
+  })
 }
 
 function applyViewerConfig({ reposition = false, initial = false } = {}) {
@@ -592,12 +623,13 @@ function resolveLabelFromSummary(id) {
 }
 
 function describeDepthValue(value) {
-  if (value === null) return 'sans limite'
+  if (value === 'auto') return 'auto (progressif)'
+  if (value === 'all' || value === null) return 'sans limite'
   if (typeof value === 'number' && Number.isFinite(value)) {
     if (value === 0) return 'profil seul'
     return `${Math.floor(value)}`
   }
-  return 'auto'
+  return 'auto (progressif)'
 }
 
 function buildDepthSummary(config) {
@@ -606,7 +638,7 @@ function buildDepthSummary(config) {
   return `Ancetres: ${ancestry}, Descendants: ${progeny}`
 }
 
-function requestSubtree(partialParams = {}, context = {}) {
+async function requestSubtree(partialParams = {}, context = {}) {
   const nextParams = {
     ...serverQueryState,
     ...partialParams
@@ -636,52 +668,180 @@ function requestSubtree(partialParams = {}, context = {}) {
   abortActiveFetch()
   activeFetchController = controller
 
-  const queryString = buildSubtreeQuery(nextParams)
+  const wantsAutoAncestry = nextParams.ancestryDepth === 'auto' || nextParams.ancestryDepth === null
+  const wantsAutoProgeny = nextParams.progenyDepth === 'auto' || nextParams.progenyDepth === null
+  const shouldProgressiveLoad = !context.disableProgressive && (wantsAutoAncestry || wantsAutoProgeny)
 
-  fetch(`/api/tree?${queryString}`, { cache: 'no-store', signal: controller.signal })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
+  try {
+    if (shouldProgressiveLoad) {
+      await progressiveSubtreeRequest(nextParams, { ...context, controller })
+    } else {
+      await fetchSubtreeOnce(nextParams, { ...context, controller })
+    }
+  } finally {
+    if (activeFetchController === controller) {
+      activeFetchController = null
+      setInterfaceLoading(false)
+    }
+  }
+}
+
+async function progressiveSubtreeRequest(initialParams, context = {}) {
+  const controller = context.controller
+  const wantsAutoAncestry = initialParams.ancestryDepth === 'auto' || initialParams.ancestryDepth === null
+  const wantsAutoProgeny = initialParams.progenyDepth === 'auto' || initialParams.progenyDepth === null
+  const stepInput = Number.isFinite(context.progressiveStep) && context.progressiveStep > 0
+    ? Math.floor(context.progressiveStep)
+    : PROGRESSIVE_DEPTH_STEP
+  const stepSize = Math.max(1, stepInput)
+
+  const currentParams = { ...initialParams }
+  if (wantsAutoAncestry) {
+    const fallback = Number.isFinite(DEFAULT_CHART_CONFIG.ancestryDepth)
+      ? Math.max(0, DEFAULT_CHART_CONFIG.ancestryDepth)
+      : stepSize
+    currentParams.ancestryDepth = Math.max(stepSize, fallback)
+  }
+
+  if (wantsAutoProgeny) {
+    const fallback = Number.isFinite(DEFAULT_CHART_CONFIG.progenyDepth)
+      ? Math.max(0, DEFAULT_CHART_CONFIG.progenyDepth)
+      : stepSize
+    currentParams.progenyDepth = Math.max(stepSize, fallback)
+  }
+
+  const originalSnapshot = {
+    ...initialParams,
+    ancestryDepth: wantsAutoAncestry ? 'auto' : initialParams.ancestryDepth,
+    progenyDepth: wantsAutoProgeny ? 'auto' : initialParams.progenyDepth
+  }
+  let iterations = 0
+  let previousCount = chartInstance?.store?.getTree?.()?.data?.length ?? 0
+  let encounteredError = false
+
+  while (iterations < PROGRESSIVE_MAX_STEPS) {
+    iterations += 1
+
+    if (controller?.signal?.aborted) {
+      return
+    }
+
+    if (wantsAutoAncestry || wantsAutoProgeny) {
+      const summaryParts = []
+      if (wantsAutoAncestry) summaryParts.push(`ancêtres ≤ ${currentParams.ancestryDepth}`)
+      if (wantsAutoProgeny) summaryParts.push(`descendants ≤ ${currentParams.progenyDepth}`)
+      if (summaryParts.length) {
+        setStatus(`Chargement progressif (${summaryParts.join(', ')})...`, 'loading')
       }
-      return response.json()
+    }
+
+    const result = await fetchSubtreeOnce(currentParams, {
+      ...context,
+      controller,
+      progressiveBatch: true,
+      reposition: iterations === 1 ? context.reposition : false
     })
-    .then(payload => {
-      if (controller.signal.aborted) return
-      const normalised = normaliseTreePayload(payload)
-      const persons = Array.isArray(normalised.data) ? normalised.data : []
-      const metaInfo = normaliseMeta(normalised.meta, persons.length)
 
-      if (!persons.length && context.reason === 'initial' && !context.allowEmpty) {
-        fetchFullTree({
-          ...context,
-          preservePreferences: false,
-          loadingLabel: 'Chargement complet de l\'arbre...',
-          source: context.source || 'system'
-        })
-        return
-      }
+    if (!result || result.aborted) {
+      return
+    }
 
-      lastSuccessfulQuery = { ...nextParams }
-      applySubtreePayload({
-        data: persons,
-        config: normalised.config,
-        meta: metaInfo
-      }, {
+    if (result.error) {
+      encounteredError = true
+      break
+    }
+
+    const meta = result.meta || {}
+    const currentCount = chartInstance?.store?.getTree?.()?.data?.length ?? meta.returned ?? previousCount
+    const gained = currentCount - previousCount
+    previousCount = currentCount
+
+    if (gained <= 0) {
+      break
+    }
+
+    if (wantsAutoAncestry) {
+      currentParams.ancestryDepth += stepSize
+    }
+
+    if (wantsAutoProgeny) {
+      currentParams.progenyDepth += stepSize
+    }
+  }
+
+  if (encounteredError) {
+    return
+  }
+
+  lastSuccessfulQuery = { ...originalSnapshot }
+  serverQueryState = {
+    ...serverQueryState,
+    ...originalSnapshot
+  }
+
+  if (viewerConfig) {
+    viewerConfig = { ...viewerConfig }
+    if (wantsAutoAncestry) viewerConfig.ancestryDepth = 'auto'
+    if (wantsAutoProgeny) viewerConfig.progenyDepth = 'auto'
+    isApplyingViewerConfig = true
+    updatePerformanceControlsUI(viewerConfig)
+    isApplyingViewerConfig = false
+  }
+}
+
+async function fetchSubtreeOnce(params, context = {}) {
+  const controller = context.controller || new AbortController()
+  if (!context.controller) {
+    abortActiveFetch()
+    activeFetchController = controller
+  }
+
+  const queryString = buildSubtreeQuery(params)
+
+  try {
+    const response = await fetch(`/api/tree?${queryString}`, { cache: 'no-store', signal: controller.signal })
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`)
+    }
+
+    const payload = await response.json()
+    if (controller.signal.aborted) {
+      return { aborted: true }
+    }
+
+    const normalised = normaliseTreePayload(payload)
+    const persons = Array.isArray(normalised.data) ? normalised.data : []
+    const metaInfo = normaliseMeta(normalised.meta, persons.length)
+
+    if (!persons.length && context.reason === 'initial' && !context.allowEmpty) {
+      await fetchFullTree({
         ...context,
-        params: nextParams
+        preservePreferences: false,
+        loadingLabel: 'Chargement complet de l\'arbre...',
+        source: context.source || 'system'
       })
+      return { aborted: false, meta: metaInfo }
+    }
+
+    lastSuccessfulQuery = { ...params }
+    applySubtreePayload({
+      data: persons,
+      config: normalised.config,
+      meta: metaInfo
+    }, {
+      ...context,
+      params
     })
-    .catch(error => {
-      if (error.name === 'AbortError') return
-      console.error('Erreur de chargement de sous-arbre', error)
-      setStatus(`Erreur: ${(error && error.message) || 'chargement interrompu'}`, 'error')
-    })
-    .finally(() => {
-      if (activeFetchController === controller) {
-        activeFetchController = null
-        setInterfaceLoading(false)
-      }
-    })
+
+    return { aborted: false, meta: metaInfo }
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      return { aborted: true, error }
+    }
+    console.error('Erreur de chargement de sous-arbre', error)
+    setStatus(`Erreur: ${(error && error.message) || 'chargement interrompu'}`, 'error')
+    return { aborted: false, error }
+  }
 }
 
 function fetchFullTree(context = {}) {

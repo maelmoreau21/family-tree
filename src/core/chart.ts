@@ -1,4 +1,4 @@
-import * as d3 from "d3"
+import * as d3 from "../d3"
 import htmlContSetup from "../renderers/html"
 import { removeToAddFromData } from "../store/edit"
 import createStore from "../store/store"

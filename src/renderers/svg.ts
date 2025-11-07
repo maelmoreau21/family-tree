@@ -1,4 +1,4 @@
-import * as d3 from "d3"
+import * as d3 from "../d3"
 import { setupZoom, ZoomProps } from "../handlers/view-handlers"
 
 export default function createSvg(cont: HTMLElement, props: ZoomProps = {}) {

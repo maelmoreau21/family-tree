@@ -1,4 +1,4 @@
-import * as d3 from "d3"
+import * as d3 from "../d3"
 import {createLinks} from "../layout/create-links"
 import {calculateDelay} from "../handlers/general"
 import { ViewProps } from "./view"

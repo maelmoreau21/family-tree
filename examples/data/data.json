@@ -1,250 +1,187 @@
-[
-  {
-    "id": "0",
-    "data": {
-      "first name": "Agnus",
-      "last name": "",
-      "birthday": "1970",
-      "avatar": "https://static8.depositphotos.com/1009634/988/v/950/depositphotos_9883921-stock-illustration-no-user-profile-picture.jpg",
-      "gender": "M"
-    },
-    "rels": {
-      "spouses": [
-        "8c92765f-92d3-4120-90dd-85a28302504c"
-      ],
-      "children": [
-        "ce2fcb9a-6058-4326-b56a-aced35168561",
-        "f626d086-e2d6-4722-b4f3-ca4f15b109ab"
-      ],
-      "parents": [
-        "0c09cfa0-5e7c-4073-8beb-94f6c69ada19",
-        "0fa5c6bc-5b58-40f5-a07e-d787e26d8b56"
-      ]
-    }
+{
+  "meta": {
+    "name": "Sample Dupont Tree",
+    "generatedAt": "2024-05-27T00:00:00.000Z",
+    "description": "Lightweight demo tree for local testing"
   },
-  {
-    "id": "8c92765f-92d3-4120-90dd-85a28302504c",
-    "data": {
-      "gender": "F",
-      "first name": "Andrea",
-      "last name": "",
-      "birthday": "",
-      "avatar": ""
+  "data": [
+    {
+      "id": "marc-dupont",
+      "data": {
+        "first name": "Marc",
+        "last name": "Dupont",
+        "birthday": "1975-03-12",
+        "gender": "M",
+        "occupation": "Architect"
+      },
+      "rels": {
+        "spouses": ["jeanne-martin"],
+        "children": ["lucas-dupont", "emma-dupont"],
+        "parents": ["andre-dupont", "colette-dupont"]
+      }
     },
-    "rels": {
-      "spouses": [
-        "0"
-      ],
-      "children": [
-        "ce2fcb9a-6058-4326-b56a-aced35168561",
-        "f626d086-e2d6-4722-b4f3-ca4f15b109ab"
-      ],
-      "parents": [
-        "d8897e67-db7c-4b72-ae7c-69aae266b140",
-        "9397093b-30bb-420b-966f-62596b58447f"
-      ]
-    }
-  },
-  {
-    "id": "0c09cfa0-5e7c-4073-8beb-94f6c69ada19",
-    "data": {
-      "gender": "M",
-      "first name": "Zen",
-      "last name": "",
-      "birthday": "",
-      "avatar": ""
+    {
+      "id": "jeanne-martin",
+      "data": {
+        "first name": "Jeanne",
+        "last name": "Martin",
+        "birthday": "1977-07-05",
+        "gender": "F",
+        "occupation": "Teacher"
+      },
+      "rels": {
+        "spouses": ["marc-dupont"],
+        "children": ["lucas-dupont", "emma-dupont"],
+        "parents": ["paul-martin", "claire-martin"]
+      }
     },
-    "rels": {
-      "children": [
-        "0"
-      ],
-      "spouses": [
-        "0fa5c6bc-5b58-40f5-a07e-d787e26d8b56"
-      ]
-    }
-  },
-  {
-    "id": "0fa5c6bc-5b58-40f5-a07e-d787e26d8b56",
-    "data": {
-      "gender": "F",
-      "first name": "Zebra",
-      "last name": "",
-      "birthday": "",
-      "avatar": ""
+    {
+      "id": "lucas-dupont",
+      "data": {
+        "first name": "Lucas",
+        "last name": "Dupont",
+        "birthday": "2001-09-01",
+        "gender": "M",
+        "occupation": "Developer"
+      },
+      "rels": {
+        "spouses": ["sophie-martin"],
+        "children": ["mia-dupont"],
+        "parents": ["marc-dupont", "jeanne-martin"]
+      }
     },
-    "rels": {
-      "spouses": [
-        "0c09cfa0-5e7c-4073-8beb-94f6c69ada19"
-      ],
-      "children": [
-        "0"
-      ],
-      "parents": [
-        "12a9bddf-855a-4583-a695-c73fa8c0e9b2",
-        "bd56a527-b613-474d-9f38-fcac0aae218b"
-      ]
-    }
-  },
-  {
-    "id": "ce2fcb9a-6058-4326-b56a-aced35168561",
-    "data": {
-      "gender": "M",
-      "first name": "Ben",
-      "last name": "",
-      "birthday": "",
-      "avatar": ""
+    {
+      "id": "emma-dupont",
+      "data": {
+        "first name": "Emma",
+        "last name": "Dupont",
+        "birthday": "2004-02-17",
+        "gender": "F",
+        "occupation": "Designer"
+      },
+      "rels": {
+        "spouses": ["noah-leroy"],
+        "children": ["leo-leroy"],
+        "parents": ["marc-dupont", "jeanne-martin"]
+      }
     },
-    "rels": {
-      "spouses": [
-        "b4e33c68-20a7-47ba-9dcc-1168a07d5b52"
-      ],
-      "children": [
-        "eabd40c9-4518-4485-af5e-e4bc3ffd27fb",
-        "240a3f71-c921-42d7-8a13-dec5e1acc4fd"
-      ],
-      "parents": [
-        "0",
-        "8c92765f-92d3-4120-90dd-85a28302504c"
-      ]
-    }
-  },
-  {
-    "id": "f626d086-e2d6-4722-b4f3-ca4f15b109ab",
-    "data": {
-      "gender": "F",
-      "first name": "Becky",
-      "last name": "",
-      "birthday": "",
-      "avatar": ""
+    {
+      "id": "sophie-martin",
+      "data": {
+        "first name": "Sophie",
+        "last name": "Martin",
+        "birthday": "2002-11-09",
+        "gender": "F",
+        "occupation": "Researcher"
+      },
+      "rels": {
+        "spouses": ["lucas-dupont"],
+        "children": ["mia-dupont"],
+        "parents": ["paul-martin", "claire-martin"]
+      }
     },
-    "rels": {
-      "parents": [
-        "0",
-        "8c92765f-92d3-4120-90dd-85a28302504c"
-      ]
-    }
-  },
-  {
-    "id": "eabd40c9-4518-4485-af5e-e4bc3ffd27fb",
-    "data": {
-      "gender": "M",
-      "first name": "Carlos",
-      "last name": "",
-      "birthday": "",
-      "avatar": ""
+    {
+      "id": "noah-leroy",
+      "data": {
+        "first name": "Noah",
+        "last name": "Leroy",
+        "birthday": "2003-06-28",
+        "gender": "M",
+        "occupation": "Student"
+      },
+      "rels": {
+        "spouses": ["emma-dupont"],
+        "children": ["leo-leroy"],
+        "parents": []
+      }
     },
-    "rels": {
-      "parents": [
-        "ce2fcb9a-6058-4326-b56a-aced35168561",
-        "b4e33c68-20a7-47ba-9dcc-1168a07d5b52"
-      ]
-    }
-  },
-  {
-    "id": "b4e33c68-20a7-47ba-9dcc-1168a07d5b52",
-    "data": {
-      "gender": "F",
-      "first name": "Branka",
-      "last name": "",
-      "birthday": "",
-      "avatar": ""
+    {
+      "id": "mia-dupont",
+      "data": {
+        "first name": "Mia",
+        "last name": "Dupont",
+        "birthday": "2023-05-14",
+        "gender": "F"
+      },
+      "rels": {
+        "parents": ["lucas-dupont", "sophie-martin"],
+        "spouses": [],
+        "children": []
+      }
     },
-    "rels": {
-      "spouses": [
-        "ce2fcb9a-6058-4326-b56a-aced35168561"
-      ],
-      "children": [
-        "eabd40c9-4518-4485-af5e-e4bc3ffd27fb",
-        "240a3f71-c921-42d7-8a13-dec5e1acc4fd"
-      ]
-    }
-  },
-  {
-    "id": "240a3f71-c921-42d7-8a13-dec5e1acc4fd",
-    "data": {
-      "gender": "F",
-      "first name": "Carla",
-      "last name": "",
-      "birthday": "",
-      "avatar": ""
+    {
+      "id": "leo-leroy",
+      "data": {
+        "first name": "Leo",
+        "last name": "Leroy",
+        "birthday": "2022-01-30",
+        "gender": "M"
+      },
+      "rels": {
+        "parents": ["emma-dupont", "noah-leroy"],
+        "spouses": [],
+        "children": []
+      }
     },
-    "rels": {
-      "parents": [
-        "ce2fcb9a-6058-4326-b56a-aced35168561",
-        "b4e33c68-20a7-47ba-9dcc-1168a07d5b52"
-      ]
-    }
-  },
-  {
-    "id": "12a9bddf-855a-4583-a695-c73fa8c0e9b2",
-    "data": {
-      "gender": "M",
-      "first name": "Yvo",
-      "last name": "",
-      "birthday": "",
-      "avatar": ""
+    {
+      "id": "andre-dupont",
+      "data": {
+        "first name": "Andre",
+        "last name": "Dupont",
+        "birthday": "1950-08-21",
+        "gender": "M",
+        "occupation": "Retired"
+      },
+      "rels": {
+        "spouses": ["colette-dupont"],
+        "children": ["marc-dupont"],
+        "parents": []
+      }
     },
-    "rels": {
-      "children": [
-        "0fa5c6bc-5b58-40f5-a07e-d787e26d8b56"
-      ],
-      "spouses": [
-        "bd56a527-b613-474d-9f38-fcac0aae218b"
-      ]
-    }
-  },
-  {
-    "id": "bd56a527-b613-474d-9f38-fcac0aae218b",
-    "data": {
-      "gender": "F",
-      "first name": "Yva",
-      "last name": "",
-      "birthday": "",
-      "avatar": ""
+    {
+      "id": "colette-dupont",
+      "data": {
+        "first name": "Colette",
+        "last name": "Dupont",
+        "birthday": "1952-12-02",
+        "gender": "F",
+        "occupation": "Retired"
+      },
+      "rels": {
+        "spouses": ["andre-dupont"],
+        "children": ["marc-dupont"],
+        "parents": []
+      }
     },
-    "rels": {
-      "spouses": [
-        "12a9bddf-855a-4583-a695-c73fa8c0e9b2"
-      ],
-      "children": [
-        "0fa5c6bc-5b58-40f5-a07e-d787e26d8b56"
-      ]
-    }
-  },
-  {
-    "id": "d8897e67-db7c-4b72-ae7c-69aae266b140",
-    "data": {
-      "gender": "M",
-      "first name": "Zadro",
-      "last name": "",
-      "birthday": "",
-      "avatar": ""
+    {
+      "id": "paul-martin",
+      "data": {
+        "first name": "Paul",
+        "last name": "Martin",
+        "birthday": "1953-04-16",
+        "gender": "M",
+        "occupation": "Physician"
+      },
+      "rels": {
+        "spouses": ["claire-martin"],
+        "children": ["jeanne-martin", "sophie-martin"],
+        "parents": []
+      }
     },
-    "rels": {
-      "children": [
-        "8c92765f-92d3-4120-90dd-85a28302504c"
-      ],
-      "spouses": [
-        "9397093b-30bb-420b-966f-62596b58447f"
-      ]
+    {
+      "id": "claire-martin",
+      "data": {
+        "first name": "Claire",
+        "last name": "Martin",
+        "birthday": "1954-09-08",
+        "gender": "F",
+        "occupation": "Bookseller"
+      },
+      "rels": {
+        "spouses": ["paul-martin"],
+        "children": ["jeanne-martin", "sophie-martin"],
+        "parents": []
+      }
     }
-  },
-  {
-    "id": "9397093b-30bb-420b-966f-62596b58447f",
-    "data": {
-      "gender": "F",
-      "first name": "Zadra",
-      "last name": "",
-      "birthday": "",
-      "avatar": ""
-    },
-    "rels": {
-      "spouses": [
-        "d8897e67-db7c-4b72-ae7c-69aae266b140"
-      ],
-      "children": [
-        "8c92765f-92d3-4120-90dd-85a28302504c"
-      ]
-    }
-  }
-]
+  ]
+}

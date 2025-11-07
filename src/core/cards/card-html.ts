@@ -1,4 +1,4 @@
-import * as d3 from "d3"
+import * as d3 from "../../d3"
 import cardHtmlRenderer from "../../renderers/card-html"
 import {processCardDisplay} from "./utils"
 import pathToMain from "../../layout/path-to-main"

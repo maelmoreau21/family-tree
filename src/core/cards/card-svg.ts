@@ -1,4 +1,4 @@
-import * as d3 from "d3"
+import * as d3 from "../../d3"
 import cardSvgRenderer from "../../renderers/card-svg/card-svg"
 import {updateCardSvgDefs} from "../../renderers/card-svg/defs"
 import {processCardDisplay} from "./utils"

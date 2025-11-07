@@ -1,4 +1,4 @@
-import * as d3 from "d3"
+import * as d3 from "../../d3"
 import { calculateKinships } from './calculate-kinships'
 import { getKinshipsDataStash } from './kinships-data'
 import { infoSvgIcon } from '../../renderers/icons'

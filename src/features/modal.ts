@@ -1,4 +1,4 @@
-import * as d3 from "d3"
+import * as d3 from "../d3"
 
 export default function(cont: HTMLElement) { return new Modal(cont) }
 

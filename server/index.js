@@ -31,6 +31,11 @@ const BUILDER_PORT = Number.parseInt(process.env.BUILDER_PORT || '7921', 10)
 const MAX_UPLOAD_SIZE = 5 * 1024 * 1024
 const TREE_PAYLOAD_LIMIT = process.env.TREE_PAYLOAD_LIMIT || '25mb'
 const DEFAULT_SUBTREE_DEPTH = 4
+const TREE_DATA_PRETTY = /^(1|true|yes)$/i.test(process.env.TREE_DATA_PRETTY || '')
+const ONE_HOUR_SECONDS = 60 * 60
+const ONE_DAY_SECONDS = ONE_HOUR_SECONDS * 24
+const ONE_WEEK_SECONDS = ONE_DAY_SECONDS * 7
+const IMMUTABLE_STATIC_EXTENSIONS = new Set(['.js', '.css', '.map', '.svg', '.png', '.jpg', '.jpeg', '.webp', '.woff', '.woff2'])
 
 let lastBackupHash = null
 
@@ -90,7 +95,7 @@ async function ensureDataFile() {
   } catch (error) {
     const fallbackData = await loadDefaultData()
     await fs.mkdir(TREE_DATA_DIR, { recursive: true })
-    await fs.writeFile(TREE_DATA_PATH, JSON.stringify(fallbackData, null, 2), 'utf8')
+    await fs.writeFile(TREE_DATA_PATH, serialiseTreeData(fallbackData), 'utf8')
     console.log(`[server] Created missing data file at ${TREE_DATA_PATH}`)
   }
 }
@@ -123,11 +128,31 @@ async function readTreeData() {
 }
 
 async function writeTreeData(data) {
-  const payloadString = JSON.stringify(data, null, 2)
+  const payloadString = serialiseTreeData(data)
   const tempPath = `${TREE_DATA_PATH}.tmp`
   await fs.writeFile(tempPath, payloadString, 'utf8')
   await fs.rename(tempPath, TREE_DATA_PATH)
   await writeBackupSnapshot(payloadString)
+}
+
+function serialiseTreeData(data) {
+  const payload = TREE_DATA_PRETTY ? JSON.stringify(data, null, 2) : JSON.stringify(data)
+  return payload.endsWith('\n') ? payload : `${payload}\n`
+}
+
+function setStaticCacheHeaders(res, filePath) {
+  const ext = path.extname(filePath).toLowerCase()
+  if (ext === '.html') {
+    res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate')
+    return
+  }
+
+  if (IMMUTABLE_STATIC_EXTENSIONS.has(ext)) {
+    res.setHeader('Cache-Control', `public, max-age=${ONE_WEEK_SECONDS}, stale-while-revalidate=${ONE_DAY_SECONDS}`)
+    return
+  }
+
+  res.setHeader('Cache-Control', `public, max-age=${ONE_HOUR_SECONDS}`)
 }
 
 function normaliseTreePayloadRoot(payload) {
@@ -669,8 +694,9 @@ function createStaticApp(staticFolder, { canWrite }) {
   const app = express()
 
   app.use(compression({ threshold: 1024 }))
-  app.use('/lib', express.static(DIST_DIR))
-  app.use('/assets', express.static(path.resolve(ROOT_DIR, 'src', 'styles')))
+  const staticOptions = { setHeaders: setStaticCacheHeaders }
+  app.use('/lib', express.static(DIST_DIR, staticOptions))
+  app.use('/assets', express.static(path.resolve(ROOT_DIR, 'src', 'styles'), staticOptions))
   app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '1d' }))
   app.use('/api', createTreeApi({ canWrite }))
 
@@ -706,7 +732,7 @@ function createStaticApp(staticFolder, { canWrite }) {
     })
   }
 
-  app.use(express.static(staticFolder, { extensions: ['html'] }))
+  app.use(express.static(staticFolder, { extensions: ['html'], setHeaders: setStaticCacheHeaders }))
 
   app.get('*', (req, res) => {
     res.sendFile(path.join(staticFolder, 'index.html'))

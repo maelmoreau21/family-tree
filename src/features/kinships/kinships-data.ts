@@ -1,4 +1,4 @@
-import * as d3 from "d3"
+import * as d3 from "../../d3"
 import { Datum, Data } from "../../types/data"
 import { Kinships, findSameAncestor } from "./calculate-kinships";
 

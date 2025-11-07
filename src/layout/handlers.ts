@@ -1,4 +1,4 @@
-import * as d3 from "d3"
+import * as d3 from "../d3"
 import { TreeDatum } from "../types/treeData"
 import { Data, Datum } from "../types/data"
 import { CalculateTreeOptions } from "./calculate-tree"

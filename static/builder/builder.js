@@ -112,7 +112,7 @@ function buildFieldDescriptors(fields, labelStore = createBaseFieldLabelStore())
 
 const DEFAULT_CHART_CONFIG = Object.freeze({
   transitionTime: 200,
-  cardXSpacing: 200,
+  cardXSpacing: 240,
   cardYSpacing: 140,
   orientation: 'vertical',
   showSiblingsOfMain: true,

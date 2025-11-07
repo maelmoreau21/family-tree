@@ -1,8 +1,8 @@
-import * as d3 from "d3"
+import * as d3 from "../../d3"
 import { onZoomSetup } from "../../renderers/html"
 import createSvg from "../../renderers/svg"
 import { TreeDatum } from "../../types/treeData"
-import { BaseType } from "d3"
+import { BaseType } from "../../d3"
 
 interface TreeDatumComponent extends TreeDatum {
   unique_id: string

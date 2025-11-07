@@ -1,4 +1,4 @@
-import * as d3 from "d3";
+import * as d3 from "../d3";
 import { sortChildrenWithSpouses, sortAddNewChildren, setupSiblings, handlePrivateCards } from "./handlers";
 import { createNewPerson } from "../store/new-person";
 import { isAllRelativeDisplayed } from "../handlers/general";

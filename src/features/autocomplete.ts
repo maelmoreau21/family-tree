@@ -1,4 +1,4 @@
-import * as d3 from "d3"
+import * as d3 from "../d3"
 import {personSvgIcon, chevronDownSvgIcon, linkOffSvgIcon} from "../renderers/icons"
 import { checkIfConnectedToFirstPerson } from "../handlers/check-person-connection"
 import { Datum } from "../types/data"

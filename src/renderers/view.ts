@@ -1,4 +1,4 @@
-import * as d3 from "d3"
+import * as d3 from "../d3"
 import {cardToMiddle, treeFit} from "../handlers/view-handlers"
 import updateLinks from "./view-links"
 import updateCardsSvg from "./view-cards-svg"
