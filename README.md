@@ -118,6 +118,22 @@ The builder saves a JSON envelope containing both the dataset and chart preferen
 
 Legacy “array-only” payloads are still accepted. The next save wraps them into the envelope automatically. See `docs/data-format.md` for the full schema (parents / spouses / children rules, legacy aliases, custom fields, etc.).
 
+## Dataset Maintenance
+
+- **Reset from image defaults (Docker)**
+
+  ```powershell
+  docker compose exec family-tree sh -lc "cp /app/examples/data/data.json /data/tree.json && rm -f /data/backups/*.json"
+  ```
+
+- **Compact the active dataset**
+
+  ```powershell
+  docker compose exec family-tree node /app/scripts/compact-tree.mjs
+  ```
+
+- **Pretty-print on next save**: start the container with `TREE_DATA_PRETTY=1` (or run `TREE_DATA_PRETTY=1 npm start` locally) to have the server rewrite `tree.json` with indentation.
+
 ### Checking for Duplicates
 
 The viewer automatically annotates duplicated persons (same `id`). To verify a dataset before publishing:
