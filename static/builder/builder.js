@@ -5,6 +5,25 @@ const saveBtn = document.getElementById('save')
 const reloadBtn = document.getElementById('reload')
 const panel = document.getElementById('controlPanel')
 const chartSelector = '#FamilyChart'
+const searchRoot = document.querySelector('[data-role="builder-search"]')
+const searchTarget = document.querySelector('[data-role="builder-search-target"]')
+const searchEmptyEl = document.querySelector('[data-role="builder-search-empty"]')
+const searchLabel = document.getElementById('builderSearchLabel')
+const searchHint = document.getElementById('builderSearchHint')
+const panelToggleBtn = document.querySelector('[data-action="toggle-panel"]')
+
+const CONTROL_PANEL_STATE_KEY = 'family-tree:builder:controlsCollapsed'
+let builderSearchOptions = []
+let builderSearchReady = false
+
+function setBuilderSearchState(state) {
+  if (!searchRoot) return
+  if (!state) {
+    delete searchRoot.dataset.state
+    return
+  }
+  searchRoot.dataset.state = state
+}
 
 function normalizeFieldKey(value) {
   if (value === undefined || value === null) return ''
@@ -27,6 +46,65 @@ function sanitizeFieldValues(values) {
   return result
 }
 
+function getStorageSafe() {
+  try {
+    return window.localStorage
+  } catch (error) {
+    return null
+  }
+}
+
+function readCollapsedState() {
+  const storage = getStorageSafe()
+  if (!storage) return false
+  try {
+    return storage.getItem(CONTROL_PANEL_STATE_KEY) === '1'
+  } catch (error) {
+    return false
+  }
+}
+
+function writeCollapsedState(collapsed) {
+  const storage = getStorageSafe()
+  if (!storage) return
+  try {
+    if (collapsed) {
+      storage.setItem(CONTROL_PANEL_STATE_KEY, '1')
+    } else {
+      storage.removeItem(CONTROL_PANEL_STATE_KEY)
+    }
+  } catch (error) {
+    // storage errors can be ignored silently
+  }
+}
+
+function applyControlsCollapsedState(collapsed) {
+  if (collapsed) {
+    document.body.classList.add('controls-collapsed')
+  } else {
+    document.body.classList.remove('controls-collapsed')
+  }
+
+  if (panelToggleBtn) {
+    panelToggleBtn.setAttribute('aria-expanded', String(!collapsed))
+    panelToggleBtn.textContent = collapsed ? 'Afficher le panneau' : 'Replier le panneau'
+  }
+}
+
+function toggleControlsCollapsed(force) {
+  const next = typeof force === 'boolean' ? force : !document.body.classList.contains('controls-collapsed')
+  applyControlsCollapsedState(next)
+  writeCollapsedState(next)
+}
+
+const initialPanelCollapsed = readCollapsedState()
+applyControlsCollapsedState(initialPanelCollapsed)
+if (panelToggleBtn) {
+  panelToggleBtn.addEventListener('click', () => {
+    toggleControlsCollapsed()
+  })
+}
+
 const DISPLAY_FIELD_LABELS = new Map([
   ['first name', 'Prénom'],
   ['last name', 'Nom'],
@@ -41,9 +119,12 @@ const DISPLAY_FIELD_LABELS = new Map([
   ['location', 'Lieu de résidence'],
   ['birthplace', 'Lieu de naissance'],
   ['deathplace', 'Lieu de décès'],
+  ['union date', "Date d'union"],
+  ['union place', "Lieu d'union"],
+  ['union paragraph', "Paragraphe d'union"],
   ['notes', 'Notes'],
   ['nickname', 'Surnom'],
-  ['maiden name', 'Nom de jeune fille']
+  ['maiden name', 'Nom de naissance']
 ])
 
 const DISPLAY_DEFAULTS = {
@@ -65,10 +146,13 @@ const DISPLAY_DEFAULTS = {
 const EDITABLE_DEFAULTS = [
   { value: 'first name', label: 'Prénom', checked: true },
   { value: 'last name', label: 'Nom', checked: true },
+  { value: 'maiden name', label: 'Nom de naissance', checked: false },
   { value: 'birthday', label: 'Date de naissance', checked: true },
+  { value: 'death', label: 'Date de Décès', checked: false },
   { value: 'avatar', label: 'Avatar', checked: true },
   { value: 'gender', label: 'Genre', checked: true },
-  { value: 'death', label: 'Date de Décès', checked: false },
+  { value: 'birthplace', label: 'Lieu de naissance', checked: false },
+  { value: 'deathplace', label: 'Lieu de Décès', checked: false },
   { value: 'bio', label: 'Biographie', checked: false }
 ]
 
@@ -77,13 +161,54 @@ const DEFAULT_CARD_DISPLAY = [
   ['birthday']
 ]
 
-const DEFAULT_EDITABLE_FIELDS = sanitizeFieldValues(
-  EDITABLE_DEFAULTS
-    .filter(def => def.checked !== false)
-    .map(def => def.value)
+const UNION_PARAGRAPH_KEY = 'union paragraph'
+
+const DEFAULT_EDITABLE_FIELDS = removeUnionParagraphField(
+  sanitizeFieldValues(
+    EDITABLE_DEFAULTS
+      .filter(def => def.checked !== false)
+      .map(def => def.value)
+  )
 )
 
-const TEXTAREA_FIELD_KEYS = new Set(['bio', 'notes', 'biographie', 'description'])
+const TEXTAREA_FIELD_KEYS = new Set(['bio', 'notes', 'biographie', 'description', 'union paragraph'])
+const REL_REFERENCE_FIELD_KEYS = new Set(['union date', 'union place'])
+
+function createFieldDescriptor(key, value, label) {
+  if (REL_REFERENCE_FIELD_KEYS.has(key)) {
+    return {
+      id: value,
+      label,
+      type: 'rel_reference',
+      rel_type: 'spouse',
+      getRelLabel: buildPersonLabel
+    }
+  }
+  const type = TEXTAREA_FIELD_KEYS.has(key) ? 'textarea' : 'text'
+  return { id: value, label, type }
+}
+
+function appendUnionFieldDescriptors(descriptors, labelLookup) {
+  const getLabel = (key) => {
+    if (!labelLookup) return key
+    if (typeof labelLookup.get === 'function') {
+      return labelLookup.get(key) || key
+    }
+    if (labelLookup instanceof Map) {
+      return labelLookup.get(key) || key
+    }
+    return labelLookup[key] || key
+  }
+
+  REL_REFERENCE_FIELD_KEYS.forEach(key => {
+    const exists = descriptors.some(descriptor => normalizeFieldKey(descriptor.id) === key)
+    if (exists) return
+    const label = getLabel(key)
+    descriptors.push(createFieldDescriptor(key, key, label))
+  })
+
+  return descriptors
+}
 
 function createBaseFieldLabelStore() {
   const store = new Map(DISPLAY_FIELD_LABELS)
@@ -102,12 +227,168 @@ function createBaseFieldLabelStore() {
 
 function buildFieldDescriptors(fields, labelStore = createBaseFieldLabelStore()) {
   const store = labelStore || createBaseFieldLabelStore()
-  return sanitizeFieldValues(fields).map(value => {
+  const descriptors = sanitizeFieldValues(fields).map(value => {
     const key = normalizeFieldKey(value)
     const label = store.get(key) || value
-    const type = TEXTAREA_FIELD_KEYS.has(key) ? 'textarea' : 'text'
-    return { id: value, label, type }
+    return createFieldDescriptor(key, value, label)
   })
+  return appendUnionFieldDescriptors(descriptors, store)
+}
+
+function safeTrim(value) {
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+function getAllPersons() {
+  if (!editTreeInstance || !editTreeInstance.store || typeof editTreeInstance.store.getData !== 'function') {
+    return []
+  }
+  const persons = editTreeInstance.store.getData()
+  return Array.isArray(persons) ? persons : []
+}
+
+function buildPersonLabel(datum) {
+  if (!datum) return 'Profil sans nom'
+  const person = datum.data || {}
+  const first = safeTrim(person['first name'])
+  const last = safeTrim(person['last name'])
+  const base = (first || last) ? [first, last].filter(Boolean).join(' ').trim() : `Profil ${datum.id}`
+  const birth = safeTrim(person['birthday'])
+  return birth ? `${base} (${birth})` : base
+}
+
+function createSearchOptionFromDatum(datum) {
+  if (!datum || typeof datum.id !== 'string' || !datum.id.trim()) return null
+  const label = buildPersonLabel(datum)
+  const tokens = new Set()
+  const metaParts = []
+  const metaSeen = new Set()
+
+  const addToken = (value) => {
+    if (typeof value !== 'string') return
+    const trimmed = value.trim()
+    if (!trimmed) return
+    tokens.add(trimmed)
+  }
+
+  const addMeta = (value) => {
+    if (typeof value !== 'string') return
+    const trimmed = value.trim()
+    if (!trimmed || metaSeen.has(trimmed)) return
+    metaSeen.add(trimmed)
+    metaParts.push(trimmed)
+  }
+
+  addToken(label)
+  addToken(String(datum.id))
+
+  const person = datum.data && typeof datum.data === 'object' ? datum.data : {}
+  Object.entries(person).forEach(([rawKey, rawValue]) => {
+    if (typeof rawValue !== 'string') return
+    const trimmed = rawValue.trim()
+    if (!trimmed) return
+    addToken(trimmed)
+    const key = normalizeFieldKey(rawKey)
+    if (key === 'birthday') {
+      addMeta(trimmed)
+      return
+    }
+    if (key === 'death') {
+      addMeta(`✝ ${trimmed}`)
+      return
+    }
+    if (key === 'maiden name') {
+      addMeta(`(${trimmed})`)
+      return
+    }
+    if (key === 'occupation') {
+      addMeta(trimmed)
+      return
+    }
+    if (key === 'location' || key === 'residence' || key === 'birthplace' || key === 'deathplace') {
+      addMeta(trimmed)
+    }
+  })
+
+  const searchText = Array.from(tokens)
+    .map(value => value.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .join(' | ')
+
+  return {
+    label,
+    value: datum.id,
+    searchText,
+    optionHtml: (option) => {
+      const meta = metaParts.length ? `<small>${metaParts.join(' · ')}</small>` : ''
+      return `<div>${option.label_html || option.label}${meta ? `<div class="f3-autocomplete-meta">${meta}</div>` : ''}</div>`
+    }
+  }
+}
+
+function buildSearchOptionsFromPersons(persons) {
+  if (!Array.isArray(persons)) return []
+  const options = []
+  const seen = new Set()
+  persons.forEach(datum => {
+    if (!datum || !datum.id || seen.has(datum.id)) return
+    const option = createSearchOptionFromDatum(datum)
+    if (!option) return
+    options.push(option)
+    seen.add(datum.id)
+  })
+  options.sort((a, b) => a.label.localeCompare(b.label, 'fr', { sensitivity: 'base' }))
+  return options
+}
+
+function initBuilderSearch(chart) {
+  if (!chart || !searchTarget) {
+    setBuilderSearchState('empty')
+    return null
+  }
+
+  if (searchEmptyEl) {
+    searchEmptyEl.classList.remove('hidden')
+  }
+
+  chart.setPersonDropdown(
+    (datum) => buildPersonLabel(datum),
+    {
+      cont: searchTarget,
+  placeholder: 'Rechercher (nom, date, lieu, etc.)',
+      onSelect: (id) => {
+        if (!id || !editTreeInstance) return
+        const datum = editTreeInstance.store?.getDatum?.(id)
+        if (datum) {
+          editTreeInstance.open(datum)
+        }
+      }
+    }
+  )
+
+  const input = searchTarget.querySelector('input')
+  if (input) {
+    input.setAttribute('id', 'builderSearchInput')
+    if (searchLabel) input.setAttribute('aria-labelledby', searchLabel.id)
+    if (searchHint) input.setAttribute('aria-describedby', searchHint.id)
+    input.setAttribute('autocomplete', 'off')
+    input.setAttribute('spellcheck', 'false')
+  }
+
+  function refreshSearchOptions() {
+    if (!chart.personSearch) return
+    const persons = getAllPersons()
+    builderSearchOptions = buildSearchOptionsFromPersons(persons)
+    chart.personSearch.setOptionsGetter(() => builderSearchOptions)
+    setBuilderSearchState(builderSearchOptions.length ? 'ready' : 'empty')
+    builderSearchReady = true
+  }
+
+  refreshSearchOptions()
+
+  return {
+    refreshSearchOptions
+  }
 }
 
 const DEFAULT_CHART_CONFIG = Object.freeze({
@@ -489,6 +770,9 @@ function setupChart(payload) {
   }
 
   container.innerHTML = ''
+  builderSearchReady = false
+  builderSearchOptions = []
+  setBuilderSearchState('loading')
 
   if (typeof activePanelTeardown === 'function') {
     activePanelTeardown()
@@ -501,6 +785,7 @@ function setupChart(payload) {
   if (!currentEditableFields.length) {
     currentEditableFields = [...DEFAULT_EDITABLE_FIELDS]
   }
+  currentEditableFields = removeUnionParagraphField(currentEditableFields)
 
   const initialEditableFields = [...currentEditableFields]
   const initialFieldDescriptors = buildFieldDescriptors(initialEditableFields)
@@ -518,6 +803,7 @@ function setupChart(payload) {
     .setMiniTree(chartConfig.miniTree !== false)
 
   let panelControlAPI = null
+  let searchControlAPI = null
   const dataArray = Array.isArray(data) ? data : []
 
   editTreeInstance = chart.editTree()
@@ -530,6 +816,9 @@ function setupChart(payload) {
         panelControlAPI.refreshMainProfileOptions({ keepSelection: true })
         panelControlAPI.syncMainProfileSelection({ scheduleSaveIfChanged: false })
       }
+      if (searchControlAPI) {
+        searchControlAPI.refreshSearchOptions()
+      }
       scheduleAutoSave()
     })
 
@@ -539,6 +828,8 @@ function setupChart(payload) {
     handleFormCreation: () => {},
     teardown: () => {}
   }
+
+  searchControlAPI = initBuilderSearch(chart)
 
   if (typeof panelControlAPI.teardown === 'function') {
     activePanelTeardown = panelControlAPI.teardown
@@ -558,9 +849,8 @@ function setupChart(payload) {
   chart.setAfterUpdate(() => {
     if (!chart.store || typeof chart.store.getMainId !== 'function') return
     const storeMainId = chart.store.getMainId()
-    if (!storeMainId) return
-    if (chartConfig.mainId !== storeMainId) {
-      chartConfig = { ...chartConfig, mainId: storeMainId }
+    if (!storeMainId && chartConfig.mainId) {
+      chartConfig = { ...chartConfig, mainId: null }
       lastSnapshotString = null
       if (!isApplyingConfig) {
         scheduleAutoSave()
@@ -568,6 +858,9 @@ function setupChart(payload) {
     }
     if (panelControlAPI) {
       panelControlAPI.syncMainProfileSelection({ scheduleSaveIfChanged: false })
+    }
+    if (!builderSearchReady && searchControlAPI) {
+      searchControlAPI.refreshSearchOptions()
     }
   })
 
@@ -1059,34 +1352,12 @@ function attachPanelControls({ chart, card }) {
   }
 
   function createFieldDescriptors(fieldValues) {
-    return sanitizeFieldValues(fieldValues).map(value => {
+    const descriptors = sanitizeFieldValues(fieldValues).map(value => {
       const key = normalizeFieldKey(value)
       const label = ensureFieldLabel(value, fieldLabelStore.get(key))
-      const type = TEXTAREA_FIELD_KEYS.has(key) ? 'textarea' : 'text'
-      return { id: value, label, type }
+      return createFieldDescriptor(key, value, label)
     })
-  }
-
-  function safeTrim(value) {
-    return typeof value === 'string' ? value.trim() : ''
-  }
-
-  function getAllPersons() {
-    if (!editTreeInstance || !editTreeInstance.store || typeof editTreeInstance.store.getData !== 'function') {
-      return []
-    }
-    const persons = editTreeInstance.store.getData()
-    return Array.isArray(persons) ? persons : []
-  }
-
-  function buildPersonLabel(datum) {
-    if (!datum) return 'Profil sans nom'
-    const person = datum.data || {}
-    const first = safeTrim(person['first name'])
-    const last = safeTrim(person['last name'])
-    const base = (first || last) ? [first, last].filter(Boolean).join(' ').trim() : `Profil ${datum.id}`
-    const birth = safeTrim(person['birthday'])
-    return birth ? `${base} (${birth})` : base
+    return appendUnionFieldDescriptors(descriptors, fieldLabelStore)
   }
 
   function updateMainProfileDisplay(id) {
@@ -1158,41 +1429,54 @@ function attachPanelControls({ chart, card }) {
     }
 
     const storeMainId = chart.store.getMainId()
+    const persons = getAllPersons()
+    const availableIds = new Set(persons.map(d => d && d.id).filter(Boolean))
+    const currentConfigMain = typeof chartConfig.mainId === 'string' && chartConfig.mainId.trim() ? chartConfig.mainId.trim() : null
 
-    if (mainProfileSelect) {
-      const persons = getAllPersons()
-      const availableIds = new Set(persons.map(d => d.id))
+    let nextConfigMain = currentConfigMain
 
-      if (storeMainId && !availableIds.has(storeMainId)) {
-        refreshMainProfileOptions({ keepSelection: false })
-      }
+    if (nextConfigMain && !availableIds.has(nextConfigMain)) {
+      nextConfigMain = null
+    }
 
-      if (storeMainId) {
-        const hasOption = [...mainProfileSelect.options].some(option => option.value === storeMainId)
-        if (!hasOption) {
-          refreshMainProfileOptions({ keepSelection: false })
-        }
-        mainProfileSelect.value = storeMainId
-        mainProfileSelect.disabled = false
-      }
+    if (!nextConfigMain && storeMainId && availableIds.has(storeMainId)) {
+      nextConfigMain = storeMainId
+    }
 
-      if (!storeMainId && !mainProfileSelect.options.length) {
-        refreshMainProfileOptions({ keepSelection: false })
+    if (!nextConfigMain && persons.length) {
+      const fallbackId = persons[0]?.id || null
+      if (fallbackId && availableIds.has(fallbackId)) {
+        nextConfigMain = fallbackId
       }
     }
 
-    updateMainProfileDisplay(storeMainId || null)
-
-    if (chartConfig.mainId !== storeMainId) {
-      chartConfig = { ...chartConfig, mainId: storeMainId || null }
+    if (nextConfigMain !== currentConfigMain) {
+      chartConfig = { ...chartConfig, mainId: nextConfigMain }
       lastSnapshotString = null
       if (scheduleSaveIfChanged && !isApplyingConfig) {
         scheduleAutoSave()
       }
     }
+
+    if (mainProfileSelect) {
+      if (nextConfigMain && ![...mainProfileSelect.options].some(option => option.value === nextConfigMain)) {
+        refreshMainProfileOptions({ keepSelection: false })
+      }
+
+      if (!nextConfigMain && !mainProfileSelect.options.length) {
+        refreshMainProfileOptions({ keepSelection: false })
+      }
+
+      if (nextConfigMain) {
+        mainProfileSelect.value = nextConfigMain
+        mainProfileSelect.disabled = false
+      }
+    }
+
+    updateMainProfileDisplay(nextConfigMain || null)
   }
 
-  function setMainProfile(id, { openEditor = true, treePosition = 'main_to_middle', suppressSave = false } = {}) {
+  function setMainProfile(id, { openEditor = true, suppressSave = false } = {}) {
     if (!id) return
     const persons = getAllPersons()
     if (!persons.some(person => person.id === id)) {
@@ -1200,24 +1484,25 @@ function attachPanelControls({ chart, card }) {
       return
     }
 
-    const storeMainId = chart.store && typeof chart.store.getMainId === 'function' ? chart.store.getMainId() : null
-    const mainChanged = storeMainId !== id
-
-    if (mainChanged) {
-      chart.updateMainId(id)
-      chart.updateTree({ initial: false, tree_position: treePosition })
-    }
-
     const configChanged = chartConfig.mainId !== id
     if (configChanged) {
       chartConfig = { ...chartConfig, mainId: id }
     }
 
-    if ((configChanged || mainChanged) && !suppressSave) {
+    if (configChanged && !suppressSave) {
       lastSnapshotString = null
       if (!isApplyingConfig) {
         scheduleAutoSave()
       }
+    }
+
+    const storeMainBefore = chart.store && typeof chart.store.getMainId === 'function'
+      ? chart.store.getMainId()
+      : null
+
+    if (chart && typeof chart.updateMainId === 'function' && storeMainBefore !== id) {
+      chart.updateMainId(id)
+      chart.updateTree({ initial: false, tree_position: 'main_to_middle' })
     }
 
     if (mainProfileSelect && mainProfileSelect.value !== id) {
@@ -1237,7 +1522,7 @@ function attachPanelControls({ chart, card }) {
     mainProfileSelect.addEventListener('change', event => {
       const { value } = event.target
       if (!value) return
-      setMainProfile(value, { openEditor: true, treePosition: 'main_to_middle' })
+      setMainProfile(value)
     })
   }
 
@@ -1296,6 +1581,7 @@ function attachPanelControls({ chart, card }) {
     if (!Array.isArray(chartConfig.editableFields)) return
     chartConfig.editableFields.forEach(field => {
       const key = normalizeFieldKey(field)
+      if (REL_REFERENCE_FIELD_KEYS.has(key) || key === UNION_PARAGRAPH_KEY) return
       if (!key) return
       const label = ensureFieldLabel(field, fieldLabelStore.get(key))
       const selector = `[data-field-key="${escapeSelector(key)}"]`
@@ -1512,7 +1798,7 @@ function attachPanelControls({ chart, card }) {
       .filter(input => input.checked)
       .map(input => input.value)
     let applied = values.length ? values : (chartConfig.editableFields.length ? [...chartConfig.editableFields] : ['first name'])
-    applied = sanitizeFieldValues(applied)
+    applied = removeUnionParagraphField(sanitizeFieldValues(applied))
     if (!applied.length) {
       const fallbackField = DEFAULT_EDITABLE_FIELDS[0] || 'first name'
       applied = [fallbackField]
@@ -1524,7 +1810,7 @@ function attachPanelControls({ chart, card }) {
       }
     }
 
-    currentEditableFields = [...applied]
+  currentEditableFields = removeUnionParagraphField([...applied])
     const fieldDescriptors = createFieldDescriptors(applied)
     editTreeInstance.setFields(fieldDescriptors)
 
@@ -1773,6 +2059,10 @@ function attachPanelControls({ chart, card }) {
     handleFormCreation,
     teardown: teardownImageUploader
   }
+}
+
+function removeUnionParagraphField(values = []) {
+  return values.filter(value => normalizeFieldKey(value) !== UNION_PARAGRAPH_KEY)
 }
 
 async function initialise() {

@@ -11,6 +11,7 @@ interface AutocompleteOption {
   optionHtml: (d: AutocompleteOption) => string
   label_html?: string
   class?: string
+  searchText?: string
 }
 
 class Autocomplete {
@@ -85,21 +86,30 @@ class Autocomplete {
   
     function activateDropdown() {
       search_cont.classed("active", true)
-      const search_input_value = search_input.property("value")
-      const filtered_options = self.options.filter(d => d.label.toLowerCase().includes(search_input_value.toLowerCase()))
+      const search_input_value = (search_input.property("value") || "") as string
+      const normalized_query = search_input_value.trim().toLowerCase()
+      const filtered_options = self.options.filter(d => {
+        if (!normalized_query) return true
+        const target = (d.searchText || d.label || "").toLowerCase()
+        return target.includes(normalized_query)
+      })
       filtered_options.forEach(setHtmlLabel)
       filtered_options.sort(sortByLabel)
       updateDropdown(filtered_options)
   
       function setHtmlLabel(d: AutocompleteOption) {
-        const index = d.label.toLowerCase().indexOf(search_input_value.toLowerCase())
+        if (!normalized_query) {
+          d.label_html = d.label
+          return
+        }
+        const index = d.label.toLowerCase().indexOf(normalized_query)
         if (index !== -1) d.label_html = itemLabel()
         else d.label_html = d.label
   
         function itemLabel() {
           return d.label.substring(0, index) 
-            + '<strong>' + d.label.substring(index, index + search_input_value.length) 
-            + '</strong>' + d.label.substring(index + search_input_value.length)
+            + '<strong>' + d.label.substring(index, index + normalized_query.length) 
+            + '</strong>' + d.label.substring(index + normalized_query.length)
         }
       }
   

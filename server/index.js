@@ -4,9 +4,15 @@ import compression from 'compression'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import fs from 'node:fs/promises'
-import { createReadStream } from 'node:fs'
 import multer from 'multer'
 import { randomUUID, createHash } from 'node:crypto'
+
+import {
+  initialiseDatabase,
+  getTreePayload,
+  setTreePayload,
+  getLastUpdatedAt
+} from './db.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -16,14 +22,9 @@ const DIST_DIR = path.resolve(ROOT_DIR, 'dist')
 const STATIC_DIR = path.resolve(ROOT_DIR, 'static')
 const UPLOAD_DIR = path.resolve(ROOT_DIR, 'uploads')
 
-const DEFAULT_DATA_PATHS = [
-  path.resolve(ROOT_DIR, 'examples', 'data', 'data.json'),
-  path.resolve(ROOT_DIR, 'examples', 'data', 'data-first-node.json')
-]
-
-const DEFAULT_STORAGE_PATH = path.resolve(ROOT_DIR, 'data', 'tree.json')
-const TREE_DATA_PATH = path.resolve(process.env.TREE_DATA_PATH || DEFAULT_STORAGE_PATH)
-const TREE_DATA_DIR = path.resolve(process.env.TREE_DATA_DIR || path.dirname(TREE_DATA_PATH))
+const DEFAULT_DB_PATH = path.resolve(ROOT_DIR, 'data', 'family.db')
+const TREE_DB_PATH = path.resolve(process.env.TREE_DB_PATH || process.env.TREE_DATA_PATH || DEFAULT_DB_PATH)
+const TREE_DATA_DIR = path.resolve(process.env.TREE_DATA_DIR || path.dirname(TREE_DB_PATH))
 const TREE_BACKUP_DIR = path.resolve(process.env.TREE_BACKUP_DIR || path.join(TREE_DATA_DIR, 'backups'))
 const TREE_BACKUP_LIMIT = Math.max(0, Number.parseInt(process.env.TREE_BACKUP_LIMIT || '50', 10))
 const VIEWER_PORT = Number.parseInt(process.env.VIEWER_PORT || '7920', 10)
@@ -36,6 +37,116 @@ const ONE_HOUR_SECONDS = 60 * 60
 const ONE_DAY_SECONDS = ONE_HOUR_SECONDS * 24
 const ONE_WEEK_SECONDS = ONE_DAY_SECONDS * 7
 const IMMUTABLE_STATIC_EXTENSIONS = new Set(['.js', '.css', '.map', '.svg', '.png', '.jpg', '.jpeg', '.webp', '.woff', '.woff2'])
+const TREE_SEED_JSON = typeof process.env.TREE_SEED_JSON === 'string' && process.env.TREE_SEED_JSON.trim()
+  ? path.resolve(process.env.TREE_SEED_JSON.trim())
+  : null
+const DEFAULT_SEED_DATASET = {
+  data: [
+    {
+      id: 'alex-garnier',
+      data: {
+        'first name': 'Alex',
+        'last name': 'Garnier',
+        birthday: '1983-03-15',
+        occupation: 'Engineer'
+      },
+      rels: {
+        spouses: ['lea-roux'],
+        children: ['chloe-garnier', 'matteo-garnier', 'ines-garnier'],
+        parents: ['pierre-garnier', 'julie-garnier']
+      }
+    },
+    {
+      id: 'lea-roux',
+      data: {
+        'first name': 'Lea',
+        'last name': 'Roux',
+        birthday: '1984-07-22',
+        occupation: 'Architect'
+      },
+      rels: {
+        spouses: ['alex-garnier'],
+        children: ['chloe-garnier', 'matteo-garnier', 'ines-garnier'],
+        parents: []
+      }
+    },
+    {
+      id: 'chloe-garnier',
+      data: {
+        'first name': 'Chloe',
+        'last name': 'Garnier',
+        birthday: '2010-02-11'
+      },
+      rels: {
+        parents: ['alex-garnier', 'lea-roux'],
+        spouses: [],
+        children: []
+      }
+    },
+    {
+      id: 'matteo-garnier',
+      data: {
+        'first name': 'Matteo',
+        'last name': 'Garnier',
+        birthday: '2012-06-05'
+      },
+      rels: {
+        parents: ['alex-garnier', 'lea-roux'],
+        spouses: [],
+        children: []
+      }
+    },
+    {
+      id: 'ines-garnier',
+      data: {
+        'first name': 'Ines',
+        'last name': 'Garnier',
+        birthday: '2016-10-19'
+      },
+      rels: {
+        parents: ['alex-garnier', 'lea-roux'],
+        spouses: [],
+        children: []
+      }
+    },
+    {
+      id: 'pierre-garnier',
+      data: {
+        'first name': 'Pierre',
+        'last name': 'Garnier',
+        birthday: '1956-04-30'
+      },
+      rels: {
+        spouses: ['julie-garnier'],
+        children: ['alex-garnier'],
+        parents: []
+      }
+    },
+    {
+      id: 'julie-garnier',
+      data: {
+        'first name': 'Julie',
+        'last name': 'Garnier',
+        birthday: '1960-12-12'
+      },
+      rels: {
+        spouses: ['pierre-garnier'],
+        children: ['alex-garnier'],
+        parents: []
+      }
+    }
+  ],
+  config: {
+    mainId: 'alex-garnier',
+    cardXSpacing: 240,
+    cardYSpacing: 140,
+    orientation: 'vertical'
+  },
+  meta: {
+    seeded: true,
+    source: 'default-sqlite'
+  }
+};
 
 let lastBackupHash = null
 
@@ -89,14 +200,23 @@ function resolveFileExtension(file) {
   return map[file.mimetype] || ''
 }
 
-async function ensureDataFile() {
+function cloneSeedPayload(payload) {
+  return JSON.parse(JSON.stringify(payload))
+}
+
+async function ensureDatabase() {
+  await fs.mkdir(TREE_DATA_DIR, { recursive: true })
+  const seedPayload = await loadSeedPayload()
+  initialiseDatabase(TREE_DB_PATH, () => seedPayload)
   try {
-    await fs.access(TREE_DATA_PATH)
+    const current = normaliseTreePayloadRoot(await readTreeData())
+    const hasPersons = Array.isArray(current.data) && current.data.length > 0
+    if (!hasPersons) {
+      const fallbackSeed = cloneSeedPayload(DEFAULT_SEED_DATASET)
+      await writeTreeData(fallbackSeed)
+    }
   } catch (error) {
-    const fallbackData = await loadDefaultData()
-    await fs.mkdir(TREE_DATA_DIR, { recursive: true })
-    await fs.writeFile(TREE_DATA_PATH, serialiseTreeData(fallbackData), 'utf8')
-    console.log(`[server] Created missing data file at ${TREE_DATA_PATH}`)
+    console.warn('[server] Unable to inspect database contents during initialisation', error)
   }
 }
 
@@ -108,30 +228,26 @@ async function ensureBackupDir() {
   await fs.mkdir(TREE_BACKUP_DIR, { recursive: true })
 }
 
-async function loadDefaultData() {
-  for (const candidate of DEFAULT_DATA_PATHS) {
+async function loadSeedPayload() {
+  if (TREE_SEED_JSON) {
     try {
-      const raw = await fs.readFile(candidate, 'utf8')
+      const raw = await fs.readFile(TREE_SEED_JSON, 'utf8')
       return JSON.parse(raw)
     } catch (error) {
-      // continue with next fallback file
+      console.warn(`[server] Unable to read TREE_SEED_JSON at ${TREE_SEED_JSON}:`, error)
     }
   }
 
-  console.warn('[server] No default data found, creating empty dataset')
-  return []
+  return cloneSeedPayload(DEFAULT_SEED_DATASET)
 }
 
 async function readTreeData() {
-  const raw = await fs.readFile(TREE_DATA_PATH, 'utf8')
-  return JSON.parse(raw)
+  return getTreePayload(TREE_DB_PATH)
 }
 
 async function writeTreeData(data) {
   const payloadString = serialiseTreeData(data)
-  const tempPath = `${TREE_DATA_PATH}.tmp`
-  await fs.writeFile(tempPath, payloadString, 'utf8')
-  await fs.rename(tempPath, TREE_DATA_PATH)
+  setTreePayload(TREE_DB_PATH, data, () => payloadString)
   await writeBackupSnapshot(payloadString)
 }
 
@@ -448,7 +564,68 @@ function buildPersonSummaryEntry(person) {
   if (gender) summary.gender = gender
   const occupation = getDataFieldValue(person, 'occupation')
   if (occupation) summary.occupation = occupation
+  const fields = collectPersonStringFields(person)
+  if (Object.keys(fields).length) {
+    summary.fields = fields
+  }
+  const searchText = buildPersonSearchText({
+    id: person.id,
+    label,
+    nickname,
+    maidenName,
+    birthday,
+    death,
+    location,
+    occupation,
+    fields
+  })
+  if (searchText) summary.searchText = searchText
   return summary
+}
+
+function collectPersonStringFields(person) {
+  const result = {}
+  if (!person || typeof person !== 'object') return result
+  const data = person.data
+  if (!data || typeof data !== 'object') return result
+  for (const [rawKey, rawValue] of Object.entries(data)) {
+    if (typeof rawValue !== 'string') continue
+    const trimmed = rawValue.trim()
+    if (!trimmed) continue
+    result[rawKey] = trimmed
+  }
+  return result
+}
+
+function buildPersonSearchText({ id, label, nickname, maidenName, birthday, death, location, occupation, fields }) {
+  const tokens = new Set()
+  const addToken = (value) => {
+    if (typeof value !== 'string') return
+    const trimmed = value.trim()
+    if (!trimmed) return
+    tokens.add(trimmed)
+  }
+
+  addToken(id)
+  addToken(label)
+  addToken(nickname)
+  addToken(maidenName)
+  addToken(birthday)
+  addToken(death)
+  addToken(location)
+  addToken(occupation)
+
+  if (fields && typeof fields === 'object') {
+    Object.values(fields).forEach(addToken)
+  }
+
+  const combined = Array.from(tokens)
+    .map(value => value.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+
+  if (!combined.length) return ''
+
+  return combined.join(' | ')
 }
 
 function buildPeopleSummary(persons) {
@@ -569,21 +746,11 @@ function createTreeApi({ canWrite }) {
 
     if (!subsetRequested) {
       try {
-        await fs.access(TREE_DATA_PATH)
-        res.setHeader('Content-Type', 'application/json; charset=utf-8')
-        const stream = createReadStream(TREE_DATA_PATH, { encoding: 'utf8' })
-        stream.on('error', (error) => {
-          console.error('[server] Failed to stream tree data', error)
-          if (!res.headersSent) {
-            res.status(500).json({ message: 'Unable to read tree data file' })
-          } else {
-            res.destroy(error)
-          }
-        })
-        stream.pipe(res)
+        const payload = await readTreeData()
+        res.json(payload)
       } catch (error) {
-        console.error('[server] Failed to access tree data', error)
-        res.status(500).json({ message: 'Unable to read tree data file' })
+        console.error('[server] Failed to load tree data', error)
+        res.status(500).json({ message: 'Unable to read tree data from storage' })
       }
       return
     }
@@ -625,13 +792,7 @@ function createTreeApi({ canWrite }) {
       const normalised = normaliseTreePayloadRoot(payload)
       const persons = Array.isArray(normalised.data) ? normalised.data : []
       const summaries = buildPeopleSummary(persons)
-      let updatedAt = null
-      try {
-        const stats = await fs.stat(TREE_DATA_PATH)
-        updatedAt = stats.mtime.toISOString()
-      } catch (statsError) {
-        // ignore inability to read file stats
-      }
+      const updatedAt = getLastUpdatedAt(TREE_DB_PATH)
 
       res.json({
         total: persons.length,
@@ -668,7 +829,7 @@ function createTreeApi({ canWrite }) {
   })
 
   if (canWrite) {
-  router.use(express.json({ limit: TREE_PAYLOAD_LIMIT }))
+    router.use(express.json({ limit: TREE_PAYLOAD_LIMIT }))
 
     router.put('/tree', async (req, res) => {
       try {
@@ -742,7 +903,7 @@ function createStaticApp(staticFolder, { canWrite }) {
 }
 
 async function start() {
-  await ensureDataFile()
+  await ensureDatabase()
   await ensureUploadDir()
   await ensureBackupDir()
   try {
@@ -759,7 +920,7 @@ async function start() {
 
   viewerApp.listen(VIEWER_PORT, () => {
     console.log(`[server] Viewer running on port ${VIEWER_PORT}`)
-    console.log(`[server] Serving data from ${TREE_DATA_PATH}`)
+    console.log(`[server] Serving data from ${TREE_DB_PATH}`)
   })
 
   builderApp.listen(BUILDER_PORT, () => {

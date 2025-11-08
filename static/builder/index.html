@@ -22,8 +22,15 @@
 </head>
 <body>
   <div class="layout">
-    <main class="workspace">
+  <main class="workspace">
+    <button type="button" class="panel-toggle" data-action="toggle-panel" aria-controls="controlPanel" aria-expanded="true">Replier le panneau</button>
         <aside class="controls" id="controlPanel">
+          <div class="search-panel" data-role="builder-search" data-state="loading">
+            <h2 class="search-title" id="builderSearchLabel">Recherche rapide</h2>
+            <p class="search-hint" id="builderSearchHint">Tapez un nom, une date, un lieu, une profession ou toute autre information.</p>
+            <div class="search-widget" data-role="builder-search-target"></div>
+            <p class="search-empty hidden" data-role="builder-search-empty">Aucune personne disponible pour le moment.</p>
+          </div>
           <details class="panel" open>
             <summary>Panneau de détails</summary>
             <div class="panel-body">
@@ -51,12 +58,13 @@
               </fieldset>
 
               <fieldset class="main-profile" data-role="main-profile">
-                <legend>Profil principal</legend>
-                <p class="group-hint">Choisissez la personne affichée par défaut dans le builder et le viewer.</p>
-                <select id="mainProfileSelect" aria-label="Profil principal par défaut">
+                <legend>Profil affiché par défaut</legend>
+                <p class="group-hint">Sélectionnez la personne qui sera ouverte automatiquement dans le builder et le visualiseur.</p>
+                <label for="mainProfileSelect">Personne par défaut</label>
+                <select id="mainProfileSelect">
                   <option value="">Chargement…</option>
                 </select>
-                <p class="hint">Actuellement : <span data-role="main-profile-name">—</span></p>
+                <p class="hint">Sélectionné par défaut : <span data-role="main-profile-name">—</span></p>
               </fieldset>
             </div>
           </details>
@@ -206,8 +214,7 @@
             <summary>Ressources</summary>
             <div class="panel-body">
               <ul>
-                <li><a href="https://donatso.github.io/family-chart-doc/create-tree/" target="_blank" rel="noopener">Éditeur d’origine</a></li>
-                <li><a href="https://github.com/donatso/family-chart" target="_blank" rel="noopener">Dépôt GitHub d’origine</a></li>
+                <li><a href="https://github.com/maelmoreau21/family-tree" target="_blank" rel="noopener">Dépôt GitHub du projet</a></li>
               </ul>
             </div>
           </details>

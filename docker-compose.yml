@@ -1,17 +1,37 @@
+version: "3.9"
 
 services:
   family-tree:
     build: .
     image: family-tree:latest
+    container_name: family-tree
     restart: unless-stopped
     environment:
-      TREE_DATA_PATH: /data/tree.json
-      TREE_BACKUP_LIMIT: 50
-      VIEWER_PORT: 7920
-      BUILDER_PORT: 7921
+      TREE_DB_PATH: "/data/family.db"
+      TREE_DATA_PATH: "/data/family.db"
+      TREE_SEED_JSON: "/data/tree.json"
+      TREE_BACKUP_LIMIT: "50"
+      TREE_PAYLOAD_LIMIT: "100mb"
+      VIEWER_PORT: "7920"
+      BUILDER_PORT: "7921"
     ports:
       - "7920:7920"
       - "7921:7921"
     volumes:
       - ./data:/data
       - ./uploads:/app/uploads
+
+  family-tree-sqlite:
+    build:
+      context: .
+      dockerfile: tools/sqlite/Dockerfile
+    image: family-tree-sqlite:latest
+    container_name: family-tree-sqlite
+    restart: unless-stopped
+    environment:
+      FAMILY_SQLITE_PATH: "/data/family.db"
+      FAMILY_TREE_JSON_PATH: "/data/tree.json"
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./data:/data

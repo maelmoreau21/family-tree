@@ -46,13 +46,14 @@
     "test-run": "cypress run",
     "dev": "vite",
     "start": "node server/index.js",
-  "data:compact": "node scripts/compact-tree.mjs",
+    "data:compact": "node scripts/compact-tree.mjs",
     "docs": "typedoc",
     "docs:deploy": "yarn docs && gh-pages -d docs/api -b gh-pages",
     "prepublishOnly": "node prePublish.js"
   },
   "sideEffects": false,
   "dependencies": {
+    "better-sqlite3": "^12.4.1",
     "compression": "^1.8.1",
     "cors": "^2.8.5",
     "d3": "^7.9.0",

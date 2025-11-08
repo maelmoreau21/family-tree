@@ -1,4 +1,4 @@
-import { EditDatumFormCreator, NewRelFormCreator, SelectField } from '../types/form'
+import { EditDatumFormCreator, NewRelFormCreator, SelectField, RelReferenceField } from '../types/form'
 import * as icons from './icons'
 
 
@@ -86,45 +86,40 @@ function editBtn(form_creator: EditDatumFormCreator) {
 
 function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
   if (!form_creator.editable) return infoField()
-  let fields_html = ''
+  const unionFields = new Map<string, { relLabel: string; dateField?: RelReferenceField; placeField?: RelReferenceField }>()
+  const orderedFields: any[] = []
+
   form_creator.fields.forEach(field => {
-    if (field.type === 'text') {
-      fields_html += `
-      <div class="f3-form-field">
-        <label>${field.label}</label>
-        <input type="${field.type}" 
-          name="${field.id}" 
-          value="${field.initial_value || ''}"
-          placeholder="${field.label}">
-      </div>`
-    } else if (field.type === 'textarea') {
-      fields_html += `
-      <div class="f3-form-field">
-        <label>${field.label}</label>
-        <textarea name="${field.id}" 
-          placeholder="${field.label}">${field.initial_value || ''}</textarea>
-      </div>`
-    } else if (field.type === 'select') {
-      const select_field = field as SelectField
-      fields_html += `
-      <div class="f3-form-field">
-        <label>${select_field.label}</label>
-        <select name="${select_field.id}" value="${select_field.initial_value || ''}">
-          <option value="">${select_field.placeholder || `Sélectionnez ${select_field.label}`}</option>
-          ${select_field.options.map((option) => `<option ${option.value === select_field.initial_value ? 'selected' : ''} value="${option.value}">${option.label}</option>`).join('')}
-        </select>
-      </div>`
-    } else if (field.type === 'rel_reference') {
-      fields_html += `
-      <div class="f3-form-field">
-        <label>${field.label} - <i>${field.rel_label}</i></label>
-        <input type="text" 
-          name="${field.id}" 
-          value="${field.initial_value || ''}"
-          placeholder="${field.label}">
-      </div>`
+    if (isUnionReferenceField(field)) {
+      const unionField = field as RelReferenceField
+      const relId = unionField.rel_id
+      if (!relId) return
+      const bucket = unionFields.get(relId) || { relLabel: unionField.rel_label }
+      if (unionField.id.startsWith('union date__ref__')) bucket.dateField = unionField
+      else if (unionField.id.startsWith('union place__ref__')) bucket.placeField = unionField
+      else orderedFields.push(unionField)
+      unionFields.set(relId, bucket)
+      return
+    }
+    orderedFields.push(field)
+  })
+
+  const unionSectionHtml = renderUnionSection(unionFields)
+  let unionInserted = false
+  let fields_html = ''
+
+  orderedFields.forEach(field => {
+    fields_html += renderFormField(field)
+    if (!unionInserted && field.id === 'bio' && unionSectionHtml) {
+      fields_html += unionSectionHtml
+      unionInserted = true
     }
   })
+
+  if (!unionInserted && unionSectionHtml) {
+    fields_html += unionSectionHtml
+  }
+
   return fields_html
 
   function infoField() {
@@ -154,6 +149,94 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
       }
     })
     return fields_html
+  }
+
+  function isUnionReferenceField(field: any): field is RelReferenceField {
+    if (!field || field.type !== 'rel_reference' || typeof field.id !== 'string') return false
+    return field.id.startsWith('union date__ref__') || field.id.startsWith('union place__ref__')
+  }
+
+  function renderFormField(field: any) {
+    if (field.type === 'text') {
+      return `
+      <div class="f3-form-field">
+        <label>${field.label}</label>
+        <input type="${field.type}" 
+          name="${field.id}" 
+          value="${field.initial_value || ''}"
+          placeholder="${field.label}">
+      </div>`
+    }
+    if (field.type === 'textarea') {
+      return `
+      <div class="f3-form-field">
+        <label>${field.label}</label>
+        <textarea name="${field.id}" 
+          placeholder="${field.label}">${field.initial_value || ''}</textarea>
+      </div>`
+    }
+    if (field.type === 'select') {
+      const select_field = field as SelectField
+      return `
+      <div class="f3-form-field">
+        <label>${select_field.label}</label>
+        <select name="${select_field.id}" value="${select_field.initial_value || ''}">
+          <option value="">${select_field.placeholder || `Sélectionnez ${select_field.label}`}</option>
+          ${select_field.options.map((option) => `<option ${option.value === select_field.initial_value ? 'selected' : ''} value="${option.value}">${option.label}</option>`).join('')}
+        </select>
+      </div>`
+    }
+    if (field.type === 'rel_reference') {
+      return `
+      <div class="f3-form-field">
+        <label>${field.label} - <i>${field.rel_label}</i></label>
+        <input type="text" 
+          name="${field.id}" 
+          value="${field.initial_value || ''}"
+          placeholder="${field.label}">
+      </div>`
+    }
+    return ''
+  }
+
+  function renderUnionSection(collection: Map<string, { relLabel: string; dateField?: RelReferenceField; placeField?: RelReferenceField }>) {
+    if (!collection || collection.size === 0) return ''
+    let html = `
+    <section class="f3-union-section">
+      <h4 class="f3-union-title">Unions et conjoints</h4>`
+    let hasContent = false
+    collection.forEach(bucket => {
+      const heading = bucket.relLabel || 'Conjoint'
+      const dateField = bucket.dateField
+      const placeField = bucket.placeField
+      const dateHtml = renderUnionInput(dateField)
+      const placeHtml = renderUnionInput(placeField)
+      if (!dateHtml && !placeHtml) return
+      hasContent = true
+      html += `
+      <div class="f3-union-entry">
+        <p class="f3-union-entry-heading">Union avec <strong>${heading}</strong></p>
+        <div class="f3-union-fields">
+          ${dateHtml}
+          ${placeHtml}
+        </div>
+      </div>`
+    })
+    html += `
+    </section>`
+    return hasContent ? html : ''
+  }
+
+  function renderUnionInput(field?: RelReferenceField) {
+    if (!field) return ''
+    return `
+          <div class="f3-form-field f3-union-field">
+            <label>${field.label}</label>
+            <input type="text" 
+              name="${field.id}" 
+              value="${field.initial_value || ''}"
+              placeholder="${field.label}">
+          </div>`
   }
 }
 

@@ -5,6 +5,13 @@ import { Store } from "../types/store";
 import { TreeDatum } from "../types/treeData";
 import { CardDim } from "../types/card";
 
+interface SpouseUnionDetail {
+  id: string;
+  name: string;
+  unionDate?: string;
+  unionPlace?: string;
+}
+
 export default function CardHtml(props: {
   style: 'default' | 'imageCircleRect' | 'imageCircle' | 'imageRect' | 'rect';
   cardInnerHtmlCreator?: (d: TreeDatum) => string;
@@ -21,6 +28,7 @@ export default function CardHtml(props: {
   card_display: ((d: TreeDatum['data']) => string)[];
   duplicate_branch_toggle?: boolean;
   store: Store;
+  onMiniTreeClick?: (e: Event, d: TreeDatum) => void;
 }) {
   const cardInner = props.style === 'default' ? cardInnerDefault 
   : props.style === 'imageCircleRect' ? cardInnerImageCircleRect
@@ -29,6 +37,117 @@ export default function CardHtml(props: {
   : props.style === 'rect' ? cardInnerRect
   : cardInnerDefault
 
+  const HTML_ESCAPE_MAP: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }
+
+  function escapeHtml(value: string) {
+    return value.replace(/[&<>"']/g, char => HTML_ESCAPE_MAP[char] || char)
+  }
+
+  function safeText(value: unknown) {
+    if (typeof value !== 'string') return ''
+    const trimmed = value.trim()
+    return trimmed
+  }
+
+  function formatPersonName(source: { [key: string]: any } | undefined, fallbackId?: string) {
+    if (!source) return fallbackId || ''
+    const first = safeText(source['first name'])
+    const last = safeText(source['last name'])
+    const full = [first, last].filter(Boolean).join(' ').trim()
+    if (full) return full
+    const display = safeText(source.name)
+    if (display) return display
+    return fallbackId || ''
+  }
+
+  function collectSpouseUnionDetails(d: TreeDatum) {
+    const personData = d.data?.data || {}
+    const details = new Map<string, SpouseUnionDetail>()
+
+    const registerSpouse = (id?: string, source?: { [key: string]: any }) => {
+      if (!id) return
+      const existing = details.get(id)
+      const resolvedName = formatPersonName(source, id)
+      if (existing) {
+        if (!existing.name && resolvedName) existing.name = resolvedName
+        return
+      }
+      details.set(id, {
+        id,
+        name: resolvedName || id
+      })
+    }
+
+    if (Array.isArray(d.spouses)) {
+      d.spouses.forEach(spouse => {
+        const id = spouse?.data?.id
+        registerSpouse(id, spouse?.data?.data)
+      })
+    }
+
+    const spouseIds = Array.isArray(d.data?.rels?.spouses) ? d.data.rels.spouses : []
+    spouseIds.forEach(id => {
+      if (!id) return
+      registerSpouse(id, props.store?.getDatum ? props.store.getDatum(id)?.data : undefined)
+    })
+
+    details.forEach(detail => {
+      const dateKey = `union date__ref__${detail.id}`
+      const placeKey = `union place__ref__${detail.id}`
+      const unionDate = safeText(personData[dateKey])
+      const unionPlace = safeText(personData[placeKey])
+      if (unionDate) detail.unionDate = unionDate
+      if (unionPlace) detail.unionPlace = unionPlace
+    })
+
+    return Array.from(details.values())
+  }
+
+  function renderUnionHtml(d: TreeDatum) {
+    const personData = d.data?.data || {}
+    const unionParagraph = safeText(personData["union paragraph"])
+    const spouseDetails = collectSpouseUnionDetails(d)
+    const detailHtml = spouseDetails
+      .map(detail => renderUnionDetail(detail))
+      .filter(Boolean) as string[]
+
+    if (!detailHtml.length && !unionParagraph) {
+      return ''
+    }
+
+    let paragraphHtml = ''
+    if (unionParagraph) {
+      const withBreaks = escapeHtml(unionParagraph).replace(/\r?\n/g, '<br>')
+      paragraphHtml = `<p class="card-union-paragraph">${withBreaks}</p>`
+    }
+
+    return `<div class="card-union">${detailHtml.join('')}${paragraphHtml}</div>`
+  }
+
+  function renderUnionDetail(detail: SpouseUnionDetail) {
+    if (!detail?.id && !detail?.name && !detail?.unionDate && !detail?.unionPlace) return ''
+    const heading = escapeHtml(detail.name || detail.id)
+    const lines: string[] = []
+    if (detail.unionDate) {
+      lines.push(`<div class="card-union-line"><strong>Date d'union :</strong> ${escapeHtml(detail.unionDate)}</div>`)
+    }
+    if (detail.unionPlace) {
+      lines.push(`<div class="card-union-line"><strong>Lieu d'union :</strong> ${escapeHtml(detail.unionPlace)}</div>`)
+    }
+
+    return `
+      <div class="card-union-item">
+        <div class="card-union-heading">Union avec <strong>${heading}</strong></div>
+        ${lines.join('')}
+      </div>`
+  }
+
   return function (this: HTMLElement, d: TreeDatum) {
     this.innerHTML = (`
     <div class="card ${getClassList(d).join(' ')}" data-id="${d.tid}" style="transform: translate(-50%, -50%); pointer-events: auto;">
@@ -36,7 +155,33 @@ export default function CardHtml(props: {
       ${(props.cardInnerHtmlCreator && !d.data._new_rel_data) ? props.cardInnerHtmlCreator(d) : cardInner(d)}
     </div>
     `)
-    this.querySelector('.card')!.addEventListener('click', (e: Event) => props.onCardClick(e, d))
+    const cardNode = this.querySelector('.card')!
+    cardNode.addEventListener('click', (e: Event) => props.onCardClick(e, d))
+    if (!d.data.to_add && !d.data._new_rel_data && !d.all_rels_displayed) {
+      cardNode.classList.add('card-has-hidden-relatives')
+    } else {
+      cardNode.classList.remove('card-has-hidden-relatives')
+    }
+
+    const miniTreeNode = this.querySelector('.mini-tree') as HTMLElement | null
+    if (miniTreeNode) {
+      miniTreeNode.setAttribute('role', 'button')
+      miniTreeNode.setAttribute('tabindex', '0')
+      miniTreeNode.setAttribute('aria-label', 'Autres proches masqués – cliquer pour centrer')
+      miniTreeNode.setAttribute('title', 'Autres proches masqués – cliquer pour centrer')
+      miniTreeNode.dataset.hiddenRelatives = 'true'
+      miniTreeNode.addEventListener('click', event => {
+        event.stopPropagation()
+        if (props.onMiniTreeClick) props.onMiniTreeClick(event, d)
+      })
+      miniTreeNode.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          event.stopPropagation()
+          if (props.onMiniTreeClick) props.onMiniTreeClick(event, d)
+        }
+      })
+    }
     if (props.onCardUpdate) props.onCardUpdate.call(this, d)
 
     if (props.onCardMouseenter) d3.select(this).select('.card').on('mouseenter', e => props.onCardMouseenter!(e, d))
@@ -89,9 +234,9 @@ export default function CardHtml(props: {
     if (d.data._new_rel_data) return newRelDataDisplay(d)
     if (d.data.to_add) return `<div>${props.empty_card_label || 'ADD'}</div>`
     if (d.data.unknown) return `<div>${props.unknown_card_label || 'UNKNOWN'}</div>`
-    return (`
-      ${props.card_display.map(display => `<div>${display(d.data)}</div>`).join('')}
-    `)
+    const baseRows = props.card_display.map(display => `<div>${display(d.data)}</div>`).join('')
+    const unionHtml = renderUnionHtml(d)
+    return `${baseRows}${unionHtml}`
   }
 
   function newRelDataDisplay(d: TreeDatum) {

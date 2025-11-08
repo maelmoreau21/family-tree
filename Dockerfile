@@ -21,7 +21,8 @@ COPY --from=build /app/src/styles ./src/styles
 COPY --from=build /app/uploads ./uploads
 RUN mkdir -p /data /app/uploads
 ENV NODE_ENV=production
-ENV TREE_DATA_PATH=/data/tree.json
+ENV TREE_DB_PATH=/data/family.db
+ENV TREE_DATA_PATH=/data/family.db
 ENV VIEWER_PORT=7920
 ENV BUILDER_PORT=7921
 EXPOSE 7920 7921

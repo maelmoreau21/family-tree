@@ -19,9 +19,9 @@ Family Tree is a polished fork of **family-chart**. It couples an ES module libr
 ├─ dist/                 # Published library (ESM, CJS, types, styles)
 ├─ server/               # Express server powering viewer + builder + uploads
 ├─ static/               # Viewer & builder entrypoints (bundled + fallback ES modules)
-├─ data/tree.json        # Sample dataset written by the builder (config + persons)
+├─ data/family.db        # Primary SQLite dataset (auto-created on first run)
 ├─ uploads/              # User-uploaded avatars (mount this in production)
-├─ scripts/compact-tree.mjs  # Utility to minify / pretty-print datasets
+├─ scripts/compact-tree.mjs  # Utility to compact/export datasets from SQLite
 └─ docs/                 # Additional documentation (FR)
 ```
 
@@ -42,7 +42,8 @@ npm run build
 
 - Viewer: `http://localhost:7920`
 - Builder: `http://localhost:7921`
-- Default dataset: `data/tree.json` (override with `TREE_DATA_PATH`)
+- Default dataset: `data/family.db` (override with `TREE_DB_PATH`, legacy `TREE_DATA_PATH` is still recognised)
+- Optional SQLite API: `tools/sqlite/api.py` (creates the SQLite file and optional JSON seed on first run)
 
 Hot module reloading during development is available through Vite:
 
@@ -60,9 +61,9 @@ The dev server proxies API calls to the Express backend and reloads the static a
 | `npm start` | Launches the production Express server (reads env vars listed below) |
 | `npm run dev` | Starts Vite for local development with live reload |
 | `npm run test` / `npm run test-run` | Open or run the Cypress end-to-end suite |
-| `npm run data:compact` | Rewrites `data/tree.json` (or file passed via `TREE_DATA_PATH`) in compact form |
+| `npm run data:compact` | Rewrites the SQLite dataset (`TREE_DB_PATH`) and exports a compact JSON snapshot |
 
-> `scripts/compact-tree.mjs` accepts `TREE_DATA_PATH`, `TREE_DATA_PRETTY`, and `TREE_BACKUP_DIR`. Use it when you want to shrink or prettify datasets prior to versioning.
+> `scripts/compact-tree.mjs` accepts `TREE_DB_PATH` (or legacy `TREE_DATA_PATH`), `TREE_DATA_PRETTY`, and `TREE_BACKUP_DIR`. Use it when you want to shrink or prettify datasets prior to versioning.
 
 ## Configuration (Environment Variables)
 
@@ -70,8 +71,12 @@ The dev server proxies API calls to the Express backend and reloads the static a
 | --- | --- | --- |
 | `VIEWER_PORT` | `7920` | HTTP port for the read-only viewer |
 | `BUILDER_PORT` | `7921` | HTTP port for the builder UI |
-| `TREE_DATA_PATH` | `<repo>/data/tree.json` or `/data/tree.json` in Docker | Main JSON payload (builder writes to it) |
-| `TREE_DATA_DIR` | Directory of `TREE_DATA_PATH` | Where backups are stored |
+| `TREE_DB_PATH` | `<repo>/data/family.db` | Primary SQLite database used by the server |
+| `TREE_DATA_PATH` | Same as above (legacy name) | Backwards-compatible alias for `TREE_DB_PATH` |
+| `FAMILY_SQLITE_PATH` | `<repo>/data/family.db` | SQLite path used by the optional Flask API |
+| `FAMILY_TREE_JSON_PATH` | _(unset)_ | Optional JSON seed consumed by the Flask API if provided |
+| `TREE_SEED_JSON` | _(unset)_ | Optional JSON seed used by the Node server on first run |
+| `TREE_DATA_DIR` | Directory of `TREE_DB_PATH` | Where backups are stored |
 | `TREE_BACKUP_LIMIT` | `50` | Rolling number of backups to keep |
 | `TREE_BACKUP_DIR` | `<data-dir>/backups` | Override to store snapshots elsewhere |
 | `TREE_DATA_PRETTY` | `false` | Pretty-print JSON when saving (set to `1` to enable) |
@@ -120,10 +125,10 @@ Legacy “array-only” payloads are still accepted. The next save wraps them in
 
 ## Dataset Maintenance
 
-- **Reset from image defaults (Docker)**
+- **Import a JSON snapshot into SQLite (Docker)**
 
   ```powershell
-  docker compose exec family-tree sh -lc "cp /app/examples/data/data.json /data/tree.json && rm -f /data/backups/*.json"
+  docker compose exec family-tree python /app/tools/sqlite/migrate_to_sqlite.py --db /data/family.db --json /data/import.json --reset --with-closure
   ```
 
 - **Compact the active dataset**
@@ -132,14 +137,14 @@ Legacy “array-only” payloads are still accepted. The next save wraps them in
   docker compose exec family-tree node /app/scripts/compact-tree.mjs
   ```
 
-- **Pretty-print on next save**: start the container with `TREE_DATA_PRETTY=1` (or run `TREE_DATA_PRETTY=1 npm start` locally) to have the server rewrite `tree.json` with indentation.
+- **Pretty-print on next save**: start the server with `TREE_DATA_PRETTY=1` (locally or in Docker) to store a prettified JSON payload inside the database and backups.
 
 ### Checking for Duplicates
 
 The viewer automatically annotates duplicated persons (same `id`). To verify a dataset before publishing:
 
 ```powershell
-node -e "import('file://$(Resolve-Path dist/family-tree.esm.js)').then(async m => { const fs = await import('node:fs/promises'); const raw = await fs.readFile(process.env.TREE_DATA_PATH ?? 'data/tree.json', 'utf8'); const payload = JSON.parse(raw); const tree = m.calculateTree(payload.data ?? payload, { main_id: payload.config?.mainId, duplicate_branch_toggle: true }); console.log('duplicates', tree.data.filter(d => d.duplicate).map(d => d.data.id)); })"
+node -e "(async () => { const { resolve } = await import('node:path'); const lib = await import('file://' + resolve('dist/family-tree.esm.js')); const db = await import('./server/db.js'); const dbPath = process.env.TREE_DB_PATH ?? process.env.TREE_DATA_PATH ?? 'data/family.db'; db.initialiseDatabase(dbPath); const payload = db.getTreePayload(dbPath); const tree = lib.calculateTree(payload.data ?? payload, { main_id: payload.config?.mainId, duplicate_branch_toggle: true }); console.log('duplicates', tree.data.filter(d => d.duplicate).map(d => d.data.id)); })().catch(err => { console.error(err); process.exit(1); });"
 ```
 
 An empty array means your IDs are unique.
@@ -161,7 +166,7 @@ docker run `
   --rm `
   -p 7920:7920 `
   -p 7921:7921 `
-  -e TREE_DATA_PATH=/data/tree.json `
+  -e TREE_DB_PATH=/data/family.db `
   -e VIEWER_PORT=7920 `
   -e BUILDER_PORT=7921 `
   -v ${dataDir}:/data `
@@ -169,9 +174,24 @@ docker run `
   family-tree
 ```
 
-- The image seeds `/data/tree.json` with the sample dataset if absent and keeps rolling backups in `/data/backups`.
+- The image initialises `/data/family.db` if absent and keeps rolling backups in `/data/backups`.
 - Mount `/app/uploads` to persist pictures uploaded via the builder.
 - Tune `TREE_PAYLOAD_LIMIT` for very large trees.
+
+### Optional SQLite API container
+
+To expose the SQLite snapshot through Flask (useful for integrating with other services), spin up the dedicated container:
+
+```powershell
+docker build -f tools/sqlite/Dockerfile -t family-tree-sqlite .
+docker run `
+  --rm `
+  -p 5001:5001 `
+  -v ${dataDir}:/data `
+  family-tree-sqlite
+```
+
+The API auto-creates `/data/family.db` (importing from `FAMILY_TREE_JSON_PATH` when provided) and exposes endpoints at `http://localhost:5001`.
 
 ### Docker Compose (Windows PowerShell)
 
@@ -184,6 +204,9 @@ Default mounts:
 
 - `./data` → `/data`
 - `./uploads` → `/app/uploads`
+- `./data` → `/data` (for the SQLite API service)
+
+Once both services are up, the Express backend remains available on ports `7920/7921` and the SQLite API responds on `5001`.
 
 ### Multi-Architecture Builds
 

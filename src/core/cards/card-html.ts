@@ -28,6 +28,7 @@ export class CardHtml {
   card_display: any
   cardImageField: string
   onCardClick: any
+  onMiniTreeClick: any
   style: 'default' | 'imageCircleRect' | 'imageCircle' | 'imageRect' | 'rect'
   mini_tree: boolean
   onCardUpdate: any
@@ -44,7 +45,8 @@ export class CardHtml {
     this.store = store
     this.card_display = [(d:Datum) => `${d.data["first name"]} ${d.data["last name"]}`]
     this.cardImageField = 'avatar'
-    this.onCardClick = this.onCardClickDefault
+  this.onCardClick = this.onCardClickDefault.bind(this)
+  this.onMiniTreeClick = this.onMiniTreeClickDefault.bind(this)
     this.style = 'default'
     this.mini_tree = false
     this.card_dim = {}
@@ -59,6 +61,7 @@ export class CardHtml {
       cardImageField: this.cardImageField,
       defaultPersonIcon: this.defaultPersonIcon,
       onCardClick: this.onCardClick,
+  onMiniTreeClick: this.onMiniTreeClick,
       style: this.style,
       mini_tree: this.mini_tree,
       onCardUpdate: this.onCardUpdate,
@@ -93,9 +96,19 @@ export class CardHtml {
     return this
   }
   
+  setOnMiniTreeClick(onMiniTreeClick: CardHtml['onMiniTreeClick']) {
+    this.onMiniTreeClick = onMiniTreeClick
+    return this
+  }
+  
   onCardClickDefault(e:MouseEvent, d:TreeDatum) {
     this.store.updateMainId(d.data.id)
     this.store.updateTree({})
+  }
+
+  onMiniTreeClickDefault(e:MouseEvent, d:TreeDatum) {
+    this.store.updateMainId(d.data.id)
+    this.store.updateTree({ tree_position: 'main_to_middle' })
   }
   
   setStyle(style: CardHtml['style']) {

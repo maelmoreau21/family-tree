@@ -25,9 +25,11 @@
     <section class="canvas">
       <div id="FamilyChart" class="f3"></div>
       <aside id="personDetails" class="details" aria-live="polite">
-        <section class="search-block" aria-label="Recherche de personne">
+        <section class="search-block" data-role="viewer-search" data-state="loading" aria-label="Recherche de personne">
           <label for="personSearchInput">Rechercher une personne</label>
+          <p class="hint" id="personSearchHint">Tapez un nom, une date, un lieu ou toute autre information.</p>
           <div id="personSearch"></div>
+          <p class="empty" data-role="viewer-search-empty">Aucune personne disponible pour le moment.</p>
         </section>
 
         <section class="info-section" aria-labelledby="infoSectionTitle">

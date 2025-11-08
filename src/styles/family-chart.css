@@ -363,15 +363,80 @@
   justify-content: center;
 }
 
+
+.f3 .card-label .card-union {
+  margin-top: 6px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: left;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.f3 .card-union-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.f3 .card-union-heading {
+  font-weight: 600;
+}
+
+.f3 .card-union-heading strong {
+  font-weight: inherit;
+}
+
+.f3 .card-union-line {
+  display: flex;
+  gap: 4px;
+}
+
+.f3 .card-union-line strong {
+  font-weight: 600;
+}
+
+.f3 .card-union-paragraph {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .f3 div.mini-tree {
   text-align: right;
   position: absolute;
   top: -15px;
   right: -2px;
-  z-index: -1;
+  z-index: 4;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
 }
 .f3 div.mini-tree svg {
   width: 55px;
+  pointer-events: none;
+}
+
+.f3 .card.card-has-hidden-relatives {
+  box-shadow: 0 0 0 2px rgba(97, 191, 82, 0.35);
+}
+
+.f3 .card.card-has-hidden-relatives .card-inner {
+  position: relative;
+}
+
+.f3 .card.card-has-hidden-relatives .mini-tree:hover,
+.f3 .card.card-has-hidden-relatives .mini-tree:focus-visible {
+  transform: translateY(-2px) scale(1.04);
+}
+
+.f3 .card.card-has-hidden-relatives .mini-tree:focus-visible {
+  outline: 2px solid #61bf52;
+  outline-offset: 2px;
 }
 
 .f3 .f3-card-duplicate-tag {

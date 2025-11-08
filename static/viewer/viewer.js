@@ -3,6 +3,9 @@ import * as f3 from '/lib/family-tree.esm.js'
 const statusEl = document.getElementById('status')
 const detailsPanel = document.getElementById('personDetails')
 const searchContainer = document.getElementById('personSearch')
+const searchHint = document.getElementById('personSearchHint')
+const searchRoot = document.querySelector('[data-role="viewer-search"]')
+const searchEmptyEl = document.querySelector('[data-role="viewer-search-empty"]')
 const detailsList = detailsPanel?.querySelector('.detail-list')
 const detailsSummary = detailsPanel?.querySelector('.summary')
 const emptyState = detailsPanel?.querySelector('.empty')
@@ -35,6 +38,120 @@ function sanitizeFieldValues(values) {
     result.push(trimmed)
   })
   return result
+}
+
+function safeTrim(value) {
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+function buildDatasetLabel(datum = {}) {
+  const person = datum.data || {}
+  const first = safeTrim(person['first name'])
+  const last = safeTrim(person['last name'])
+  const base = (first || last) ? [first, last].filter(Boolean).join(' ').trim() : (datum.id ? `Profil ${datum.id}` : 'Profil sans nom')
+  const birth = safeTrim(person['birthday'])
+  return birth ? `${base} (${birth})` : base
+}
+
+function createDatasetSearchOption(datum) {
+  if (!datum || typeof datum.id !== 'string' || !datum.id.trim()) return null
+  const label = buildDatasetLabel(datum)
+  const tokens = new Set()
+  const metaParts = []
+  const metaSeen = new Set()
+
+  const addToken = (value) => {
+    if (typeof value !== 'string') return
+    const trimmed = value.trim()
+    if (!trimmed) return
+    tokens.add(trimmed)
+  }
+
+  const addMeta = (value) => {
+    if (typeof value !== 'string') return
+    const trimmed = value.trim()
+    if (!trimmed) return
+    if (metaSeen.has(trimmed)) return
+    metaSeen.add(trimmed)
+    metaParts.push(trimmed)
+  }
+
+  addToken(label)
+  addToken(String(datum.id))
+
+  const data = datum.data && typeof datum.data === 'object' ? datum.data : {}
+  Object.entries(data).forEach(([rawKey, rawValue]) => {
+    if (typeof rawValue !== 'string') return
+    const trimmed = rawValue.trim()
+    if (!trimmed) return
+    addToken(trimmed)
+    const key = normalizeFieldKey(rawKey)
+    if (key === 'birthday') {
+      addMeta(trimmed)
+      return
+    }
+    if (key === 'death') {
+      addMeta(`✝ ${trimmed}`)
+      return
+    }
+    if (key === 'maiden name') {
+      addMeta(`(${trimmed})`)
+      return
+    }
+    if (key === 'occupation') {
+      addMeta(trimmed)
+      return
+    }
+    if (key === 'location' || key === 'residence' || key === 'birthplace' || key === 'deathplace') {
+      addMeta(trimmed)
+    }
+  })
+
+  const searchText = Array.from(tokens)
+    .map(value => value.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .join(' | ')
+
+  return {
+    label,
+    value: datum.id,
+    searchText,
+    optionHtml: (option) => {
+      const meta = metaParts.length ? `<small>${metaParts.join(' · ')}</small>` : ''
+      return `<div>${option.label_html || option.label}${meta ? `<div class="f3-autocomplete-meta">${meta}</div>` : ''}</div>`
+    }
+  }
+}
+
+function buildSearchOptionsFromDataset(persons) {
+  if (!Array.isArray(persons)) return []
+  const options = []
+  const seen = new Set()
+  persons.forEach(datum => {
+    if (!datum || !datum.id || seen.has(datum.id)) return
+    const option = createDatasetSearchOption(datum)
+    if (!option) return
+    options.push(option)
+    seen.add(datum.id)
+  })
+  options.sort((a, b) => a.label.localeCompare(b.label, 'fr', { sensitivity: 'base' }))
+  return options
+}
+
+function setViewerSearchState(state) {
+  if (!searchRoot) return
+  if (!state) {
+    delete searchRoot.dataset.state
+  } else {
+    searchRoot.dataset.state = String(state)
+  }
+  if (searchEmptyEl) {
+    if (state === 'error') {
+      searchEmptyEl.textContent = 'Impossible de charger la recherche pour le moment.'
+    } else {
+      searchEmptyEl.textContent = 'Aucune personne disponible pour le moment.'
+    }
+  }
 }
 
 const DETAIL_FIELD_ORDER = [
@@ -121,6 +238,8 @@ let latestMeta = {
 let activeFetchController = null
 let searchSummaryPromise = null
 let peopleSummary = null
+let summarySearchOptions = []
+let localSearchOptions = []
 let searchOptions = []
 let lastSelectionContext = { source: 'initial', label: null }
 let peopleSummaryIndex = new Map()
@@ -379,14 +498,80 @@ function hasQueryChanged(nextParams) {
 
 function buildSearchOption(person) {
   const label = typeof person.label === 'string' && person.label.trim() ? person.label.trim() : `Profil ${person.id}`
+  const tokens = new Set()
   const metaParts = []
-  if (typeof person.birthday === 'string' && person.birthday.trim()) metaParts.push(person.birthday.trim())
-  if (typeof person.death === 'string' && person.death.trim()) metaParts.push(`✝ ${person.death.trim()}`)
-  if (typeof person.location === 'string' && person.location.trim()) metaParts.push(person.location.trim())
+  const metaSeen = new Set()
+
+  const addToken = (value) => {
+    if (typeof value !== 'string') return
+    const trimmed = value.trim()
+    if (!trimmed) return
+    tokens.add(trimmed)
+  }
+
+  const addMeta = (value) => {
+    if (typeof value !== 'string') return
+    const trimmed = value.trim()
+    if (!trimmed) return
+    const key = trimmed.toLowerCase()
+    if (metaSeen.has(key)) return
+    metaSeen.add(key)
+    metaParts.push(trimmed)
+  }
+
+  const registerField = (rawKey, rawValue) => {
+    if (typeof rawValue !== 'string') return
+    const trimmed = rawValue.trim()
+    if (!trimmed) return
+    addToken(trimmed)
+    const key = normalizeFieldKey(rawKey)
+    if (key === 'birthday') {
+      addMeta(trimmed)
+      return
+    }
+    if (key === 'death') {
+      addMeta(`✝ ${trimmed}`)
+      return
+    }
+    if (key === 'maiden name') {
+      addMeta(`(${trimmed})`)
+      return
+    }
+    if (key === 'location' || key === 'residence' || key === 'birthplace' || key === 'deathplace') {
+      addMeta(trimmed)
+      return
+    }
+  }
+
+  addToken(label)
+  addToken(String(person.id || ''))
+
+  if (typeof person.searchText === 'string' && person.searchText.trim()) {
+    person.searchText.split('|').forEach(fragment => addToken(fragment))
+  }
+
+  registerField('birthday', person.birthday)
+  registerField('death', person.death)
+  registerField('location', person.location)
+  registerField('residence', person.residence)
+  registerField('maiden name', person.maidenName)
+
+  if (person.fields && typeof person.fields === 'object') {
+    Object.entries(person.fields).forEach(([fieldKey, fieldValue]) => {
+      registerField(fieldKey, fieldValue)
+    })
+  }
+
+  const normalisedTokens = Array.from(tokens)
+    .map(value => value.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+
+  const searchText = normalisedTokens.length ? normalisedTokens.join(' | ') : label
 
   return {
     label,
     value: person.id,
+    searchText,
     optionHtml: (option) => {
       const title = option.label_html || option.label
       const meta = metaParts.length ? `<small>${metaParts.join(' · ')}</small>` : ''
@@ -404,7 +589,69 @@ function buildSearchOptionsFromSummary(summary) {
   return options
 }
 
+function combineSearchOptions() {
+  const merged = new Map()
+  const mergeEntry = (option) => {
+    if (!option || !option.value) return
+    if (!merged.has(option.value)) {
+      merged.set(option.value, { ...option })
+      return
+    }
+    const existing = merged.get(option.value)
+    const mergedSearchText = mergeSearchText(existing.searchText, option.searchText)
+    if (mergedSearchText) {
+      existing.searchText = mergedSearchText
+    }
+    if (typeof existing.optionHtml !== 'function' && typeof option.optionHtml === 'function') {
+      existing.optionHtml = option.optionHtml
+    }
+  }
+
+  const mergeSearchText = (first, second) => {
+    const segments = new Set()
+    const add = (value) => {
+      if (typeof value !== 'string') return
+      value.split('|').forEach(part => {
+        const trimmed = part.trim()
+        if (trimmed) segments.add(trimmed)
+      })
+    }
+    add(first)
+    add(second)
+    if (!segments.size) return (first || second || '')
+    return Array.from(segments).join(' | ')
+  }
+
+  localSearchOptions.forEach(mergeEntry)
+  summarySearchOptions.forEach(mergeEntry)
+
+  searchOptions = Array.from(merged.values())
+  searchOptions.sort((a, b) => a.label.localeCompare(b.label, 'fr', { sensitivity: 'base' }))
+  if (chartInstance) {
+    updateSearchOptionsForChart(chartInstance)
+  }
+}
+
+function rebuildLocalSearchOptions(chart) {
+  if (!chart || !chart.store || typeof chart.store.getData !== 'function') {
+    localSearchOptions = []
+    combineSearchOptions()
+    return
+  }
+
+  try {
+    const persons = chart.store.getData()
+    localSearchOptions = buildSearchOptionsFromDataset(persons)
+  } catch (error) {
+    console.warn('[viewer] Impossible de reconstruire l’index local de recherche', error)
+    localSearchOptions = []
+  }
+
+  combineSearchOptions()
+}
+
 function setSearchLoadingState(state) {
+  setViewerSearchState(state)
   if (!searchContainer) return
   if (!state) {
     searchContainer.dataset.state = ''
@@ -436,14 +683,15 @@ async function ensurePeopleSummary(force = false) {
           }
         })
       }
-      searchOptions = buildSearchOptionsFromSummary(summary)
-      setSearchLoadingState('ready')
+      summarySearchOptions = buildSearchOptionsFromSummary(summary)
+      setViewerSearchState(summarySearchOptions.length ? 'ready' : 'empty')
+      combineSearchOptions()
       return peopleSummary
     })
     .catch(error => {
       if (error.name === 'AbortError') return peopleSummary
       console.error('Impossible de charger l\'index de recherche', error)
-      setSearchLoadingState('error')
+      setViewerSearchState('error')
       throw error
     })
     .finally(() => {
@@ -458,8 +706,13 @@ async function ensurePeopleSummary(force = false) {
 
 function updateSearchOptionsForChart(chart) {
   if (!chart || !chart.personSearch) return
-  if (!searchOptions || !searchOptions.length) return
-  chart.personSearch.setOptionsGetter(() => searchOptions)
+  const options = Array.isArray(searchOptions) ? searchOptions : []
+  chart.personSearch.setOptionsGetter(() => options)
+  if (options.length) {
+    setViewerSearchState('ready')
+  } else if (peopleSummary) {
+    setViewerSearchState('empty')
+  }
 }
 
 function setStatus(message, type = 'info') {
@@ -533,7 +786,7 @@ function updateDatasetMeta() {
   })
 }
 
-function applyViewerConfig({ reposition = false, initial = false } = {}) {
+function applyViewerConfig({ treePosition = 'inherit', initial = false } = {}) {
   if (!chartInstance) return
   if (typeof viewerConfig.ancestryDepth === 'number' && Number.isFinite(viewerConfig.ancestryDepth)) {
     chartInstance.setAncestryDepth(viewerConfig.ancestryDepth)
@@ -557,7 +810,11 @@ function applyViewerConfig({ reposition = false, initial = false } = {}) {
   updatePerformanceControlsUI(viewerConfig)
   isApplyingViewerConfig = false
 
-  chartInstance.updateTree({ initial, tree_position: reposition ? 'main_to_middle' : 'inherit' })
+  let nextPosition = 'inherit'
+  if (treePosition === 'fit' || treePosition === 'main_to_middle') {
+    nextPosition = treePosition
+  }
+  chartInstance.updateTree({ initial, tree_position: nextPosition })
   updateDatasetMeta()
 }
 
@@ -571,7 +828,8 @@ function attachPerformanceHandlers() {
     requestSubtree({ ancestryDepth: value }, {
       reason: 'ancestry-depth-change',
       source: 'controls',
-      reposition: true,
+      reposition: false,
+      treePosition: 'inherit',
       preservePreferences: true
     })
   })
@@ -585,7 +843,8 @@ function attachPerformanceHandlers() {
     requestSubtree({ progenyDepth: value }, {
       reason: 'progeny-depth-change',
       source: 'controls',
-      reposition: true,
+      reposition: false,
+      treePosition: 'inherit',
       preservePreferences: true
     })
   })
@@ -596,7 +855,7 @@ function attachPerformanceHandlers() {
     const previous = viewerConfig.miniTree !== false
     if (enabled === previous) return
     viewerConfig = { ...viewerConfig, miniTree: enabled }
-    applyViewerConfig({ reposition: false })
+    applyViewerConfig({ treePosition: 'inherit' })
   })
 
   duplicateToggle?.addEventListener('change', () => {
@@ -605,7 +864,7 @@ function attachPerformanceHandlers() {
     const previous = viewerConfig.duplicateBranchToggle !== false
     if (enabled === previous) return
     viewerConfig = { ...viewerConfig, duplicateBranchToggle: enabled }
-    applyViewerConfig({ reposition: false })
+    applyViewerConfig({ treePosition: 'inherit' })
   })
 }
 
@@ -735,11 +994,21 @@ async function progressiveSubtreeRequest(initialParams, context = {}) {
       }
     }
 
+    const firstBatch = iterations === 1
+    const batchTreePosition = firstBatch
+      ? (context.treePosition !== undefined
+        ? context.treePosition
+        : (context.reposition === false
+          ? 'inherit'
+          : (context.source === 'search' ? 'main_to_middle' : 'inherit')))
+      : 'inherit'
+
     const result = await fetchSubtreeOnce(currentParams, {
       ...context,
       controller,
       progressiveBatch: true,
-      reposition: iterations === 1 ? context.reposition : false
+      reposition: firstBatch ? context.reposition : false,
+      treePosition: batchTreePosition
     })
 
     if (!result || result.aborted) {
@@ -879,7 +1148,7 @@ function fetchFullTree(context = {}) {
         meta: metaInfo
       }, {
         preservePreferences: context.preservePreferences !== false,
-        reposition: true,
+        treePosition: context.treePosition || 'fit',
         source: context.source || 'system',
         selectedLabel: context.selectedLabel,
         mainId: resolvedMainId
@@ -916,9 +1185,14 @@ function applySubtreePayload(payload, context = {}) {
   }
 
   const selectedLabel = context.selectedLabel || resolveLabelFromSummary(resolvedMainId)
+  const treePosition = context.treePosition !== undefined
+    ? context.treePosition
+    : (context.reposition === false
+      ? 'inherit'
+      : (context.source === 'search' ? 'main_to_middle' : 'inherit'))
   renderChart({ data: persons, config, meta: metaInfo }, {
     preservePreferences: context.preservePreferences !== false,
-    reposition: context.reposition !== false,
+    treePosition,
     source: context.source || lastSelectionContext.source,
     selectedLabel,
     mainId: resolvedMainId
@@ -958,12 +1232,109 @@ function buildDetailEntries(person = {}) {
 
   const seen = new Set(DETAIL_FIELD_ORDER)
   Object.entries(normalizedPerson).forEach(([field, value]) => {
+    if (isUnionReferenceKey(field)) return
     if (seen.has(field)) return
     if (!hasContent(value)) return
     entries.push({ field, value, mandatory: false })
   })
 
   return entries
+}
+
+function isUnionReferenceKey(field) {
+  if (typeof field !== 'string') return false
+  return field.startsWith('union date__ref__') || field.startsWith('union place__ref__')
+}
+
+function collectSpouseUnionDetails(datum) {
+  if (!datum || !datum.data) return []
+  const personData = datum.data || {}
+  const candidateIds = new Set()
+
+  const spouseIds = Array.isArray(datum.rels?.spouses) ? datum.rels.spouses : []
+  spouseIds.forEach(id => {
+    if (id) candidateIds.add(id)
+  })
+
+  Object.keys(personData).forEach(key => {
+    if (!isUnionReferenceKey(key)) return
+    const [, refId] = key.split('__ref__')
+    if (refId) candidateIds.add(refId)
+  })
+
+  const details = []
+  candidateIds.forEach(id => {
+    if (!id) return
+    const unionDate = safeTrim(personData[`union date__ref__${id}`])
+    const unionPlace = safeTrim(personData[`union place__ref__${id}`])
+    const storeDatum = chartInstance?.store?.getDatum?.(id)
+    const name = storeDatum ? buildDatasetLabel(storeDatum) : `Profil ${id}`
+    details.push({
+      id,
+      name,
+      unionDate,
+      unionPlace
+    })
+  })
+
+  return details
+}
+
+function renderUnionDetails(datum) {
+  if (!detailsList) return 0
+  const unions = collectSpouseUnionDetails(datum)
+  if (!unions.length) return 0
+
+  const item = document.createElement('article')
+  item.className = 'detail-item detail-unions'
+
+  const labelEl = document.createElement('span')
+  labelEl.className = 'detail-label'
+  labelEl.textContent = unions.length > 1 ? 'Unions' : 'Union'
+  item.append(labelEl)
+
+  const valueEl = document.createElement('div')
+  valueEl.className = 'detail-value union-list'
+
+  unions.forEach(detail => {
+    const entryEl = document.createElement('div')
+    entryEl.className = 'union-entry'
+
+    const nameEl = document.createElement('p')
+    nameEl.className = 'union-name'
+    nameEl.textContent = detail.name
+    entryEl.append(nameEl)
+
+    entryEl.append(createUnionRow("Date d'union", detail.unionDate))
+    entryEl.append(createUnionRow("Lieu d'union", detail.unionPlace))
+
+    valueEl.append(entryEl)
+  })
+
+  item.append(valueEl)
+  detailsList.append(item)
+  return unions.length
+}
+
+function createUnionRow(label, value) {
+  const row = document.createElement('p')
+  row.className = 'union-row'
+
+  const labelSpan = document.createElement('span')
+  labelSpan.className = 'union-row-label'
+  labelSpan.textContent = `${label} :`
+
+  const valueSpan = document.createElement('span')
+  valueSpan.className = 'union-row-value'
+  if (!value) {
+    valueSpan.classList.add('empty')
+    valueSpan.textContent = DEFAULT_EMPTY_LABEL
+  } else {
+    valueSpan.textContent = value
+  }
+
+  row.append(labelSpan, valueSpan)
+  return row
 }
 
 function formatFieldLabel(rawField) {
@@ -1093,6 +1464,8 @@ function showDetailsForDatum(datum) {
     rendered += 1
   })
 
+  rendered += renderUnionDetails(datum)
+
   if (rendered === 0) {
     emptyState.textContent = 'Aucune information supplémentaire disponible.'
     emptyState.classList.remove('hidden')
@@ -1110,7 +1483,7 @@ function handlePersonSelection(datum, source = 'card') {
 
   if (chartInstance) {
     chartInstance.updateMainId(datum.id)
-    chartInstance.updateTree({ initial: false, tree_position: 'main_to_middle' })
+    applyViewerConfig({ treePosition: 'inherit', initial: false })
   }
 
   const prefixLabel = source === 'search' ? 'Resultat' : 'Selection'
@@ -1126,7 +1499,8 @@ function handlePersonSelection(datum, source = 'card') {
 
   requestSubtree({ mainId: datum.id }, {
     source,
-    reposition: true,
+    treePosition: source === 'search' ? 'main_to_middle' : 'inherit',
+    reposition: source === 'search',
     preservePreferences: true,
     selectedLabel: name,
     loadingLabel: `${source === 'search' ? 'Recherche' : 'Selection'} : ${name}...`
@@ -1137,6 +1511,10 @@ function setupSearch(chart) {
   if (!searchContainer) return
 
   searchContainer.innerHTML = ''
+  const initialState = searchOptions && searchOptions.length
+    ? 'ready'
+    : (peopleSummary && peopleSummary.length === 0 ? 'empty' : 'loading')
+  setViewerSearchState(initialState)
 
   chart.setPersonDropdown(datum => {
     const person = datum.data || {}
@@ -1147,7 +1525,7 @@ function setupSearch(chart) {
     return extras.length ? `${name} (${extras.join(' · ')})` : name
   }, {
     cont: searchContainer,
-  placeholder: 'Rechercher une personne...',
+  placeholder: 'Rechercher (nom, date, lieu, etc.)',
     onSelect: (id) => {
       const selected = chart.store?.getDatum?.(id)
       if (selected) {
@@ -1157,6 +1535,7 @@ function setupSearch(chart) {
       const fallbackLabel = resolveLabelFromSummary(id) || `Profil ${id}`
       requestSubtree({ mainId: id }, {
         source: 'search',
+        treePosition: 'main_to_middle',
         reposition: true,
         preservePreferences: true,
         selectedLabel: fallbackLabel,
@@ -1185,6 +1564,10 @@ function setupSearch(chart) {
   const searchInput = searchContainer.querySelector('input')
   if (searchInput) {
     searchInput.id = 'personSearchInput'
+    searchInput.setAttribute('placeholder', 'Rechercher (nom, date, lieu, etc.)')
+    if (searchHint && searchHint.id) {
+      searchInput.setAttribute('aria-describedby', searchHint.id)
+    }
   }
 
   updateSearchOptionsForChart(chart)
@@ -1199,21 +1582,27 @@ function renderChart(payload, options = {}) {
     throw new Error('Conteneur du graphique introuvable')
   }
 
-  if (chartInstance && typeof chartInstance.unSetPersonSearch === 'function') {
-    chartInstance.unSetPersonSearch()
-  }
-
-  container.innerHTML = ''
-  resetDetails()
-
   const normalised = payload && payload.data !== undefined
     ? payload
     : normaliseTreePayload(payload)
 
   const dataArray = Array.isArray(normalised.data) ? normalised.data : []
   const rawConfig = normalised.config || {}
+  const isInitialRender = !chartInstance
 
-  const chart = f3.createChart(chartSelector, dataArray)
+  if (isInitialRender) {
+    container.innerHTML = ''
+  }
+
+  resetDetails()
+
+  if (!chartInstance) {
+    chartInstance = f3.createChart(chartSelector, dataArray)
+  } else {
+    chartInstance.updateData(dataArray)
+  }
+
+  const chart = chartInstance
   const baseConfig = applyConfigToChart(chart, rawConfig)
 
   const mergedConfig = {
@@ -1243,17 +1632,62 @@ function renderChart(payload, options = {}) {
   viewerConfig = { ...mergedConfig }
   viewerConfig.mainId = mergedConfig.mainId
 
-  chartInstance = chart
-
-  const initialCardDisplay = viewerConfig.cardDisplay && viewerConfig.cardDisplay.length
+  const cardDisplayConfig = viewerConfig.cardDisplay && viewerConfig.cardDisplay.length
     ? viewerConfig.cardDisplay.map(row => [...row])
     : DEFAULT_CARD_DISPLAY.map(row => [...row])
 
-  const card = chart.setCardHtml()
-    .setCardDisplay(initialCardDisplay)
-    .setMiniTree(viewerConfig.miniTree !== false)
+  if (!cardInstance) {
+    cardInstance = chart.setCardHtml()
+  }
 
-  cardInstance = card
+  if (typeof cardInstance.setCardDisplay === 'function') {
+    cardInstance.setCardDisplay(cardDisplayConfig)
+  }
+  if (typeof cardInstance.setMiniTree === 'function') {
+    cardInstance.setMiniTree(viewerConfig.miniTree !== false)
+  }
+
+  if (typeof cardInstance.setOnCardClick === 'function') {
+    cardInstance.setOnCardClick((event, treeDatum) => {
+      const id = treeDatum?.data?.id
+      if (!id) return
+      const datum = chart.store?.getDatum?.(id)
+      if (datum) {
+        handlePersonSelection(datum, 'card')
+      } else {
+        const fallbackLabel = resolveLabelFromSummary(id) || `Profil ${id}`
+        requestSubtree({ mainId: id }, {
+          source: 'card',
+          treePosition: 'inherit',
+          reposition: false,
+          preservePreferences: true,
+          selectedLabel: fallbackLabel,
+          loadingLabel: `Selection : ${fallbackLabel}...`
+        })
+      }
+    })
+  }
+
+  if (typeof cardInstance.setOnMiniTreeClick === 'function') {
+    cardInstance.setOnMiniTreeClick((event, treeDatum) => {
+      const id = treeDatum?.data?.id
+      if (!id) return
+      const datum = chart.store?.getDatum?.(id)
+      if (datum) {
+        handlePersonSelection(datum, 'card')
+      } else {
+        const fallbackLabel = resolveLabelFromSummary(id) || `Profil ${id}`
+        requestSubtree({ mainId: id }, {
+          source: 'card',
+          treePosition: 'inherit',
+          reposition: false,
+          preservePreferences: true,
+          selectedLabel: fallbackLabel,
+          loadingLabel: `Selection : ${fallbackLabel}...`
+        })
+      }
+    })
+  }
 
   chart.setDuplicateBranchToggle(viewerConfig.duplicateBranchToggle !== false)
 
@@ -1261,32 +1695,26 @@ function renderChart(payload, options = {}) {
   updatePerformanceControlsUI(viewerConfig)
   isApplyingViewerConfig = false
 
-  card.setOnCardClick((event, treeDatum) => {
-    card.onCardClickDefault(event, treeDatum)
-    const id = treeDatum?.data?.id
-    if (!id) return
-    const datum = chart.store?.getDatum?.(id)
-    if (datum) {
-      handlePersonSelection(datum, 'card')
-    } else {
-      const fallbackLabel = resolveLabelFromSummary(id) || `Profil ${id}`
-      requestSubtree({ mainId: id }, {
-        source: 'card',
-        reposition: true,
-        preservePreferences: true,
-        selectedLabel: fallbackLabel,
-        loadingLabel: `Selection : ${fallbackLabel}...`
-      })
-    }
-  })
-
   if (viewerConfig.mainId) {
     chart.updateMainId(viewerConfig.mainId)
   }
 
-  setupSearch(chart)
+  rebuildLocalSearchOptions(chart)
 
-  applyViewerConfig({ reposition: options.reposition !== false, initial: options.preservePreferences === false })
+  if (isInitialRender) {
+    setupSearch(chart)
+  } else {
+    updateSearchOptionsForChart(chart)
+  }
+
+  const initialUpdate = options.preservePreferences === false
+  const requestedTreePosition = options.treePosition
+  const defaultTreePosition = requestedTreePosition
+    || (options.source === 'search'
+      ? 'main_to_middle'
+      : (isInitialRender ? 'fit' : 'inherit'))
+
+  applyViewerConfig({ treePosition: defaultTreePosition, initial: initialUpdate })
 
   const mainDatum = chart.getMainDatum?.()
   const effectiveMainId = chart.store?.getMainId?.() || viewerConfig.mainId
