@@ -48,8 +48,7 @@ const DEFAULT_SEED_DATASET = {
       data: {
         'first name': 'Inconnu',
         'last name': 'Profil',
-        gender: '',
-        notes: 'Remplacez ce profil pour demarrer votre arbre.'
+            gender: ''
       },
       rels: {
         spouses: [],

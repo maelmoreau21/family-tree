@@ -1,4 +1,3 @@
-import {checkIfRelativesConnectedWithoutPerson} from "../handlers/check-person-connection"
 import { Data, Datum } from "../types/data"
 import {createNewPerson} from "./new-person"
 
@@ -44,36 +43,31 @@ export function removeToAdd(datum: Datum, data_stash: Data) {
 }
 
 export function deletePerson(datum: Datum, data_stash: Data, clean_to_add: boolean = true) {
-  if (!checkIfRelativesConnectedWithoutPerson(datum, data_stash)) {
-    changeToUnknown()
-    return {success: true}
-  } else {
-    executeDelete()
-    if (clean_to_add) removeToAddFromData(data_stash)
-    return {success: true};
-  }
+  executeDelete()
+  if (clean_to_add) removeToAddFromData(data_stash)
+  return { success: true }
 
   function executeDelete() {
     data_stash.forEach(d => {
-      for (let k in d.rels) {
-        if (!d.rels.hasOwnProperty(k)) continue
-        const key = k as keyof Datum['rels'];
-        if (Array.isArray(d.rels[key]) && d.rels[key].includes(datum.id)) {
-          d.rels[key].splice(d.rels[key].findIndex(did => did === datum.id), 1)
+      for (const k in d.rels) {
+        if (!Object.prototype.hasOwnProperty.call(d.rels, k)) continue
+        const key = k as keyof Datum['rels']
+        const relList = d.rels[key]
+        if (Array.isArray(relList)) {
+          const idx = relList.indexOf(datum.id)
+          if (idx !== -1) relList.splice(idx, 1)
         }
       }
     })
-    onDeleteSyncRelReference(datum, data_stash)
-    data_stash.splice(data_stash.findIndex(d => d.id === datum.id), 1)
-    if (data_stash.length === 0) data_stash.push(createNewPerson({data: {gender: 'M'}}))
-  }
 
-  function changeToUnknown() {
     onDeleteSyncRelReference(datum, data_stash)
-    datum.data = {
-      gender: datum.data.gender,
+
+    const index = data_stash.findIndex(d => d.id === datum.id)
+    if (index !== -1) data_stash.splice(index, 1)
+
+    if (data_stash.length === 0) {
+      data_stash.push(createNewPerson({ data: { gender: 'M' } }))
     }
-    datum.unknown = true
   }
 }
 
