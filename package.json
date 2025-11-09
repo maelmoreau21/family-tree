@@ -1,6 +1,6 @@
 {
   "name": "family-tree",
-  "version": "0.9.0",
+  "version": "1.0.0",
   "type": "module",
   "description": "Family Tree creator and viewer (forked from family-chart)",
   "keywords": [
@@ -9,10 +9,10 @@
     "family tree",
     "d3"
   ],
-  "homepage": "https://donatso.github.io/family-chart/",
+  "homepage": "https://maelmoreau21.github.io/family-tree/",
   "license": "ISC",
   "author": {
-    "name": "donatso"
+    "name": "maelmoreau21"
   },
   "main": "dist/family-tree.js",
   "types": "dist/types/index.d.ts",
@@ -33,7 +33,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/donatso/family-chart.git"
+    "url": "git+https://github.com/maelmoreau21/family-tree.git"
   },
   "files": [
     "dist/**/*.js",
