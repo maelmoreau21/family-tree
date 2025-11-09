@@ -792,7 +792,15 @@ function createTreeApi({ canWrite }) {
           dropIndexes = parseBooleanParam(req.query.dropIndexes, true)
         }
 
-        await writeTreeData(payload, { dropIndexes })
+        // fastImport: when true, the DB layer may relax synchronous pragma to speed up bulk inserts.
+        let fastImport = false
+        if (hasPayloadField && Object.prototype.hasOwnProperty.call(body, 'fastImport')) {
+          fastImport = parseBooleanParam(body.fastImport, false)
+        } else if (req.query.fastImport !== undefined) {
+          fastImport = parseBooleanParam(req.query.fastImport, false)
+        }
+
+        await writeTreeData(payload, { dropIndexes, fastImport })
         res.status(204).end()
       } catch (error) {
         console.error('[server] admin import failed', error)

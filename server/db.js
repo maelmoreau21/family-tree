@@ -89,6 +89,14 @@ function ensureSchema(db) {
   } catch (e) {
     ftsEnabled = false
   }
+
+  // Additional helpful indexes for large datasets: timestamps
+  try {
+    db.exec('CREATE INDEX IF NOT EXISTS idx_persons_created_at ON persons(created_at)')
+    db.exec('CREATE INDEX IF NOT EXISTS idx_persons_updated_at ON persons(updated_at)')
+  } catch (e) {
+    // ignore failures for older sqlite builds
+  }
 }
 
 function applyMigrations(db) {
@@ -186,6 +194,8 @@ function rebuildRelationalTables(db, payload, options = {}) {
       // read current value if possible
       try { originalSynchronous = db.pragma('synchronous', { simple: true }) } catch (e) { originalSynchronous = null }
       db.pragma('synchronous = OFF')
+      // try to set a reasonable WAL auto-checkpoint to avoid unbounded WAL growth
+      try { db.pragma('wal_autocheckpoint = 1000') } catch (e) { /* ignore */ }
     } catch (e) {
       // ignore
     }
@@ -194,6 +204,7 @@ function rebuildRelationalTables(db, payload, options = {}) {
     try {
       db.exec('DROP INDEX IF EXISTS idx_persons_given_name')
       db.exec('DROP INDEX IF EXISTS idx_persons_family_name')
+      db.exec('DROP INDEX IF EXISTS idx_persons_name')
       droppedIndexes = true
     } catch (e) {
       // ignore failures; proceed without dropping
@@ -276,6 +287,11 @@ function rebuildRelationalTables(db, payload, options = {}) {
       db.exec('CREATE INDEX IF NOT EXISTS idx_persons_given_name ON persons(given_name)')
       db.exec('CREATE INDEX IF NOT EXISTS idx_persons_family_name ON persons(family_name)')
       db.exec('CREATE INDEX IF NOT EXISTS idx_persons_name ON persons(family_name, given_name)')
+      // Ensure timestamp indexes exist after import
+      try {
+        db.exec('CREATE INDEX IF NOT EXISTS idx_persons_created_at ON persons(created_at)')
+        db.exec('CREATE INDEX IF NOT EXISTS idx_persons_updated_at ON persons(updated_at)')
+      } catch (e) { /* ignore */ }
     } catch (e) {
       console.warn('[db] Failed to recreate indexes:', e && e.message ? e.message : e)
     }
