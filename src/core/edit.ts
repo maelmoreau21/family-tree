@@ -22,6 +22,7 @@ type Card = CardHtml | CardSvg
 
 const FIELD_LABEL_MAP: Record<string, string> = {
   'first name': 'Prénom',
+  'first names': 'Prénoms',
   'last name': 'Nom',
   'nickname': 'Surnom',
   'maiden name': 'Nom de jeune fille',
@@ -104,6 +105,7 @@ export class EditTree {
   
     this.fields = [
       {type: 'text', label: 'Prénom', id: 'first name'},
+      {type: 'text', label: 'Prénoms', id: 'first names'},
       {type: 'text', label: 'Nom', id: 'last name'},
       {type: 'text', label: 'Date de naissance', id: 'birthday'},
       {type: 'text', label: 'Avatar', id: 'avatar'}
