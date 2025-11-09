@@ -107,6 +107,7 @@ if (panelToggleBtn) {
 
 const DISPLAY_FIELD_LABELS = new Map([
   ['first name', 'Prénom'],
+  ['first names', 'Prénoms'],
   ['last name', 'Nom'],
   ['birthday', 'Date de naissance'],
   ['death', 'Date de Décès'],
@@ -145,14 +146,15 @@ const DISPLAY_DEFAULTS = {
 
 const EDITABLE_DEFAULTS = [
   { value: 'first name', label: 'Prénom', checked: true },
+  { value: 'first names', label: 'Prénoms', checked: true },
   { value: 'last name', label: 'Nom', checked: true },
-  { value: 'maiden name', label: 'Nom de naissance', checked: false },
+  { value: 'maiden name', label: 'Nom de naissance', checked: true },
   { value: 'birthday', label: 'Date de naissance', checked: true },
-  { value: 'death', label: 'Date de Décès', checked: false },
+  { value: 'death', label: 'Date de Décès', checked: true },
   { value: 'avatar', label: 'Avatar', checked: true },
   { value: 'gender', label: 'Genre', checked: true },
-  { value: 'birthplace', label: 'Lieu de naissance', checked: false },
-  { value: 'deathplace', label: 'Lieu de Décès', checked: false },
+  { value: 'birthplace', label: 'Lieu de naissance', checked: true },
+  { value: 'deathplace', label: 'Lieu de Décès', checked: true },
   { value: 'bio', label: 'Biographie', checked: false }
 ]
 
