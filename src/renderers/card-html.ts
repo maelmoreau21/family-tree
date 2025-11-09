@@ -88,7 +88,7 @@ export default function CardHtml(props: {
   function getCardInnerImageCircle(d: TreeDatum) {
     return (`
     <div class="card-inner card-image-circle" ${getCardStyle()}>
-      ${d.data.data[props.cardImageField] ? `<img src="${d.data.data[props.cardImageField]}" ${getCardImageStyle()}>` : noImageIcon(d)}
+  ${d.data.data[props.cardImageField] ? `<img loading="lazy" decoding="async" src="${d.data.data[props.cardImageField]}" ${getCardImageStyle()}>` : noImageIcon(d)}
       <div class="card-label">${textDisplay(d)}</div>
       ${d.duplicate ? getCardDuplicateTag(d) : ''}
     </div>
@@ -98,7 +98,7 @@ export default function CardHtml(props: {
   function getCardInnerImageRect(d: TreeDatum) {
     return (`
     <div class="card-inner card-image-rect" ${getCardStyle()}>
-      ${d.data.data[props.cardImageField] ? `<img src="${d.data.data[props.cardImageField]}" ${getCardImageStyle()}>` : noImageIcon(d)}
+  ${d.data.data[props.cardImageField] ? `<img loading="lazy" decoding="async" src="${d.data.data[props.cardImageField]}" ${getCardImageStyle()}>` : noImageIcon(d)}
       <div class="card-label">${textDisplay(d)}</div>
       ${d.duplicate ? getCardDuplicateTag(d) : ''}
     </div>

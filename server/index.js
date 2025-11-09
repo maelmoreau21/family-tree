@@ -11,7 +11,8 @@ import {
   initialiseDatabase,
   getTreePayload,
   setTreePayload,
-  getLastUpdatedAt
+  getLastUpdatedAt,
+  rebuildFts
 } from './db.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -43,108 +44,33 @@ const TREE_SEED_JSON = typeof process.env.TREE_SEED_JSON === 'string' && process
 const DEFAULT_SEED_DATASET = {
   data: [
     {
-      id: 'alex-garnier',
+      id: 'unknown-person',
       data: {
-        'first name': 'Alex',
-        'last name': 'Garnier',
-        birthday: '1983-03-15',
-        occupation: 'Engineer'
+        'first name': 'Inconnu',
+        'last name': 'Profil',
+        gender: '',
+        notes: 'Remplacez ce profil pour demarrer votre arbre.'
       },
       rels: {
-        spouses: ['lea-roux'],
-        children: ['chloe-garnier', 'matteo-garnier', 'ines-garnier'],
-        parents: ['pierre-garnier', 'julie-garnier']
-      }
-    },
-    {
-      id: 'lea-roux',
-      data: {
-        'first name': 'Lea',
-        'last name': 'Roux',
-        birthday: '1984-07-22',
-        occupation: 'Architect'
-      },
-      rels: {
-        spouses: ['alex-garnier'],
-        children: ['chloe-garnier', 'matteo-garnier', 'ines-garnier'],
-        parents: []
-      }
-    },
-    {
-      id: 'chloe-garnier',
-      data: {
-        'first name': 'Chloe',
-        'last name': 'Garnier',
-        birthday: '2010-02-11'
-      },
-      rels: {
-        parents: ['alex-garnier', 'lea-roux'],
         spouses: [],
-        children: []
-      }
-    },
-    {
-      id: 'matteo-garnier',
-      data: {
-        'first name': 'Matteo',
-        'last name': 'Garnier',
-        birthday: '2012-06-05'
-      },
-      rels: {
-        parents: ['alex-garnier', 'lea-roux'],
-        spouses: [],
-        children: []
-      }
-    },
-    {
-      id: 'ines-garnier',
-      data: {
-        'first name': 'Ines',
-        'last name': 'Garnier',
-        birthday: '2016-10-19'
-      },
-      rels: {
-        parents: ['alex-garnier', 'lea-roux'],
-        spouses: [],
-        children: []
-      }
-    },
-    {
-      id: 'pierre-garnier',
-      data: {
-        'first name': 'Pierre',
-        'last name': 'Garnier',
-        birthday: '1956-04-30'
-      },
-      rels: {
-        spouses: ['julie-garnier'],
-        children: ['alex-garnier'],
+        children: [],
         parents: []
-      }
-    },
-    {
-      id: 'julie-garnier',
-      data: {
-        'first name': 'Julie',
-        'last name': 'Garnier',
-        birthday: '1960-12-12'
       },
-      rels: {
-        spouses: ['pierre-garnier'],
-        children: ['alex-garnier'],
-        parents: []
-      }
+      main: true,
+      unknown: true
     }
   ],
   config: {
-    mainId: 'alex-garnier',
+    mainId: 'unknown-person',
     cardXSpacing: 240,
     cardYSpacing: 140,
-    orientation: 'vertical'
+    orientation: 'vertical',
+    miniTree: false
   },
   meta: {
     seeded: true,
-    source: 'default-sqlite'
+    source: 'default-empty-profile',
+    seedVersion: '2025-11-unknown-profile'
   }
 };
 
@@ -245,9 +171,9 @@ async function readTreeData() {
   return getTreePayload(TREE_DB_PATH)
 }
 
-async function writeTreeData(data) {
+async function writeTreeData(data, options) {
   const payloadString = serialiseTreeData(data)
-  setTreePayload(TREE_DB_PATH, data, () => payloadString)
+  setTreePayload(TREE_DB_PATH, data, () => payloadString, options)
   await writeBackupSnapshot(payloadString)
 }
 
@@ -844,6 +770,60 @@ function createTreeApi({ canWrite }) {
       } catch (error) {
         console.error('[server] Failed to write tree data', error)
         res.status(500).json({ message: 'Unable to persist tree data file' })
+      }
+    })
+
+    // Admin endpoints (write-enabled only). These are intended for the builder/admin app.
+    router.post('/admin/import', async (req, res) => {
+      try {
+        const body = req.body
+        const hasPayloadField = body && typeof body === 'object' && !Array.isArray(body) && Object.prototype.hasOwnProperty.call(body, 'payload')
+        const payload = hasPayloadField ? body.payload : body
+
+        if (!payload || (typeof payload !== 'object' && !Array.isArray(payload))) {
+          res.status(400).json({ message: 'Invalid payload: expected JSON object or array' })
+          return
+        }
+
+        let dropIndexes = true
+        if (hasPayloadField && Object.prototype.hasOwnProperty.call(body, 'dropIndexes')) {
+          dropIndexes = parseBooleanParam(body.dropIndexes, true)
+        } else if (req.query.dropIndexes !== undefined) {
+          dropIndexes = parseBooleanParam(req.query.dropIndexes, true)
+        }
+
+        await writeTreeData(payload, { dropIndexes })
+        res.status(204).end()
+      } catch (error) {
+        console.error('[server] admin import failed', error)
+        res.status(500).json({ message: 'Import failed', error: String(error) })
+      }
+    })
+
+    router.post('/admin/rebuild-fts', async (req, res) => {
+      try {
+        const result = rebuildFts(TREE_DB_PATH)
+        res.json(result)
+      } catch (error) {
+        console.error('[server] rebuild-fts failed', error)
+        res.status(500).json({ message: 'FTS rebuild failed', error: String(error) })
+      }
+    })
+
+    router.post('/admin/reset-to-seed', async (req, res) => {
+      // Protect this endpoint behind an explicit confirm flag to avoid accidental wipes.
+      const confirm = req.query.confirm === '1' || req.query.confirm === 'true'
+      if (!confirm) {
+        res.status(400).json({ message: 'Missing confirm=1 query param to reset database to seed' })
+        return
+      }
+      try {
+        const seedPayload = await loadSeedPayload()
+        await writeTreeData(seedPayload)
+        res.status(204).end()
+      } catch (error) {
+        console.error('[server] reset-to-seed failed', error)
+        res.status(500).json({ message: 'Reset to seed failed', error: String(error) })
       }
     })
   }

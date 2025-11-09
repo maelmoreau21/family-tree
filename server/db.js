@@ -7,12 +7,32 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const DATASET_ID = 'default'
+const SCHEMA_VERSION = 1
 let dbInstance = null
+let ftsEnabled = false
+let dropIndexesByDefault = true
 
 function openDatabase(dbPath) {
   if (dbInstance) return dbInstance
   dbInstance = new Database(dbPath)
-  dbInstance.pragma('foreign_keys = ON')
+  // Enable foreign keys and tuned pragmas for better concurrency/performance.
+  // WAL mode improves concurrent reads/writes which helps the viewer/builder usage.
+  try {
+    dbInstance.pragma('foreign_keys = ON')
+    dbInstance.pragma('journal_mode = WAL')
+    // Use NORMAL synchronous to balance durability and speed for typical desktop/server use.
+    dbInstance.pragma('synchronous = NORMAL')
+    // Prefer in-memory temp storage and a slightly larger page cache for heavier datasets
+    try {
+      dbInstance.pragma('temp_store = MEMORY')
+      dbInstance.pragma('cache_size = 2000')
+    } catch (e) {
+      // optional pragmas may fail on some SQLite builds; ignore silently
+    }
+  } catch (err) {
+    // If pragmas are unsupported for any reason, continue with defaults but log.
+    console.warn('[db] Unable to apply pragmas:', err && err.message ? err.message : err)
+  }
   return dbInstance
 }
 
@@ -23,13 +43,23 @@ function ensureSchema(db) {
       payload TEXT NOT NULL,
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+    CREATE TABLE IF NOT EXISTS schema_meta (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS persons (
       id TEXT PRIMARY KEY,
       given_name TEXT,
       family_name TEXT,
       birth_date TEXT,
-      metadata TEXT
+      metadata TEXT,
+      created_at TEXT,
+      updated_at TEXT
     );
+    CREATE INDEX IF NOT EXISTS idx_persons_given_name ON persons(given_name);
+    CREATE INDEX IF NOT EXISTS idx_persons_family_name ON persons(family_name);
+  CREATE INDEX IF NOT EXISTS idx_persons_name ON persons(family_name, given_name);
+  CREATE INDEX IF NOT EXISTS idx_dataset_updated_at ON dataset(updated_at);
     CREATE TABLE IF NOT EXISTS relationships (
       parent_id TEXT NOT NULL,
       child_id TEXT NOT NULL,
@@ -50,6 +80,44 @@ function ensureSchema(db) {
     CREATE INDEX IF NOT EXISTS idx_closure_ancestor ON closure(ancestor_id);
     CREATE INDEX IF NOT EXISTS idx_closure_descendant ON closure(descendant_id);
   `)
+
+  // Best-effort: create an FTS5 virtual table for fast text search.
+  // Not all SQLite builds include FTS5, so wrap in try/catch and fall back silently.
+  try {
+    db.exec("CREATE VIRTUAL TABLE IF NOT EXISTS persons_fts USING fts5(id, given_name, family_name, metadata)")
+    ftsEnabled = true
+  } catch (e) {
+    ftsEnabled = false
+  }
+}
+
+function applyMigrations(db) {
+  const row = db.prepare('SELECT value FROM schema_meta WHERE key = ?').get('schema_version')
+  let currentVersion = row ? Number.parseInt(row.value, 10) || 0 : 0
+
+  const setVersion = (version) => {
+    db.prepare(`INSERT INTO schema_meta (key, value)
+      VALUES ('schema_version', ?)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value`).run(String(version))
+  }
+
+  if (currentVersion === 0) {
+    currentVersion = SCHEMA_VERSION
+    setVersion(currentVersion)
+    return
+  }
+
+  if (currentVersion === SCHEMA_VERSION) {
+    return
+  }
+
+  if (currentVersion > SCHEMA_VERSION) {
+    return
+  }
+
+  // Placeholder for future migrations when SCHEMA_VERSION increases.
+  currentVersion = SCHEMA_VERSION
+  setVersion(currentVersion)
 }
 
 function normalisePayload(payload) {
@@ -106,11 +174,37 @@ function collectRelationshipPairs(person, personId) {
   return pairs
 }
 
-function rebuildRelationalTables(db, payload) {
+function rebuildRelationalTables(db, payload, options = {}) {
   const { data } = normalisePayload(payload)
+  const { dropIndexes = dropIndexesByDefault, fastImport = false } = options
+  // Attempt to drop non-essential indexes to speed up large imports. We'll recreate them after inserts.
+  let droppedIndexes = false
+  // If fastImport is requested, temporarily relax synchronous setting to speed inserts.
+  let originalSynchronous = null
+  if (fastImport) {
+    try {
+      // read current value if possible
+      try { originalSynchronous = db.pragma('synchronous', { simple: true }) } catch (e) { originalSynchronous = null }
+      db.pragma('synchronous = OFF')
+    } catch (e) {
+      // ignore
+    }
+  }
+  if (dropIndexes) {
+    try {
+      db.exec('DROP INDEX IF EXISTS idx_persons_given_name')
+      db.exec('DROP INDEX IF EXISTS idx_persons_family_name')
+      droppedIndexes = true
+    } catch (e) {
+      // ignore failures; proceed without dropping
+      droppedIndexes = false
+    }
+  }
+
+  const ftsRecords = []
   const insertPerson = db.prepare(`
-    INSERT OR REPLACE INTO persons (id, given_name, family_name, birth_date, metadata)
-    VALUES (@id, @givenName, @familyName, @birthDate, @metadata)
+    INSERT OR REPLACE INTO persons (id, given_name, family_name, birth_date, metadata, created_at, updated_at)
+    VALUES (@id, @givenName, @familyName, @birthDate, @metadata, @createdAt, @updatedAt)
   `)
   const insertRelationship = db.prepare(
     'INSERT OR IGNORE INTO relationships (parent_id, child_id) VALUES (?, ?)' )
@@ -128,7 +222,11 @@ function rebuildRelationalTables(db, payload) {
   data.forEach(person => {
     const record = toPersonRecord(person)
     if (!record) return
-    insertPerson.run(record)
+    // populate timestamp fields during rebuild
+    const ts = new Date().toISOString()
+    const recWithTs = { ...record, createdAt: ts, updatedAt: ts }
+    insertPerson.run(recWithTs)
+    if (ftsEnabled) ftsRecords.push(recWithTs)
     knownIds.add(record.id)
     const pairs = collectRelationshipPairs(person, record.id)
     pairs.forEach(pair => pendingPairs.push(pair))
@@ -156,11 +254,48 @@ function rebuildRelationalTables(db, payload) {
     INSERT OR IGNORE INTO closure (ancestor_id, descendant_id, depth)
     SELECT ancestor_id, descendant_id, depth FROM tree
   `).run()
+
+  // Populate FTS table if available
+  if (ftsEnabled) {
+    try {
+      db.prepare('DELETE FROM persons_fts').run()
+      const insertFts = db.prepare('INSERT INTO persons_fts (id, given_name, family_name, metadata) VALUES (?, ?, ?, ?)')
+      for (const r of ftsRecords) {
+        insertFts.run(r.id, r.givenName, r.familyName, r.metadata)
+      }
+    } catch (e) {
+      // If FTS operations fail, disable for this run but continue
+      console.warn('[db] FTS update failed:', e && e.message ? e.message : e)
+      ftsEnabled = false
+    }
+  }
+
+  // Recreate dropped indexes
+  if (droppedIndexes) {
+    try {
+      db.exec('CREATE INDEX IF NOT EXISTS idx_persons_given_name ON persons(given_name)')
+      db.exec('CREATE INDEX IF NOT EXISTS idx_persons_family_name ON persons(family_name)')
+      db.exec('CREATE INDEX IF NOT EXISTS idx_persons_name ON persons(family_name, given_name)')
+    } catch (e) {
+      console.warn('[db] Failed to recreate indexes:', e && e.message ? e.message : e)
+    }
+  }
+
+  // Restore synchronous pragma if we modified it
+  if (fastImport) {
+    try {
+      if (originalSynchronous !== null && originalSynchronous !== undefined) db.pragma(`synchronous = ${String(originalSynchronous)}`)
+      else db.pragma('synchronous = NORMAL')
+    } catch (e) {
+      // ignore
+    }
+  }
 }
 
 export function initialiseDatabase(dbPath, seedLoader) {
   const db = openDatabase(dbPath)
   ensureSchema(db)
+  applyMigrations(db)
   const row = db.prepare('SELECT payload FROM dataset WHERE id = ?').get(DATASET_ID)
   if (!row) {
     const fallback = seedLoader ? seedLoader() : { data: [], config: {}, meta: {} }
@@ -183,7 +318,7 @@ export function getTreePayload(dbPath) {
   }
 }
 
-export function setTreePayload(dbPath, payload, serialiser) {
+export function setTreePayload(dbPath, payload, serialiser, options) {
   const db = openDatabase(dbPath)
   const normalised = normalisePayload(payload)
   const stringPayload = typeof payload === 'string'
@@ -199,7 +334,7 @@ export function setTreePayload(dbPath, payload, serialiser) {
   `)
   const tx = db.transaction(() => {
     save.run(DATASET_ID, stringPayload, timestamp)
-    rebuildRelationalTables(db, payload)
+    rebuildRelationalTables(db, payload, options)
   })
   tx()
   return normalised
@@ -209,6 +344,28 @@ export function getLastUpdatedAt(dbPath) {
   const db = openDatabase(dbPath)
   const row = db.prepare('SELECT updated_at FROM dataset WHERE id = ?').get(DATASET_ID)
   return row ? row.updated_at : null
+}
+
+export function rebuildFts(dbPath) {
+  const db = openDatabase(dbPath)
+  if (!ftsEnabled) {
+    throw new Error('FTS not enabled in this SQLite build')
+  }
+  try {
+    db.prepare('DELETE FROM persons_fts').run()
+    const insertFts = db.prepare('INSERT INTO persons_fts (id, given_name, family_name, metadata) VALUES (?, ?, ?, ?)')
+    const rows = db.prepare('SELECT id, given_name, family_name, metadata FROM persons').all()
+    for (const r of rows) insertFts.run(r.id, r.given_name, r.family_name, r.metadata)
+    return { ok: true, inserted: rows.length }
+  } catch (e) {
+    console.warn('[db] rebuildFts failed', e && e.message ? e.message : e)
+    throw e
+  }
+}
+
+export function resetToSeed(dbPath, seedPayload) {
+  // Overwrites dataset with provided seedPayload. Use with caution.
+  return setTreePayload(dbPath, seedPayload)
 }
 
 export function closeDatabase() {

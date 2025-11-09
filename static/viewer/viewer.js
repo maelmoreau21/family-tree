@@ -1268,6 +1268,10 @@ function collectSpouseUnionDetails(datum) {
     const unionDate = safeTrim(personData[`union date__ref__${id}`])
     const unionPlace = safeTrim(personData[`union place__ref__${id}`])
     const storeDatum = chartInstance?.store?.getDatum?.(id)
+    const hasUnionInfo = Boolean(unionDate || unionPlace)
+    if (!storeDatum && !hasUnionInfo) {
+      return
+    }
     const name = storeDatum ? buildDatasetLabel(storeDatum) : `Profil ${id}`
     details.push({
       id,

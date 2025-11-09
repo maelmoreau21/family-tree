@@ -54,10 +54,17 @@ export function createLinks(d: TreeDatum, is_horizontal: boolean = false) {
 
     d.children.forEach((child, i) => {
       const other_parent = otherParent(child, d) || d
-      const sx = other_parent.sx
-      if (typeof sx !== 'number') throw new Error('sx is not a number')
+      const anchorX = child.psx ?? other_parent.sx ?? d.x
+      const anchorY = child.psy ?? other_parent.sy ?? other_parent.sx ?? d.y
 
-      const parent_pos: LinkPoint = !is_horizontal ? {x: sx, y: d.y} : {x: d.x, y: sx}
+      if (typeof anchorX !== 'number' || Number.isNaN(anchorX)) {
+        throw new Error('Cannot resolve progeny link anchor X')
+      }
+      if (typeof anchorY !== 'number' || Number.isNaN(anchorY)) {
+        throw new Error('Cannot resolve progeny link anchor Y')
+      }
+
+      const parent_pos: LinkPoint = !is_horizontal ? {x: anchorX, y: d.y} : {x: d.x, y: anchorY}
       links.push({
         d: Link(child, parent_pos),
         _d: () => Link(parent_pos, {x: _or(parent_pos, 'x'), y: _or(parent_pos, 'y')}),
