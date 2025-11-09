@@ -1,7 +1,5 @@
 # Family Tree
 
-![Family Tree logo](examples/logo.svg)
-
 Family Tree is a polished fork of **family-chart**. It couples an ES module library (dist build + typings) with two ready-to-ship web apps: a **viewer** and a **builder**. The apps share the same REST API, so you can explore and edit the same JSON dataset from either side.
 
 ## Highlights
@@ -60,7 +58,6 @@ The dev server proxies API calls to the Express backend and reloads the static a
 | `npm run build` | Cleans `dist`, runs Rollup for the library, bundles viewer/builder with esbuild |
 | `npm start` | Launches the production Express server (reads env vars listed below) |
 | `npm run dev` | Starts Vite for local development with live reload |
-| `npm run test` / `npm run test-run` | Open or run the Cypress end-to-end suite |
 | `npm run data:compact` | Rewrites the SQLite dataset (`TREE_DB_PATH`) and exports a compact JSON snapshot |
 
 > `scripts/compact-tree.mjs` accepts `TREE_DB_PATH` (or legacy `TREE_DATA_PATH`), `TREE_DATA_PRETTY`, and `TREE_BACKUP_DIR`. Use it when you want to shrink or prettify datasets prior to versioning.

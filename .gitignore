@@ -3,6 +3,5 @@
 /.idea/
 /.vscode/
 /tests/debugging/
-cypress/screenshots
 docs/api
 data/

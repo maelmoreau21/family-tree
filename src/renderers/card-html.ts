@@ -5,13 +5,6 @@ import { Store } from "../types/store";
 import { TreeDatum } from "../types/treeData";
 import { CardDim } from "../types/card";
 
-interface SpouseUnionDetail {
-  id: string;
-  name: string;
-  unionDate?: string;
-  unionPlace?: string;
-}
-
 export default function CardHtml(props: {
   style: 'default' | 'imageCircleRect' | 'imageCircle' | 'imageRect' | 'rect';
   cardInnerHtmlCreator?: (d: TreeDatum) => string;
@@ -37,116 +30,7 @@ export default function CardHtml(props: {
   : props.style === 'rect' ? cardInnerRect
   : cardInnerDefault
 
-  const HTML_ESCAPE_MAP: Record<string, string> = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;'
-  }
-
-  function escapeHtml(value: string) {
-    return value.replace(/[&<>"']/g, char => HTML_ESCAPE_MAP[char] || char)
-  }
-
-  function safeText(value: unknown) {
-    if (typeof value !== 'string') return ''
-    const trimmed = value.trim()
-    return trimmed
-  }
-
-  function formatPersonName(source: { [key: string]: any } | undefined, fallbackId?: string) {
-    if (!source) return fallbackId || ''
-    const first = safeText(source['first name'])
-    const last = safeText(source['last name'])
-    const full = [first, last].filter(Boolean).join(' ').trim()
-    if (full) return full
-    const display = safeText(source.name)
-    if (display) return display
-    return fallbackId || ''
-  }
-
-  function collectSpouseUnionDetails(d: TreeDatum) {
-    const personData = d.data?.data || {}
-    const details = new Map<string, SpouseUnionDetail>()
-
-    const registerSpouse = (id?: string, source?: { [key: string]: any }) => {
-      if (!id) return
-      const existing = details.get(id)
-      const resolvedName = formatPersonName(source, id)
-      if (existing) {
-        if (!existing.name && resolvedName) existing.name = resolvedName
-        return
-      }
-      details.set(id, {
-        id,
-        name: resolvedName || id
-      })
-    }
-
-    if (Array.isArray(d.spouses)) {
-      d.spouses.forEach(spouse => {
-        const id = spouse?.data?.id
-        registerSpouse(id, spouse?.data?.data)
-      })
-    }
-
-    const spouseIds = Array.isArray(d.data?.rels?.spouses) ? d.data.rels.spouses : []
-    spouseIds.forEach(id => {
-      if (!id) return
-      registerSpouse(id, props.store?.getDatum ? props.store.getDatum(id)?.data : undefined)
-    })
-
-    details.forEach(detail => {
-      const dateKey = `union date__ref__${detail.id}`
-      const placeKey = `union place__ref__${detail.id}`
-      const unionDate = safeText(personData[dateKey])
-      const unionPlace = safeText(personData[placeKey])
-      if (unionDate) detail.unionDate = unionDate
-      if (unionPlace) detail.unionPlace = unionPlace
-    })
-
-    return Array.from(details.values())
-  }
-
-  function renderUnionHtml(d: TreeDatum) {
-    const personData = d.data?.data || {}
-    const unionParagraph = safeText(personData["union paragraph"])
-    const spouseDetails = collectSpouseUnionDetails(d)
-    const detailHtml = spouseDetails
-      .map(detail => renderUnionDetail(detail))
-      .filter(Boolean) as string[]
-
-    if (!detailHtml.length && !unionParagraph) {
-      return ''
-    }
-
-    let paragraphHtml = ''
-    if (unionParagraph) {
-      const withBreaks = escapeHtml(unionParagraph).replace(/\r?\n/g, '<br>')
-      paragraphHtml = `<p class="card-union-paragraph">${withBreaks}</p>`
-    }
-
-    return `<div class="card-union">${detailHtml.join('')}${paragraphHtml}</div>`
-  }
-
-  function renderUnionDetail(detail: SpouseUnionDetail) {
-    if (!detail?.id && !detail?.name && !detail?.unionDate && !detail?.unionPlace) return ''
-    const heading = escapeHtml(detail.name || detail.id)
-    const lines: string[] = []
-    if (detail.unionDate) {
-      lines.push(`<div class="card-union-line"><strong>Date d'union :</strong> ${escapeHtml(detail.unionDate)}</div>`)
-    }
-    if (detail.unionPlace) {
-      lines.push(`<div class="card-union-line"><strong>Lieu d'union :</strong> ${escapeHtml(detail.unionPlace)}</div>`)
-    }
-
-    return `
-      <div class="card-union-item">
-        <div class="card-union-heading">Union avec <strong>${heading}</strong></div>
-        ${lines.join('')}
-      </div>`
-  }
+  
 
   return function (this: HTMLElement, d: TreeDatum) {
     this.innerHTML = (`
@@ -232,11 +116,12 @@ export default function CardHtml(props: {
 
   function textDisplay(d: TreeDatum) {
     if (d.data._new_rel_data) return newRelDataDisplay(d)
-    if (d.data.to_add) return `<div>${props.empty_card_label || 'ADD'}</div>`
-    if (d.data.unknown) return `<div>${props.unknown_card_label || 'UNKNOWN'}</div>`
-    const baseRows = props.card_display.map(display => `<div>${display(d.data)}</div>`).join('')
-    const unionHtml = renderUnionHtml(d)
-    return `${baseRows}${unionHtml}`
+  if (d.data.to_add) return `<div>${props.empty_card_label || 'À AJOUTER'}</div>`
+  if (d.data.unknown) return `<div>${props.unknown_card_label || 'INCONNU'}</div>`
+  const baseRows = props.card_display.map(display => `<div>${display(d.data)}</div>`).join('')
+  // Ne pas afficher les unions sur la carte elle-même — elles restent visibles
+  // uniquement dans le panneau "Informations complémentaires".
+    return baseRows
   }
 
   function newRelDataDisplay(d: TreeDatum) {

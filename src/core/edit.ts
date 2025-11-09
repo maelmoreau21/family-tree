@@ -20,6 +20,28 @@ import { LegacyDatum, formatDataForExport } from "../store/format-data"
 type Card = CardHtml | CardSvg
 
 
+const FIELD_LABEL_MAP: Record<string, string> = {
+  'first name': 'Prénom',
+  'last name': 'Nom',
+  'nickname': 'Surnom',
+  'maiden name': 'Nom de jeune fille',
+  'birthday': 'Date de naissance',
+  'death': 'Date de décès',
+  'gender': 'Genre',
+  'location': 'Localisation',
+  'residence': 'Lieu de résidence',
+  'birthplace': 'Lieu de naissance',
+  'deathplace': 'Lieu de décès',
+  'occupation': 'Profession',
+  'bio': 'Biographie',
+  'notes': 'Notes',
+  'email': 'Courriel',
+  'phone': 'Téléphone',
+  'avatar': 'Avatar',
+  'union paragraph': 'Paragraphe d’union'
+}
+
+
 export default (cont: HTMLElement, store: Store) => new EditTree(cont, store)
 
 /**
@@ -81,10 +103,10 @@ export class EditTree {
     this.store = store
   
     this.fields = [
-      {type: 'text', label: 'first name', id: 'first name'},
-      {type: 'text', label: 'last name', id: 'last name'},
-      {type: 'text', label: 'birthday', id: 'birthday'},
-      {type: 'text', label: 'avatar', id: 'avatar'}
+      {type: 'text', label: 'Prénom', id: 'first name'},
+      {type: 'text', label: 'Nom', id: 'last name'},
+      {type: 'text', label: 'Date de naissance', id: 'birthday'},
+      {type: 'text', label: 'Avatar', id: 'avatar'}
     ]
   
     this.is_fixed = true
@@ -385,12 +407,15 @@ export class EditTree {
     }
     for (const field of fields) {
       if (typeof field === 'string') {
-        new_fields.push({type: 'text', label: field, id: field})
+        const id = field
+        const label = FIELD_LABEL_MAP[id] || field
+        new_fields.push({type: 'text', label, id})
       } else if (typeof field === 'object') {
         if (!field.id) {
           console.error('fields must be an array of objects with id property')
         } else {
-          new_fields.push(field)
+          const label = field.label || FIELD_LABEL_MAP[field.id] || field.id
+          new_fields.push({...field, label})
         }
       } else {
         console.error('fields must be an array of strings or objects')

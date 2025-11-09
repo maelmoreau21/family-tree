@@ -16,7 +16,6 @@ RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/server ./server
 COPY --from=build /app/static ./static
-COPY --from=build /app/examples ./examples
 COPY --from=build /app/src/styles ./src/styles
 COPY --from=build /app/uploads ./uploads
 RUN mkdir -p /data /app/uploads

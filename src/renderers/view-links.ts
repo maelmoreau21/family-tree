@@ -29,26 +29,27 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
 
   function linkEnter(this: SVGPathElement, d: Link) {
     d3.select(this).attr("fill", "none").attr("stroke", "#fff").attr("stroke-width", 1).style("opacity", 0)
-      .attr("d", createPath(d, true))
+      .attr("d", createPath(d, true, tree.is_horizontal))
   }
 
   function linkUpdate(this: SVGPathElement, d: Link) {
     const path = d3.select(this);
     const delay = props.initial ? calculateDelay(tree, d, props.transition_time!) : 0
-    path.transition('path').duration(props.transition_time!).delay(delay).attr("d", createPath(d)).style("opacity", 1)
+    path.transition('path').duration(props.transition_time!).delay(delay).attr("d", createPath(d, false, tree.is_horizontal)).style("opacity", 1)
   }
 
   function linkExit(this: SVGPathElement, d: unknown | Link) {
     const path = d3.select(this);
     path.transition('op').duration(800).style("opacity", 0)
-    path.transition('path').duration(props.transition_time!).attr("d", createPath(d as Link, true))
+    path.transition('path').duration(props.transition_time!).attr("d", createPath(d as Link, true, tree.is_horizontal))
       .on("end", () => path.remove())
   }
 
 }
 
-function createPath(d: Link, is_: boolean = false) {
-  const line = d3.line().curve(d3.curveMonotoneY)
+function createPath(d: Link, is_: boolean = false, is_horizontal: boolean = false) {
+  // choose appropriate monotone curve based on orientation to avoid bad angles
+  const line = d3.line().curve(is_horizontal ? d3.curveMonotoneX : d3.curveMonotoneY)
   const lineCurve = d3.line().curve(d3.curveBasis)
   const path_data: [number, number][] = is_ ? d._d() : d.d
 

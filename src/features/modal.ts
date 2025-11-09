@@ -56,8 +56,8 @@ export class Modal {
       if (!onAccept) throw new Error('onAccept is required')
       if (!onCancel) throw new Error('onCancel is required')
       d3.select(this.modal_cont).select('.f3-modal-content-bottom').html(`
-        <button class="f3-modal-accept f3-btn">Accept</button>
-        <button class="f3-modal-cancel f3-btn">Cancel</button>
+        <button class="f3-modal-accept f3-btn">Valider</button>
+        <button class="f3-modal-cancel f3-btn">Annuler</button>
       `)
       d3.select(this.modal_cont).select('.f3-modal-accept').on('click', () => {onAccept(); this.reset(); this.close()})
       d3.select(this.modal_cont).select('.f3-modal-cancel').on('click', () => {this.close()})

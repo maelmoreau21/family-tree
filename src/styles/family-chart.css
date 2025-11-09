@@ -192,27 +192,6 @@
 
 .f3-radio-group input[type="radio"] {
   margin-right: 5px;
-}
-
-.f3-info-field-label, .f3-form-field label {
-  font-weight: bold;
-  font-size: 12px;
-  display: block;
-  opacity: 0.8;
-}
-
-.f3-info-field-value {
-  font-weight: normal;
-  display: block;
-  border: none;
-  outline: none;
-  border-bottom: 1px solid rgba(255,255,255,0.2);
-  padding-bottom: 1px;
-  margin-bottom: 10px;
-  min-height: 18px;
-}
-
-.f3-form-buttons {
   text-align: right;
 }
 
@@ -364,48 +343,6 @@
 }
 
 
-.f3 .card-label .card-union {
-  margin-top: 6px;
-  padding-top: 4px;
-  border-top: 1px solid rgba(255, 255, 255, 0.25);
-  font-size: 12px;
-  line-height: 1.35;
-  text-align: left;
-  align-self: stretch;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.f3 .card-union-item {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.f3 .card-union-heading {
-  font-weight: 600;
-}
-
-.f3 .card-union-heading strong {
-  font-weight: inherit;
-}
-
-.f3 .card-union-line {
-  display: flex;
-  gap: 4px;
-}
-
-.f3 .card-union-line strong {
-  font-weight: 600;
-}
-
-.f3 .card-union-paragraph {
-  margin-top: 4px;
-  font-size: 12px;
-  line-height: 1.35;
-}
-
 .f3 div.mini-tree {
   text-align: right;
   position: absolute;
@@ -419,6 +356,15 @@
 .f3 div.mini-tree svg {
   width: 55px;
   pointer-events: none;
+}
+
+/* Hide union details in the viewer cards (keeps data available in DOM but not shown) */
+.f3 .card-union,
+.f3 .card-union-item,
+.f3 .card-union-heading,
+.f3 .card-union-line,
+.f3 .card-union-paragraph {
+  display: none !important;
 }
 
 .f3 .card.card-has-hidden-relatives {

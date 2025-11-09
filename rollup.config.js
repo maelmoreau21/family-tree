@@ -29,7 +29,7 @@ const plugins = [
     tsconfig: "./tsconfig.json",
     declaration: true,
     declarationDir: "./dist/types",
-    exclude: ["tests/**/*", "examples/**/*"]
+    exclude: ["tests/**/*"]
   })
 ]
 

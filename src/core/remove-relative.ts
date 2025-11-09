@@ -96,10 +96,10 @@ export class RemoveRelative {
           const spouse_gender_class = spouse.data.gender === 'M' ? 'f3-male-bg' : spouse.data.gender === 'F' ? 'f3-female-bg' : null
     
           const div = d3.create('div').html(`
-            <p>You are removing a spouse relationship. Since there are shared children, please choose which parent should keep them in the family tree.</p>
+            <p>Vous supprimez un lien de conjoint. Comme des enfants sont partagés, choisissez quel parent doit les conserver dans l'arbre.</p>
             <div class="f3-modal-options">
-              <button data-option="assign-to-current" class="f3-btn ${current_gender_class}">Keep children with current person</button>
-              <button data-option="assign-to-spouse" class="f3-btn ${spouse_gender_class}">Keep children with spouse</button>
+              <button data-option="assign-to-current" class="f3-btn ${current_gender_class}">Garder les enfants avec la personne actuelle</button>
+              <button data-option="assign-to-spouse" class="f3-btn ${spouse_gender_class}">Garder les enfants avec le conjoint</button>
             </div>
           `)
     

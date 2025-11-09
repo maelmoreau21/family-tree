@@ -40,7 +40,7 @@ class Autocomplete {
     d3.select(this.autocomplete_cont).html(`
       <div class="f3-autocomplete">
         <div class="f3-autocomplete-input-cont">
-          <input type="text" placeholder="${this.config?.placeholder || 'Search'}">
+          <input type="text" placeholder="${this.config?.placeholder || 'Rechercher'}">
           <span class="f3-autocomplete-toggle">${chevronDownSvgIcon()}</span>
         </div>
         <div class="f3-autocomplete-items" tabindex="0"></div>
@@ -202,7 +202,7 @@ class Autocomplete {
         <div>
           <span style="float: left; width: 10px; height: 10px; margin-right: 10px;" class="f3-${getPersonGender(d)}-color">${personSvgIcon()}</span>
           <span>${option.label_html}</span>
-          ${link_off ? `<span style="float: right; width: 10px; height: 10px; margin-left: 5px;" title="This profile is not connected to the main profile">${linkOffSvgIcon()}</span>` : ''}
+          ${link_off ? `<span style="float: right; width: 10px; height: 10px; margin-left: 5px;" title="Ce profil n'est pas relié au profil principal">${linkOffSvgIcon()}</span>` : ''}
         </div>
       `)
     }

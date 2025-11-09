@@ -229,7 +229,7 @@ export class Chart {
    * @param label - The label to display for the single parent empty card.
    * @returns The CreateChart instance
    */
-  setSingleParentEmptyCard(single_parent_empty_card: boolean, {label='Unknown'} = {}) {
+  setSingleParentEmptyCard(single_parent_empty_card: boolean, {label='Inconnu'} = {}) {
     this.store.state.single_parent_empty_card = single_parent_empty_card
     this.store.state.single_parent_empty_card_label = label
     if (this.editTreeInstance && this.editTreeInstance.addRelativeInstance.is_active) this.editTreeInstance.addRelativeInstance.onCancel!()
@@ -468,15 +468,15 @@ export class Chart {
    * @param config - The config for the person dropdown.
    * @param config.cont - The container to put the dropdown in. Default is the .f3-nav-cont element.
    * @param config.onSelect - The function to call when a person is selected. Default is setting clicked person as main person and updating the tree.
-   * @param config.placeholder - The placeholder for the search input. Default is 'Search'.
+  * @param config.placeholder - The placeholder for the search input. Default is 'Rechercher'.
    * @returns The CreateChart instance
    */
   setPersonDropdown(
     getLabel: Function,
     {
       cont=this.cont!.querySelector('.f3-nav-cont') as HTMLElement,
-      onSelect,
-      placeholder='Search'
+  onSelect,
+  placeholder='Rechercher'
     } : {
       cont?: HTMLElement,
       onSelect?: (d_id: Datum['id']) => void,

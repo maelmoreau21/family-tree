@@ -106,11 +106,11 @@ export class AddRelative {
   
   addRelLabelsDefault() {
     return {
-      father: 'Add Father',
-      mother: 'Add Mother',
-      spouse: 'Add Spouse',
-      son: 'Add Son',
-      daughter: 'Add Daughter'
+      father: 'Ajouter un père',
+      mother: 'Ajouter une mère',
+      spouse: 'Ajouter un conjoint',
+      son: 'Ajouter un fils',
+      daughter: 'Ajouter une fille'
     }
   }
   

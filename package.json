@@ -42,8 +42,6 @@
   ],
   "scripts": {
     "build": "node build.js",
-    "test": "cypress open",
-    "test-run": "cypress run",
     "dev": "vite",
     "start": "node server/index.js",
     "data:compact": "node scripts/compact-tree.mjs",
@@ -64,11 +62,11 @@
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^12.1.4",
     "@types/d3": "^7.4.3",
-    "cypress": "15.2.0",
     "esbuild": "^0.24.0",
     "gh-pages": "^6.3.0",
     "http-server": "^14.1.1",
     "rollup": "^4.45.1",
+    "tslib": "^2.8.1",
     "typedoc": "^0.28.13",
     "typescript": "^5.8.3",
     "vite": "^6.3.5"
