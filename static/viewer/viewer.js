@@ -24,6 +24,10 @@ function normalizeFieldKey(value) {
   return String(value).trim().toLowerCase()
 }
 
+function canonicalFieldKey(value) {
+  return normalizeFieldKey(value).replace(/[\s_-]+/g, '')
+}
+
 function sanitizeFieldValues(values) {
   if (!Array.isArray(values)) return []
   const seen = new Set()
@@ -168,6 +172,8 @@ const DETAIL_FIELD_ORDER = [
 const FIELD_LABELS = {
   'first name': 'Prénom',
   'first names': 'Prénoms',
+  'firstnames': 'Prénoms',
+  'first_names': 'Prénoms',
   'last name': 'Nom',
   'nickname': 'Surnom',
   'maiden name': 'Nom de jeune fille',
@@ -1226,17 +1232,42 @@ function hasContent(value) {
 
 function buildDetailEntries(person = {}) {
   const normalizedPerson = person || {}
+
+  // Helper to find a person's field value ignoring key case/formatting.
+  function findValueForKey(rawKey) {
+    const desired = normalizeFieldKey(rawKey)
+    const desiredCanonical = canonicalFieldKey(rawKey)
+    // direct match first
+    if (Object.prototype.hasOwnProperty.call(normalizedPerson, rawKey)) {
+      return normalizedPerson[rawKey]
+    }
+    // try normalized keys (case-insensitive)
+    for (const k of Object.keys(normalizedPerson)) {
+      if (normalizeFieldKey(k) === desired) return normalizedPerson[k]
+    }
+    // try canonical keys (ignore spaces/underscores)
+    for (const k of Object.keys(normalizedPerson)) {
+      if (canonicalFieldKey(k) === desiredCanonical) return normalizedPerson[k]
+    }
+    return undefined
+  }
+
+  // Build entries for the ordered (mandatory) fields, resolving values case-insensitively
   const entries = DETAIL_FIELD_ORDER.map(field => ({
     field,
-    value: normalizedPerson[field],
+    value: findValueForKey(field),
     mandatory: true
   }))
 
-  const seen = new Set(DETAIL_FIELD_ORDER)
+  // Track normalized keys already included so we don't duplicate when iterating remaining fields
+  const seen = new Set(DETAIL_FIELD_ORDER.map(canonicalFieldKey))
+
   Object.entries(normalizedPerson).forEach(([field, value]) => {
     if (isUnionReferenceKey(field)) return
-    if (seen.has(field)) return
+    const key = canonicalFieldKey(field)
+    if (seen.has(key)) return
     if (!hasContent(value)) return
+    seen.add(key)
     entries.push({ field, value, mandatory: false })
   })
 
