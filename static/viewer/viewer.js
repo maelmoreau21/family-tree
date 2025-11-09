@@ -156,6 +156,7 @@ function setViewerSearchState(state) {
 
 const DETAIL_FIELD_ORDER = [
   'first name',
+  'first names',
   'last name',
   'birthday',
   'death',
@@ -166,6 +167,7 @@ const DETAIL_FIELD_ORDER = [
 
 const FIELD_LABELS = {
   'first name': 'Prénom',
+  'first names': 'Prénoms',
   'last name': 'Nom',
   'nickname': 'Surnom',
   'maiden name': 'Nom de jeune fille',
