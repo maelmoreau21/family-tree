@@ -416,7 +416,7 @@ function applyConfigToChart(chart, rawConfig) {
     chart.setProgenyDepth(null)
   }
 
-  // duplicate branch merging option removed; chart will use internal defaults
+  
 
   return config
 }
@@ -773,7 +773,7 @@ function updatePerformanceControlsUI(config) {
   if (ancestryDepthControl) ancestryDepthControl.value = depthToSelectValue(config.ancestryDepth, DEFAULT_CHART_CONFIG.ancestryDepth)
   if (progenyDepthControl) progenyDepthControl.value = depthToSelectValue(config.progenyDepth, DEFAULT_CHART_CONFIG.progenyDepth)
   if (miniTreeToggle) miniTreeToggle.checked = config.miniTree !== false
-  // duplicate branch toggle control removed; no UI state to sync
+  
 }
 
 function updateDatasetMeta() {
@@ -817,7 +817,7 @@ function applyViewerConfig({ treePosition = 'inherit', initial = false } = {}) {
     chartInstance.setProgenyDepth(null)
   }
 
-  // duplicate branch merging option removed; chart will use internal defaults
+  
 
   if (cardInstance && typeof cardInstance.setMiniTree === 'function') {
     cardInstance.setMiniTree(viewerConfig.miniTree !== false)
@@ -875,7 +875,7 @@ function attachPerformanceHandlers() {
     applyViewerConfig({ treePosition: 'inherit' })
   })
 
-  // duplicate toggle listener removed (option removed from UI)
+  
 }
 
 attachPerformanceHandlers()
@@ -1652,7 +1652,7 @@ function renderChart(payload, options = {}) {
     mainId: options.mainId || baseConfig.mainId || viewerConfig.mainId || null,
     ancestryDepth: serverQueryState.ancestryDepth,
     progenyDepth: serverQueryState.progenyDepth,
-  // duplicateBranchToggle option removed; rely on chart defaults
+  
     miniTree: options.preservePreferences && viewerConfig ? viewerConfig.miniTree !== false : baseConfig.miniTree !== false,
     cardDisplay: baseConfig.cardDisplay && baseConfig.cardDisplay.length
       ? baseConfig.cardDisplay.map(row => [...row])
@@ -1731,7 +1731,7 @@ function renderChart(payload, options = {}) {
     })
   }
 
-  // duplicate branch merging option removed; chart will use internal defaults
+  
 
   isApplyingViewerConfig = true
   updatePerformanceControlsUI(viewerConfig)

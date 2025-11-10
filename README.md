@@ -2,6 +2,10 @@
 
 Family Tree est un fork maintenu de **family-chart** fournissant une bibliothèque de rendu (ESM + typages) ainsi que deux applications web : un visualiseur (viewer) et un éditeur (builder). Le backend est un serveur Express qui persiste le dataset dans PostgreSQL.
 
+> IMPORTANT — Docker-first
+>
+> Ce dépôt est prévu pour être exécuté dans un conteneur Docker / via Docker Compose en production. L'utilisation en local sans conteneur (par ex. en lançant directement `npm start`) peut fonctionner pour du développement, mais n'est pas testée ni supportée de façon exhaustive : la configuration par défaut, les volumes et la persistance sont orientés vers un déploiement Docker. Si vous utilisez ce projet en production, démarrez-le avec Docker Compose (instructions ci‑dessous).
+
 Cette documentation rapide couvre le démarrage local, l'utilisation recommandée via Docker, les endpoints d'administration et les opérations de maintenance pour des jeux de données volumineux.
 
 ## Démarrage rapide (local)

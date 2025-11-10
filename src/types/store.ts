@@ -28,7 +28,6 @@ export interface StoreState extends CalculateTreeOptions {
   transition_time?: TransitionTime;
   single_parent_empty_card_label?: SingleParentEmptyCardLabel;
   unknown_card_label?: UnknownCardLabel;
-  // duplicate_branch_toggle removed
   level_separation?: LevelSeparation;
   node_separation?: NodeSeparation;
   private_cards_config?: PrivateCardsConfig;

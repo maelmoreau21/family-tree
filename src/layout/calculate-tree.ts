@@ -2,7 +2,6 @@ import * as d3 from "../d3";
 import { sortChildrenWithSpouses, sortAddNewChildren, setupSiblings, handlePrivateCards } from "./handlers";
 import { createNewPerson } from "../store/new-person";
 import { isAllRelativeDisplayed } from "../handlers/general";
-// duplicate-branch feature removed: handlers were deleted to simplify tree layout logic
 import type { Datum, Data } from "../types/data";
 import type { TreeDatum, TreeData } from "../types/treeData";
 
@@ -22,7 +21,6 @@ export interface CalculateTreeOptions {
   show_siblings_of_main?: boolean;
   modifyTreeHierarchy?: (tree: HN, is_ancestry: boolean) => void;
   private_cards_config?: any;
-  // duplicate_branch_toggle removed
 }
 
 export interface Tree {
@@ -48,7 +46,6 @@ export default function calculateTree(data: Data, {
   show_siblings_of_main = false,
   modifyTreeHierarchy=undefined,
   private_cards_config = undefined,
-  // duplicate branch toggle option removed from public API
 }: CalculateTreeOptions): Tree {
   if (!data || !data.length) throw new Error('No data')
 
@@ -74,7 +71,6 @@ export default function calculateTree(data: Data, {
   if (private_cards_config) handlePrivateCards({tree, data_stash, private_cards_config})
   setupTid(tree)
   // setupFromTo(tree)
-  // duplicate branch merging removed — chart uses internal defaults
   const dim = calculateTreeDim(tree, node_separation, level_separation)
 
   return {data: tree, data_stash, dim, main_id: main.id, is_horizontal}
@@ -85,7 +81,6 @@ export default function calculateTree(data: Data, {
     const root = d3.hierarchy<Datum>(datum, hierarchyGetter)
 
     trimTree(root, is_ancestry)
-  // duplicate branch hierarchy handling removed
     if (modifyTreeHierarchy) modifyTreeHierarchy(root, is_ancestry)
     d3_tree(root);
     const tree = root.descendants()
@@ -323,7 +318,6 @@ export default function calculateTree(data: Data, {
     }
   }
   
-  // duplicate handling utilities removed
 }
 
 function setupTid(tree:TreeDatum[]) {
