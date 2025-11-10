@@ -41,6 +41,7 @@
   "scripts": {
     "build": "node build.js",
     "dev": "vite",
+    "generate-favicons": "node scripts/generate-favicons.mjs",
     "start": "node server/index.js",
     "data:compact": "node scripts/compact-tree.mjs",
     "docs": "typedoc",
@@ -70,5 +71,7 @@
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
     "vitest": "^2.1.5"
+    ,
+    "sharp": "^0.32.0"
   }
 }

@@ -68,6 +68,17 @@ Exemple d'appel PowerShell pour un import rapide :
 - Backups rolling : contrôlés par `TREE_BACKUP_DIR` et `TREE_BACKUP_LIMIT`.
 - Imports massifs : pour ajuster la taille des batchs SQL, utilisez `TREE_IMPORT_PERSON_CHUNK`, `TREE_IMPORT_RELATIONSHIP_CHUNK` et `TREE_IMPORT_FTS_CHUNK` (valeurs par défaut respectives : 500, 1000 et 500).
 - Limite de téléversement : la taille maximale d'upload d'un fichier (images) est contrôlée par `TREE_MAX_UPLOAD_MB` (par défaut 5). Vous pouvez aussi fournir `TREE_MAX_UPLOAD_SIZE` en octets pour un contrôle fin. En cas de dépassement, le serveur renvoie HTTP 413 avec un message indiquant la limite active.
+ - Générer les icônes (PNG) depuis le SVG : utilisez le script de génération qui produit des fallbacks PNG (48/32/16) et une `apple-touch-icon` :
+
+```powershell
+# installer les dépendances (sharp est nécessaire pour la génération)
+npm install
+
+# générer les PNG à partir de static/logo.svg
+npm run generate-favicons
+```
+
+Les images générées sont écrites dans `static/` : `logo-48.png`, `logo-32.png`, `logo-16.png`, `apple-touch-icon.png`. Les pages viewer/builder incluent déjà les balises fallback vers ces fichiers.
 
 Pattern d'import massif recommandé :
 
