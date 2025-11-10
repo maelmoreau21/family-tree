@@ -169,6 +169,17 @@ const DETAIL_FIELD_ORDER = [
   'bio'
 ]
 
+// Fields to hide from the viewer details and from search/meta indexing.
+const HIDDEN_FIELD_KEYS = new Set([
+  'phone',
+  'email',
+  'notes',
+  'occupation',
+  'location',
+  'residence',
+  'nickname'
+])
+
 const FIELD_LABELS = {
   'first name': 'Prénom',
   'first names': 'Prénoms',
@@ -531,6 +542,9 @@ function buildSearchOption(person) {
     if (typeof rawValue !== 'string') return
     const trimmed = rawValue.trim()
     if (!trimmed) return
+    // Hide configured fields from search/meta tokens
+    const rkey = normalizeFieldKey(rawKey)
+    if (HIDDEN_FIELD_KEYS.has(rkey)) return
     addToken(trimmed)
     const key = normalizeFieldKey(rawKey)
     if (key === 'birthday') {
@@ -902,7 +916,8 @@ function describeDepthValue(value) {
 function buildDepthSummary(config) {
   const ancestry = describeDepthValue(config.ancestryDepth)
   const progeny = describeDepthValue(config.progenyDepth)
-  return `Ancetres: ${ancestry}, Descendants: ${progeny}`
+  // Clarify that these are configured depths (or modes) rather than counts
+  return `Profondeur — Ancêtres: ${ancestry}, Descendants: ${progeny}`
 }
 
 async function requestSubtree(partialParams = {}, context = {}) {
@@ -1265,6 +1280,8 @@ function buildDetailEntries(person = {}) {
   Object.entries(normalizedPerson).forEach(([field, value]) => {
     if (isUnionReferenceKey(field)) return
     const key = canonicalFieldKey(field)
+    // Skip hidden fields entirely
+    if (HIDDEN_FIELD_KEYS.has(key)) return
     if (seen.has(key)) return
     if (!hasContent(value)) return
     seen.add(key)
@@ -1776,12 +1793,15 @@ function renderChart(payload, options = {}) {
     ? (buildFullName(mainDatum.data || {}) || `Profil ${mainDatum.id}`)
     : (options.selectedLabel || 'Branche courante')
   const prefix = options.source === 'search'
-    ? 'Resultat'
+    ? 'Résultat'
     : options.source === 'card'
-      ? 'Selection'
+      ? 'Sélection'
       : 'Branche'
   const depthSummary = buildDepthSummary(viewerConfig)
-  setStatus(`${prefix} : ${name} - ${branchCount} profil(s) dans la branche / ${totalCount} au total - ${depthSummary}`, 'success')
+  const branchLabel = branchCount === 1 ? 'profil' : 'profils'
+  const totalLabel = totalCount === 1 ? 'profil' : 'profils'
+  // Use clearer separators and correct French accents
+  setStatus(`${prefix} : ${name} — ${branchCount} ${branchLabel} dans la branche / ${totalCount} ${totalLabel} au total — ${depthSummary}`, 'success')
 
   lastSelectionContext = { source: options.source || prefix.toLowerCase(), label: name }
 

@@ -1,5 +1,6 @@
 import { EditDatumFormCreator, NewRelFormCreator, SelectField, RelReferenceField } from '../types/form'
 import * as icons from './icons'
+import fr from '../i18n/fr'
 
 
 export function getHtmlNew(form_creator: NewRelFormCreator) {
@@ -11,8 +12,8 @@ export function getHtmlNew(form_creator: NewRelFormCreator) {
       ${fields(form_creator)}
       
       <div class="f3-form-buttons">
-        <button type="button" class="f3-cancel-btn">Annuler</button>
-        <button type="submit">Enregistrer</button>
+        <button type="button" class="f3-cancel-btn">${fr.form.cancel}</button>
+        <button type="submit">${fr.form.save}</button>
       </div>
 
       ${form_creator.linkExistingRelative ? addLinkExistingRelative(form_creator) : ''}
@@ -32,8 +33,8 @@ export function getHtmlEdit(form_creator: EditDatumFormCreator) {
       ${fields(form_creator)}
       
       <div class="f3-form-buttons">
-        <button type="button" class="f3-cancel-btn">Annuler</button>
-        <button type="submit">Enregistrer</button>
+        <button type="button" class="f3-cancel-btn">${fr.form.cancel}</button>
+        <button type="submit">${fr.form.save}</button>
       </div>
 
       ${form_creator.linkExistingRelative ? addLinkExistingRelative(form_creator) : ''}

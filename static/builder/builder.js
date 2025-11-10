@@ -128,6 +128,17 @@ const DISPLAY_FIELD_LABELS = new Map([
   ['maiden name', 'Nom de naissance']
 ])
 
+// Fields that should be hidden from the builder/editor UI
+const HIDDEN_FIELD_KEYS = new Set([
+  'phone',
+  'email',
+  'notes',
+  'occupation',
+  'location',
+  'residence',
+  'nickname'
+])
+
 const DISPLAY_DEFAULTS = {
   1: [
     { value: 'first name', checked: true },
@@ -1354,11 +1365,13 @@ function attachPanelControls({ chart, card }) {
   }
 
   function createFieldDescriptors(fieldValues) {
-    const descriptors = sanitizeFieldValues(fieldValues).map(value => {
-      const key = normalizeFieldKey(value)
-      const label = ensureFieldLabel(value, fieldLabelStore.get(key))
-      return createFieldDescriptor(key, value, label)
-    })
+    const descriptors = sanitizeFieldValues(fieldValues)
+      .map(value => ({ value, key: normalizeFieldKey(value) }))
+      .filter(item => !HIDDEN_FIELD_KEYS.has(item.key))
+      .map(item => {
+        const label = ensureFieldLabel(item.value, fieldLabelStore.get(item.key))
+        return createFieldDescriptor(item.key, item.value, label)
+      })
     return appendUnionFieldDescriptors(descriptors, fieldLabelStore)
   }
 
@@ -1621,8 +1634,8 @@ function attachPanelControls({ chart, card }) {
   function createDisplayItem(group, { value, label, defaultChecked = false, removable = false }) {
     const list = group.querySelector('.field-list')
     if (!list) return { item: null, isNew: false }
-
   const key = normalizeFieldKey(value)
+    if (HIDDEN_FIELD_KEYS.has(key)) return { item: null, isNew: false }
     const selector = `[data-field-key="${escapeSelector(key)}"]`
     const displayLabel = ensureFieldLabel(value, label)
     let item = list.querySelector(selector)
@@ -1664,8 +1677,8 @@ function attachPanelControls({ chart, card }) {
 
   function createEditableItem({ value, label, checked = true, removable = false, selectRows = [] }) {
     if (!editableList) return
-
     const key = normalizeFieldKey(value)
+    if (HIDDEN_FIELD_KEYS.has(key)) return
     const displayLabel = ensureFieldLabel(value, label)
     const selector = `[data-field-key="${escapeSelector(key)}"]`
     let item = editableList.querySelector(selector)
@@ -1866,12 +1879,14 @@ function attachPanelControls({ chart, card }) {
   }
 
   EDITABLE_DEFAULTS.forEach(def => {
-    createEditableItem({
-      value: def.value,
-      label: def.label,
-      checked: def.checked !== false,
-      removable: false
-    })
+    if (!HIDDEN_FIELD_KEYS.has(normalizeFieldKey(def.value))) {
+      createEditableItem({
+        value: def.value,
+        label: def.label,
+        checked: def.checked !== false,
+        removable: false
+      })
+    }
   })
 
   editableList?.addEventListener('change', (event) => {

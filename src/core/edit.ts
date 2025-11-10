@@ -24,20 +24,15 @@ const FIELD_LABEL_MAP: Record<string, string> = {
   'first name': 'Prénom',
   'first names': 'Prénoms',
   'last name': 'Nom',
-  'nickname': 'Surnom',
+  // Note: several fields (phone, email, notes, occupation, location, residence, nickname)
+  // were intentionally removed from this map to keep the editor UI focused on core fields.
   'maiden name': 'Nom de jeune fille',
   'birthday': 'Date de naissance',
   'death': 'Date de décès',
   'gender': 'Genre',
-  'location': 'Localisation',
-  'residence': 'Lieu de résidence',
   'birthplace': 'Lieu de naissance',
   'deathplace': 'Lieu de décès',
-  'occupation': 'Profession',
   'bio': 'Biographie',
-  'notes': 'Notes',
-  'email': 'Courriel',
-  'phone': 'Téléphone',
   'avatar': 'Avatar',
   'union paragraph': 'Paragraphe d’union'
 }

@@ -1,6 +1,7 @@
 import { handleLinkRel } from "../store/add-existing-rel"
 import { addDatumRelsPlaceholders, cleanUp, updateGendersForNewRelatives } from "../store/add-relative"
 import { Data, Datum } from "../types/data"
+import fr from '../i18n/fr'
 import { Store } from "../types/store"
 
 export default (store: Store, onActivate: () => void, cancelCallback: (datum: Datum) => void) => { return new AddRelative(store, onActivate, cancelCallback) }
@@ -105,13 +106,7 @@ export class AddRelative {
   }
   
   addRelLabelsDefault() {
-    return {
-      father: 'Ajouter un père',
-      mother: 'Ajouter une mère',
-      spouse: 'Ajouter un conjoint',
-      son: 'Ajouter un fils',
-      daughter: 'Ajouter une fille'
-    }
+    return fr.add
   }
   
   getStoreData() {
