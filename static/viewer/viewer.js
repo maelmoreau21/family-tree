@@ -1797,11 +1797,10 @@ function renderChart(payload, options = {}) {
     : options.source === 'card'
       ? 'Sélection'
       : 'Branche'
-  const depthSummary = buildDepthSummary(viewerConfig)
   const branchLabel = branchCount === 1 ? 'profil' : 'profils'
   const totalLabel = totalCount === 1 ? 'profil' : 'profils'
-  // Use clearer separators and correct French accents
-  setStatus(`${prefix} : ${name} — ${branchCount} ${branchLabel} dans la branche / ${totalCount} ${totalLabel} au total — ${depthSummary}`, 'success')
+  // Affiche les informations principales sans mentionner les profondeurs (souvent inexactes)
+  setStatus(`${prefix} : ${name} — ${branchCount} ${branchLabel} dans la branche / ${totalCount} ${totalLabel} au total`, 'success')
 
   lastSelectionContext = { source: options.source || prefix.toLowerCase(), label: name }
 

@@ -916,6 +916,8 @@ function createStaticApp(staticFolder, { canWrite }) {
   const staticOptions = { setHeaders: setStaticCacheHeaders }
   app.use('/lib', express.static(DIST_DIR, staticOptions))
   app.use('/assets', express.static(path.resolve(ROOT_DIR, 'src', 'styles'), staticOptions))
+  // Serve the top-level static directory (contains logo.svg) at /static so pages can reference /static/logo.svg
+  app.use('/static', express.static(STATIC_DIR, staticOptions))
   app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '1d' }))
   app.use('/api', createTreeApi({ canWrite }))
 

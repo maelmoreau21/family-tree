@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Family Tree &ndash; Visualisation</title>
+  <!-- Favicon / page icon -->
+  <link rel="icon" href="/static/logo.svg" type="image/svg+xml">
+  <link rel="shortcut icon" href="/static/logo.svg">
   <link rel="stylesheet" href="/lib/styles/family-tree.css">
   <link rel="stylesheet" href="/viewer.css">
   <script type="importmap">
@@ -38,38 +41,7 @@
             <summary>Affichage rapide</summary>
             <div class="performance-body">
               <div class="performance-grid">
-              <div class="control-group">
-                <label for="viewerAncestryDepth">Ancêtres visibles</label>
-                <select id="viewerAncestryDepth">
-                  <option value="auto">Auto (progressif)</option>
-                  <option value="0">0 (profil seul)</option>
-                  <option value="1">1 génération</option>
-                  <option value="2">2 générations</option>
-                  <option value="3">3 générations</option>
-                  <option value="4">4 générations</option>
-                  <option value="5">5 générations</option>
-                  <option value="6">6 générations</option>
-                  <option value="8">8 générations</option>
-                  <option value="10">10 générations</option>
-                  <option value="all">Illimité (tout charger)</option>
-                </select>
-              </div>
-              <div class="control-group">
-                <label for="viewerProgenyDepth">Descendants visibles</label>
-                <select id="viewerProgenyDepth">
-                  <option value="auto">Auto (progressif)</option>
-                  <option value="0">0 (profil seul)</option>
-                  <option value="1">1 génération</option>
-                  <option value="2">2 générations</option>
-                  <option value="3">3 générations</option>
-                  <option value="4">4 générations</option>
-                  <option value="5">5 générations</option>
-                  <option value="6">6 générations</option>
-                  <option value="8">8 générations</option>
-                  <option value="10">10 générations</option>
-                  <option value="all">Illimité (tout charger)</option>
-                </select>
-              </div>
+                <!-- Profondeur des ancêtres/descendants masquée dans le viewer car les valeurs peuvent être inexactes -->
               </div>
               <label class="toggle-row" for="viewerMiniTree">
                 <input type="checkbox" id="viewerMiniTree" checked>
