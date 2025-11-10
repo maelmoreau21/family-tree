@@ -129,9 +129,10 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
       if (field.type === 'rel_reference') {
           const rf = field as RelReferenceField
           if (!rf.initial_value) return
+          const relLabelSanitized = sanitizeRelLabel(rf.rel_label)
           fields_html += `
           <div class="f3-info-field">
-            <span class="f3-info-field-label">${rf.label} - <i>${rf.rel_label}</i></span>
+            <span class="f3-info-field-label">${rf.label} - <i>${relLabelSanitized}</i></span>
             <span class="f3-info-field-value">${rf.initial_value || ''}</span>
           </div>`
         } else if (field.type === 'select') {
@@ -211,7 +212,7 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
       <h4 class="f3-union-title">Unions et conjoints</h4>`
     let hasContent = false
     collection.forEach(bucket => {
-      const heading = bucket.relLabel || 'Conjoint'
+      const heading = sanitizeRelLabel(bucket.relLabel || 'Conjoint')
       const dateField = bucket.dateField
       const placeField = bucket.placeField
       const dateHtml = renderUnionInput(dateField)
@@ -242,6 +243,12 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
               value="${field.initial_value || ''}"
               placeholder="${field.label}">
           </div>`
+  }
+
+  function sanitizeRelLabel(label?: string) {
+    if (!label) return ''
+    // Remove trailing parenthesised dates/notes like " (31.02.1949)" or similar
+    return label.replace(/\s*\([^)]*\)\s*$/,'').trim()
   }
 }
 
