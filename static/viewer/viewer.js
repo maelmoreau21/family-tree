@@ -13,7 +13,6 @@ const chartSelector = '#FamilyChart'
 const ancestryDepthControl = document.getElementById('viewerAncestryDepth')
 const progenyDepthControl = document.getElementById('viewerProgenyDepth')
 const miniTreeToggle = document.getElementById('viewerMiniTree')
-const duplicateToggle = document.getElementById('viewerDuplicateToggle')
 const datasetMeta = document.querySelector('[data-role="dataset-meta"]')
 const visibleCountEl = document.querySelector('[data-role="visible-count"]')
 const branchCountEl = document.querySelector('[data-role="branch-count"]')
@@ -227,7 +226,6 @@ const DEFAULT_CHART_CONFIG = Object.freeze({
   ancestryDepth: 4,
   progenyDepth: 4,
   miniTree: true,
-  duplicateBranchToggle: true,
   cardDisplay: DEFAULT_CARD_DISPLAY.map(row => [...row]),
   mainId: null
 })
@@ -377,10 +375,7 @@ function normaliseChartConfig(rawConfig = {}) {
     config.miniTree = rawMiniTree
   }
 
-  const rawDuplicateToggle = rawConfig.duplicateBranchToggle ?? rawConfig.duplicate_branch_toggle
-  if (typeof rawDuplicateToggle === 'boolean') {
-    config.duplicateBranchToggle = rawDuplicateToggle
-  }
+  
 
   return config
 }
@@ -421,7 +416,7 @@ function applyConfigToChart(chart, rawConfig) {
     chart.setProgenyDepth(null)
   }
 
-  chart.setDuplicateBranchToggle(config.duplicateBranchToggle !== false)
+  // duplicate branch merging option removed; chart will use internal defaults
 
   return config
 }
@@ -778,7 +773,7 @@ function updatePerformanceControlsUI(config) {
   if (ancestryDepthControl) ancestryDepthControl.value = depthToSelectValue(config.ancestryDepth, DEFAULT_CHART_CONFIG.ancestryDepth)
   if (progenyDepthControl) progenyDepthControl.value = depthToSelectValue(config.progenyDepth, DEFAULT_CHART_CONFIG.progenyDepth)
   if (miniTreeToggle) miniTreeToggle.checked = config.miniTree !== false
-  if (duplicateToggle) duplicateToggle.checked = config.duplicateBranchToggle !== false
+  // duplicate branch toggle control removed; no UI state to sync
 }
 
 function updateDatasetMeta() {
@@ -822,7 +817,7 @@ function applyViewerConfig({ treePosition = 'inherit', initial = false } = {}) {
     chartInstance.setProgenyDepth(null)
   }
 
-  chartInstance.setDuplicateBranchToggle(viewerConfig.duplicateBranchToggle !== false)
+  // duplicate branch merging option removed; chart will use internal defaults
 
   if (cardInstance && typeof cardInstance.setMiniTree === 'function') {
     cardInstance.setMiniTree(viewerConfig.miniTree !== false)
@@ -880,14 +875,7 @@ function attachPerformanceHandlers() {
     applyViewerConfig({ treePosition: 'inherit' })
   })
 
-  duplicateToggle?.addEventListener('change', () => {
-    if (isApplyingViewerConfig) return
-    const enabled = duplicateToggle.checked
-    const previous = viewerConfig.duplicateBranchToggle !== false
-    if (enabled === previous) return
-    viewerConfig = { ...viewerConfig, duplicateBranchToggle: enabled }
-    applyViewerConfig({ treePosition: 'inherit' })
-  })
+  // duplicate toggle listener removed (option removed from UI)
 }
 
 attachPerformanceHandlers()
@@ -1664,7 +1652,7 @@ function renderChart(payload, options = {}) {
     mainId: options.mainId || baseConfig.mainId || viewerConfig.mainId || null,
     ancestryDepth: serverQueryState.ancestryDepth,
     progenyDepth: serverQueryState.progenyDepth,
-    duplicateBranchToggle: options.preservePreferences && viewerConfig ? viewerConfig.duplicateBranchToggle !== false : baseConfig.duplicateBranchToggle,
+  // duplicateBranchToggle option removed; rely on chart defaults
     miniTree: options.preservePreferences && viewerConfig ? viewerConfig.miniTree !== false : baseConfig.miniTree !== false,
     cardDisplay: baseConfig.cardDisplay && baseConfig.cardDisplay.length
       ? baseConfig.cardDisplay.map(row => [...row])
@@ -1743,7 +1731,7 @@ function renderChart(payload, options = {}) {
     })
   }
 
-  chart.setDuplicateBranchToggle(viewerConfig.duplicateBranchToggle !== false)
+  // duplicate branch merging option removed; chart will use internal defaults
 
   isApplyingViewerConfig = true
   updatePerformanceControlsUI(viewerConfig)

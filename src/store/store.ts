@@ -65,8 +65,7 @@ export default function createStore(initial_state: StoreState): Store {
     if (state.ancestry_depth !== undefined) args.ancestry_depth = state.ancestry_depth;
     if (state.progeny_depth !== undefined) args.progeny_depth = state.progeny_depth;
     if (state.show_siblings_of_main !== undefined) args.show_siblings_of_main = state.show_siblings_of_main;
-    if (state.private_cards_config !== undefined) args.private_cards_config = state.private_cards_config;
-    if (state.duplicate_branch_toggle !== undefined) args.duplicate_branch_toggle = state.duplicate_branch_toggle;
+  if (state.private_cards_config !== undefined) args.private_cards_config = state.private_cards_config;
     
     return calculateTree(state.data, args);
   }

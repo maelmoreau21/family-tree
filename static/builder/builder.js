@@ -415,7 +415,6 @@ const DEFAULT_CHART_CONFIG = Object.freeze({
   ancestryDepth: 4,
   progenyDepth: 4,
   miniTree: true,
-  duplicateBranchToggle: true,
   editableFields: [...DEFAULT_EDITABLE_FIELDS],
   cardDisplay: DEFAULT_CARD_DISPLAY.map(row => [...row]),
   mainId: null
@@ -461,7 +460,7 @@ function buildChartConfig(overrides = {}) {
     ancestryDepth: DEFAULT_CHART_CONFIG.ancestryDepth,
     progenyDepth: DEFAULT_CHART_CONFIG.progenyDepth,
     miniTree: DEFAULT_CHART_CONFIG.miniTree,
-    duplicateBranchToggle: DEFAULT_CHART_CONFIG.duplicateBranchToggle,
+  // duplicateBranchToggle option removed; rely on chart defaults
     editableFields: [...DEFAULT_EDITABLE_FIELDS],
     cardDisplay: cloneCardDisplay(DEFAULT_CARD_DISPLAY),
     mainId: DEFAULT_CHART_CONFIG.mainId
@@ -512,9 +511,7 @@ function buildChartConfig(overrides = {}) {
     base.miniTree = overrides.miniTree
   }
 
-  if (typeof overrides.duplicateBranchToggle === 'boolean') {
-    base.duplicateBranchToggle = overrides.duplicateBranchToggle
-  }
+  
 
   if (Array.isArray(overrides.editableFields)) {
     const sanitizedEditable = sanitizeFieldValues(overrides.editableFields)
@@ -653,10 +650,7 @@ function normaliseChartConfig(rawConfig = {}) {
     config.miniTree = rawMiniTree
   }
 
-  const rawDuplicateToggle = rawConfig.duplicateBranchToggle ?? rawConfig.duplicate_branch_toggle
-  if (typeof rawDuplicateToggle === 'boolean') {
-    config.duplicateBranchToggle = rawDuplicateToggle
-  }
+  // duplicateBranchToggle removed from public config options
 
   return config
 }
@@ -689,7 +683,7 @@ function applyChartConfigToChart(chart) {
     chart.setProgenyDepth(null)
   }
 
-  chart.setDuplicateBranchToggle(chartConfig.duplicateBranchToggle !== false)
+  // duplicate branch merging option removed; chart will use internal defaults
 }
 
 async function loadTree() {
@@ -958,7 +952,6 @@ function attachPanelControls({ chart, card }) {
   const ancestryDepthSelect = panel.querySelector('#ancestryDepth')
   const progenyDepthSelect = panel.querySelector('#progenyDepth')
   const miniTreeToggle = panel.querySelector('#miniTreeToggle')
-  const duplicateToggle = panel.querySelector('#duplicateToggle')
   const orientationButtons = panel.querySelectorAll('[data-orientation]')
   const cardWidth = panel.querySelector('#cardWidth')
   const cardHeight = panel.querySelector('#cardHeight')
@@ -1303,8 +1296,8 @@ function attachPanelControls({ chart, card }) {
     }
     if (ancestryDepthSelect) ancestryDepthSelect.value = depthToSelectValue(chartConfig.ancestryDepth, DEFAULT_CHART_CONFIG.ancestryDepth)
     if (progenyDepthSelect) progenyDepthSelect.value = depthToSelectValue(chartConfig.progenyDepth, DEFAULT_CHART_CONFIG.progenyDepth)
-    if (miniTreeToggle) miniTreeToggle.checked = chartConfig.miniTree !== false
-    if (duplicateToggle) duplicateToggle.checked = chartConfig.duplicateBranchToggle !== false
+  if (miniTreeToggle) miniTreeToggle.checked = chartConfig.miniTree !== false
+  // duplicateToggle removed from UI; chart uses internal defaults
     setOrientationButtonsState(chartConfig.orientation || DEFAULT_CHART_CONFIG.orientation)
   }
 
@@ -1967,13 +1960,7 @@ function attachPanelControls({ chart, card }) {
     commitConfigUpdate({ miniTree: enabled })
   })
 
-  duplicateToggle?.addEventListener('change', () => {
-    if (isApplyingConfig) return
-    const enabled = duplicateToggle.checked
-    const previous = chartConfig.duplicateBranchToggle !== false
-    if (enabled === previous) return
-    commitConfigUpdate({ duplicateBranchToggle: enabled }, { treePosition: 'inherit' })
-  })
+  // duplicateToggle event listener removed (option removed from UI)
 
   emptyLabel?.addEventListener('change', () => {
     if (isApplyingConfig) return

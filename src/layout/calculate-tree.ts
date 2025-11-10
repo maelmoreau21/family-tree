@@ -2,8 +2,7 @@ import * as d3 from "../d3";
 import { sortChildrenWithSpouses, sortAddNewChildren, setupSiblings, handlePrivateCards } from "./handlers";
 import { createNewPerson } from "../store/new-person";
 import { isAllRelativeDisplayed } from "../handlers/general";
-import { handleDuplicateSpouseToggle, handleDuplicateHierarchyProgeny } from "../features/duplicates-toggle/duplicates-progeny";
-import { handleDuplicateHierarchyAncestry } from "../features/duplicates-toggle/duplicates-ancestry";
+// duplicate-branch feature removed: handlers were deleted to simplify tree layout logic
 import type { Datum, Data } from "../types/data";
 import type { TreeDatum, TreeData } from "../types/treeData";
 
@@ -23,8 +22,7 @@ export interface CalculateTreeOptions {
   show_siblings_of_main?: boolean;
   modifyTreeHierarchy?: (tree: HN, is_ancestry: boolean) => void;
   private_cards_config?: any;
-  duplicate_branch_toggle?: boolean;
-  on_toggle_one_close_others?: boolean;
+  // duplicate_branch_toggle removed
 }
 
 export interface Tree {
@@ -50,8 +48,7 @@ export default function calculateTree(data: Data, {
   show_siblings_of_main = false,
   modifyTreeHierarchy=undefined,
   private_cards_config = undefined,
-  duplicate_branch_toggle = false,
-  on_toggle_one_close_others = true,
+  // duplicate branch toggle option removed from public API
 }: CalculateTreeOptions): Tree {
   if (!data || !data.length) throw new Error('No data')
 
@@ -77,7 +74,7 @@ export default function calculateTree(data: Data, {
   if (private_cards_config) handlePrivateCards({tree, data_stash, private_cards_config})
   setupTid(tree)
   // setupFromTo(tree)
-  if (duplicate_branch_toggle) handleDuplicateSpouseToggle(tree)
+  // duplicate branch merging removed — chart uses internal defaults
   const dim = calculateTreeDim(tree, node_separation, level_separation)
 
   return {data: tree, data_stash, dim, main_id: main.id, is_horizontal}
@@ -88,7 +85,7 @@ export default function calculateTree(data: Data, {
     const root = d3.hierarchy<Datum>(datum, hierarchyGetter)
 
     trimTree(root, is_ancestry)
-    if (duplicate_branch_toggle) handleDuplicateHierarchy(root, data_stash, is_ancestry)
+  // duplicate branch hierarchy handling removed
     if (modifyTreeHierarchy) modifyTreeHierarchy(root, is_ancestry)
     d3_tree(root);
     const tree = root.descendants()
@@ -326,10 +323,7 @@ export default function calculateTree(data: Data, {
     }
   }
   
-  function handleDuplicateHierarchy(root:HN, data_stash:Data, is_ancestry:boolean) {
-    if (is_ancestry) handleDuplicateHierarchyAncestry(root, on_toggle_one_close_others)
-    else handleDuplicateHierarchyProgeny(root, data_stash, on_toggle_one_close_others)
-  }
+  // duplicate handling utilities removed
 }
 
 function setupTid(tree:TreeDatum[]) {

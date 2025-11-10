@@ -1,6 +1,5 @@
 import * as d3 from "../d3"
 import {personSvgIcon, miniTreeSvgIcon, plusSvgIcon} from "./icons"
-import {handleCardDuplicateToggle} from "../features/duplicates-toggle/duplicates-toggle-renderer"
 import { Store } from "../types/store";
 import { TreeDatum } from "../types/treeData";
 import { CardDim } from "../types/card";
@@ -19,7 +18,6 @@ export default function CardHtml(props: {
   unknown_card_label: string;
   cardImageField: string;
   card_display: ((d: TreeDatum['data']) => string)[];
-  duplicate_branch_toggle?: boolean;
   store: Store;
   onMiniTreeClick?: (e: Event, d: TreeDatum) => void;
 }) {
@@ -68,13 +66,9 @@ export default function CardHtml(props: {
     }
     if (props.onCardUpdate) props.onCardUpdate.call(this, d)
 
-    if (props.onCardMouseenter) d3.select(this).select('.card').on('mouseenter', e => props.onCardMouseenter!(e, d))
-    if (props.onCardMouseleave) d3.select(this).select('.card').on('mouseleave', e => props.onCardMouseleave!(e, d))
+    if (props.onCardMouseenter) d3.select(this).select('.card').on('mouseenter', (e: Event) => props.onCardMouseenter!(e, d))
+    if (props.onCardMouseleave) d3.select(this).select('.card').on('mouseleave', (e: Event) => props.onCardMouseleave!(e, d))
     if (d.duplicate) handleCardDuplicateHover(this, d)
-    if (props.duplicate_branch_toggle) {
-      const isHorizontal = props.store?.state?.is_horizontal === true
-      handleCardDuplicateToggle(this, d, isHorizontal, props.store.updateTree)
-    }
     if (location.origin.includes('localhost')) {
       d.__node = this.querySelector('.card') as HTMLElement
       d.__label = d.data.data['first name']
@@ -213,10 +207,10 @@ export default function CardHtml(props: {
   }
 
   function handleCardDuplicateHover(node: HTMLElement, d: TreeDatum) {
-    d3.select(node).on('mouseenter', e => {
-      d3.select(node.closest('.cards_view')).selectAll('.card_cont').select('.card').classed('f3-card-duplicate-hover', d0 => (d0 as TreeDatum).data.id === d.data.id)
+    d3.select(node).on('mouseenter', (e: Event) => {
+      d3.select(node.closest('.cards_view')).selectAll('.card_cont').select('.card').classed('f3-card-duplicate-hover', (d0: any) => (d0 as TreeDatum).data.id === d.data.id)
     })
-    d3.select(node).on('mouseleave', e => {
+    d3.select(node).on('mouseleave', (e: Event) => {
       d3.select(node.closest('.cards_view')).selectAll('.card_cont').select('.card').classed('f3-card-duplicate-hover', false)
     })
   }

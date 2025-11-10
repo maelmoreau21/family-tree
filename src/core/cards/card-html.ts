@@ -69,7 +69,6 @@ export class CardHtml {
       empty_card_label: this.store.state.single_parent_empty_card_label || '',
       unknown_card_label: this.store.state.unknown_card_label || '',
       cardInnerHtmlCreator: this.cardInnerHtmlCreator,
-      duplicate_branch_toggle: this.store.state.duplicate_branch_toggle,
       onCardMouseenter: this.onCardMouseenter ? this.onCardMouseenter.bind(this) : undefined,
       onCardMouseleave: this.onCardMouseleave ? this.onCardMouseleave.bind(this) : undefined
     })
