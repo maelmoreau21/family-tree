@@ -230,7 +230,10 @@ async function rebuildRelationalTables(client, payload, options = {}) {
     await client.query('SET LOCAL synchronous_commit = OFF')
   }
 
-  await client.query('TRUNCATE TABLE relationships, closure, persons_fts, persons RESTART IDENTITY CASCADE')
+  await client.query('TRUNCATE TABLE relationships, closure, persons RESTART IDENTITY CASCADE')
+  if (ftsEnabled) {
+    await client.query('TRUNCATE TABLE persons_fts')
+  }
 
   const insertPersonText = `
     INSERT INTO persons (id, given_name, family_name, birth_date, metadata, created_at, updated_at)

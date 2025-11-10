@@ -86,3 +86,66 @@ Pattern d'import massif recommandé :
 ## Licence
 
 Distribué sous licence MIT — voir `LICENSE.txt`.
+
+## API rapide et exemples
+
+Voici un petit exemple d'utilisation côté application pour créer un chart et le peupler depuis un tableau de personnes :
+
+```javascript
+import * as f3 from 'family-tree';
+import 'family-tree/dist/styles/family-tree.css';
+
+const data = [
+  { id: '1', data: { 'first name': 'John', 'last name': 'Doe', birthday: '1980', gender: 'M' }, rels: { spouses: ['2'], children: ['3'] } },
+  { id: '2', data: { 'first name': 'Jane', 'last name': 'Doe', birthday: '1982', gender: 'F' }, rels: { spouses: ['1'], children: ['3'] } },
+  { id: '3', data: { 'first name': 'Bob', 'last name': 'Doe', birthday: '2005', gender: 'M' }, rels: { parents: ['1','2'] } }
+];
+
+const f3Chart = f3.createChart('#FamilyChart', data);
+f3Chart.setCardHtml().setCardDisplay([['first name','last name'],['birthday']]);
+f3Chart.updateTree({ initial: true });
+```
+
+Composants principaux :
+
+- `f3Chart` — classe principale pour créer et configurer l'arbre
+- `f3Card` — rendu HTML des cartes
+- `f3EditTree` — outils d'édition, formulaires et historique
+
+Ressources utiles :
+
+- Exemples live : [https://donatso.github.io/family-chart-doc/examples/](https://donatso.github.io/family-chart-doc/examples/)
+- Référentiel source (amont) : [https://github.com/donatso/family-chart](https://github.com/donatso/family-chart)
+
+## Format des données
+
+Chaque personne est un objet avec `id`, `data` et `rels`.
+
+Structure de base :
+
+- `id` (string) — identifiant unique de la personne
+- `data` (object) — attributs descriptifs (prénom, nom, date de naissance, etc.)
+- `rels` (object) — relations (`parents`, `spouses`, `children`)
+
+Exemple minimal :
+
+```json
+{
+  "id": "1",
+  "data": { "first name": "John", "last name": "Doe", "gender": "M", "birthday": "1980" },
+  "rels": { "spouses": ["2"], "children": ["3"] }
+}
+```
+
+Propriétés recommandées :
+
+- `first name`, `last name`, `birthday`, `death`, `gender` sont courantes et utilisées par le rendu.
+- Tout champ personnalisé peut être ajouté dans `data` (ex. `occupation`, `notes`, `location`).
+
+Relations :
+
+- `parents`: tableau d'IDs (0, 1 ou 2 éléments)
+- `spouses`: tableau d'IDs (permet plusieurs unions)
+- `children`: tableau d'IDs
+
+Le loader convertit automatiquement certains formats hérités (par ex. `father`/`mother`) en `rels.parents` pour conserver la rétrocompatibilité.

@@ -10,10 +10,8 @@
     "d3"
   ],
   "homepage": "https://maelmoreau21.github.io/family-tree/",
-  "license": "ISC",
-  "author": {
-    "name": "maelmoreau21"
-  },
+  "license": "MIT",
+  "author": "Maël Moreau <maelmoreau21@users.noreply.github.com>",
   "main": "dist/family-tree.js",
   "types": "dist/types/index.d.ts",
   "unpkg": "dist/family-tree.min.js",

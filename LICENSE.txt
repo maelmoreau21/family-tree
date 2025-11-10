@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2021 Donat Soric
+Copyright (c) 2025 Maël Moreau
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -11,6 +11,22 @@ furnished to do so, subject to the following conditions:
 
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
+
+Additional attribution requirement by Maël Moreau
+
+As a maintainer and contributor to this fork, Maël Moreau requests that any
+forks or derivative works of this repository include a visible attribution to
+Maël Moreau. Specifically, when publishing, redistributing, or deploying a
+modified or forked version of this software, please include the following in
+the project's README (or equivalent prominent documentation):
+
+	"Forked and maintained by Maël Moreau (https://github.com/maelmoreau21)"
+
+This attribution request is intended to credit the maintainer of this fork.
+Note: the original MIT terms above remain in effect for the code; this
+additional request is a courtesy/attribution requirement by the maintainer of
+this fork. If you are unsure about licensing implications, consult legal
+advice before redistributing.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
