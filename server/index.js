@@ -29,7 +29,11 @@ const TREE_BACKUP_DIR = path.resolve(process.env.TREE_BACKUP_DIR || path.join(TR
 const TREE_BACKUP_LIMIT = Math.max(0, Number.parseInt(process.env.TREE_BACKUP_LIMIT || '50', 10))
 const VIEWER_PORT = Number.parseInt(process.env.VIEWER_PORT || '7920', 10)
 const BUILDER_PORT = Number.parseInt(process.env.BUILDER_PORT || '7921', 10)
-const MAX_UPLOAD_SIZE = 5 * 1024 * 1024
+const DEFAULT_MAX_UPLOAD_MB = Math.max(1, Number.parseInt(process.env.TREE_MAX_UPLOAD_MB || '5', 10))
+const MAX_UPLOAD_SIZE = process.env.TREE_MAX_UPLOAD_SIZE
+  ? Math.max(1024, Number.parseInt(process.env.TREE_MAX_UPLOAD_SIZE, 10))
+  : DEFAULT_MAX_UPLOAD_MB * 1024 * 1024
+const MAX_UPLOAD_SIZE_MB = Math.round(MAX_UPLOAD_SIZE / 1024 / 1024)
 const TREE_PAYLOAD_LIMIT = process.env.TREE_PAYLOAD_LIMIT || '25mb'
 const DEFAULT_SUBTREE_DEPTH = 4
 const TREE_DATA_PRETTY = /^(1|true|yes)$/i.test(process.env.TREE_DATA_PRETTY || '')
@@ -926,7 +930,7 @@ function createStaticApp(staticFolder, { canWrite }) {
       uploadSingleImage(req, res, (error) => {
         if (error) {
           if (error.code === 'LIMIT_FILE_SIZE') {
-            res.status(413).json({ message: 'Fichier trop volumineux (limite 5 Mo).' })
+                res.status(413).json({ message: `Fichier trop volumineux (limite ${MAX_UPLOAD_SIZE_MB} Mo).` })
             return
           }
           if (error.code === 'UNSUPPORTED_FILE_TYPE') {

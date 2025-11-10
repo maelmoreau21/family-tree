@@ -67,6 +67,7 @@ Exemple d'appel PowerShell pour un import rapide :
 - Script utile : `scripts/db-maintenance.mjs` — exécute `ANALYZE`, `VACUUM` et écrit un snapshot JSON horodaté dans le dossier de backup (`data/backups` par défaut). Activez `FORCE_VACUUM=1` pour lancer `VACUUM (FULL, ANALYZE)` si une compaction complète est nécessaire.
 - Backups rolling : contrôlés par `TREE_BACKUP_DIR` et `TREE_BACKUP_LIMIT`.
 - Imports massifs : pour ajuster la taille des batchs SQL, utilisez `TREE_IMPORT_PERSON_CHUNK`, `TREE_IMPORT_RELATIONSHIP_CHUNK` et `TREE_IMPORT_FTS_CHUNK` (valeurs par défaut respectives : 500, 1000 et 500).
+- Limite de téléversement : la taille maximale d'upload d'un fichier (images) est contrôlée par `TREE_MAX_UPLOAD_MB` (par défaut 5). Vous pouvez aussi fournir `TREE_MAX_UPLOAD_SIZE` en octets pour un contrôle fin. En cas de dépassement, le serveur renvoie HTTP 413 avec un message indiquant la limite active.
 
 Pattern d'import massif recommandé :
 
