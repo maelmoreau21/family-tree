@@ -44,7 +44,7 @@
     "start": "node server/index.js",
     "data:compact": "node scripts/compact-tree.mjs",
     "docs": "typedoc",
-    "docs:deploy": "yarn docs && gh-pages -d docs/api -b gh-pages",
+  "docs:deploy": "npm run docs && gh-pages -d docs/api -b gh-pages",
     "prepublishOnly": "node prePublish.js",
     "test": "vitest run"
   },

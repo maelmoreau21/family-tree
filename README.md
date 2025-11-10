@@ -66,6 +66,7 @@ Exemple d'appel PowerShell pour un import rapide :
 
 - Script utile : `scripts/db-maintenance.mjs` — exécute `ANALYZE`, `VACUUM` et écrit un snapshot JSON horodaté dans le dossier de backup (`data/backups` par défaut). Activez `FORCE_VACUUM=1` pour lancer `VACUUM (FULL, ANALYZE)` si une compaction complète est nécessaire.
 - Backups rolling : contrôlés par `TREE_BACKUP_DIR` et `TREE_BACKUP_LIMIT`.
+- Imports massifs : pour ajuster la taille des batchs SQL, utilisez `TREE_IMPORT_PERSON_CHUNK`, `TREE_IMPORT_RELATIONSHIP_CHUNK` et `TREE_IMPORT_FTS_CHUNK` (valeurs par défaut respectives : 500, 1000 et 500).
 
 Pattern d'import massif recommandé :
 
@@ -77,6 +78,8 @@ Pattern d'import massif recommandé :
 
 - Protégez les endpoints d'administration (authentification, réseau privé, reverse-proxy) avant exposition.
 - `fastImport` améliore les performances mais accroît le risque de perte en cas de crash : documentez-le clairement et n'autorisez son usage qu'à des administrateurs.
+- Définissez `TREE_ADMIN_TOKEN` pour exiger un jeton (en-tête `X-Admin-Token` ou `Authorization: Bearer`) sur toutes les opérations d'écriture (`PUT /api/tree`, `/api/admin/*`, uploads).
+- Optionnel : `TREE_ALLOWED_ORIGINS` accepte une liste d'origines séparées par des virgules pour restreindre le CORS (`https://app.exemple.com,https://admin.exemple.com`). Laisser vide autorise toutes les origines.
 
 ## Développement & build
 

@@ -33,6 +33,11 @@ const MAX_UPLOAD_SIZE = 5 * 1024 * 1024
 const TREE_PAYLOAD_LIMIT = process.env.TREE_PAYLOAD_LIMIT || '25mb'
 const DEFAULT_SUBTREE_DEPTH = 4
 const TREE_DATA_PRETTY = /^(1|true|yes)$/i.test(process.env.TREE_DATA_PRETTY || '')
+const RAW_ALLOWED_ORIGINS = (process.env.TREE_ALLOWED_ORIGINS || '').split(',').map(origin => origin.trim()).filter(Boolean)
+const ALLOWED_ORIGINS = RAW_ALLOWED_ORIGINS.filter(origin => origin !== '*')
+const ADMIN_API_TOKEN = typeof process.env.TREE_ADMIN_TOKEN === 'string' && process.env.TREE_ADMIN_TOKEN.trim()
+  ? process.env.TREE_ADMIN_TOKEN.trim()
+  : null
 const ONE_HOUR_SECONDS = 60 * 60
 const ONE_DAY_SECONDS = ONE_HOUR_SECONDS * 24
 const ONE_WEEK_SECONDS = ONE_DAY_SECONDS * 7
@@ -74,6 +79,8 @@ const DEFAULT_SEED_DATASET = {
 
 let lastBackupHash = null
 
+const corsMiddleware = buildCorsMiddleware()
+
 function maskDatabaseUrl(rawUrl) {
   if (!rawUrl) return ''
   try {
@@ -85,6 +92,50 @@ function maskDatabaseUrl(rawUrl) {
   } catch (error) {
     return rawUrl
   }
+}
+
+function buildCorsMiddleware() {
+  if (!RAW_ALLOWED_ORIGINS.length || RAW_ALLOWED_ORIGINS.includes('*')) {
+    return cors()
+  }
+
+  const allowed = new Set(ALLOWED_ORIGINS)
+
+  return cors({
+    origin(origin, callback) {
+      if (!origin) return callback(null, true)
+      if (allowed.has(origin)) return callback(null, true)
+      return callback(new Error('Not allowed by CORS'))
+    },
+    credentials: true
+  })
+}
+
+function extractBearerToken(headerValue = '') {
+  const parts = headerValue.trim().split(/\s+/)
+  if (parts.length === 2 && /^Bearer$/i.test(parts[0])) {
+    return parts[1]
+  }
+  return ''
+}
+
+function ensureAdminAuth(req, res, next) {
+  if (!ADMIN_API_TOKEN) {
+    next()
+    return
+  }
+
+  const headerToken = (req.get('x-admin-token') || '').trim()
+  const bearerToken = extractBearerToken(req.get('authorization') || '')
+  const candidate = headerToken || bearerToken
+
+  if (candidate && candidate === ADMIN_API_TOKEN) {
+    next()
+    return
+  }
+
+  res.setHeader('WWW-Authenticate', 'Bearer realm="FamilyTreeAdmin"')
+  res.status(401).json({ message: 'Admin authentication required' })
 }
 
 const uploadStorage = multer.diskStorage({
@@ -665,7 +716,15 @@ async function resolveBackupPath(name) {
 
 function createTreeApi({ canWrite }) {
   const router = express.Router()
-  router.use(cors())
+  router.use(corsMiddleware)
+  router.options('*', corsMiddleware)
+  router.use((error, req, res, next) => {
+    if (error && error.message === 'Not allowed by CORS') {
+      res.status(403).json({ message: 'CORS origin denied' })
+      return
+    }
+    next(error)
+  })
 
   router.get('/tree', async (req, res) => {
     const subsetRequested =
@@ -766,9 +825,9 @@ function createTreeApi({ canWrite }) {
   })
 
   if (canWrite) {
-    router.use(express.json({ limit: TREE_PAYLOAD_LIMIT }))
+    const jsonParser = express.json({ limit: TREE_PAYLOAD_LIMIT })
 
-    router.put('/tree', async (req, res) => {
+    router.put('/tree', ensureAdminAuth, jsonParser, async (req, res) => {
       try {
         const payload = req.body
         if (!payload || typeof payload !== 'object') {
@@ -785,7 +844,7 @@ function createTreeApi({ canWrite }) {
     })
 
     // Admin endpoints (write-enabled only). These are intended for the builder/admin app.
-    router.post('/admin/import', async (req, res) => {
+    router.post('/admin/import', ensureAdminAuth, jsonParser, async (req, res) => {
       try {
         const body = req.body
         const hasPayloadField = body && typeof body === 'object' && !Array.isArray(body) && Object.prototype.hasOwnProperty.call(body, 'payload')
@@ -819,7 +878,7 @@ function createTreeApi({ canWrite }) {
       }
     })
 
-    router.post('/admin/rebuild-fts', async (req, res) => {
+    router.post('/admin/rebuild-fts', ensureAdminAuth, async (req, res) => {
       try {
   const result = await rebuildFts()
         res.json(result)
@@ -829,7 +888,7 @@ function createTreeApi({ canWrite }) {
       }
     })
 
-    router.post('/admin/reset-to-seed', async (req, res) => {
+    router.post('/admin/reset-to-seed', ensureAdminAuth, async (req, res) => {
       // Protect this endpoint behind an explicit confirm flag to avoid accidental wipes.
       const confirm = req.query.confirm === '1' || req.query.confirm === 'true'
       if (!confirm) {
@@ -861,7 +920,7 @@ function createStaticApp(staticFolder, { canWrite }) {
   app.use('/api', createTreeApi({ canWrite }))
 
   if (canWrite) {
-    app.post('/api/uploads', (req, res) => {
+    app.post('/api/uploads', ensureAdminAuth, (req, res) => {
       uploadSingleImage(req, res, (error) => {
         if (error) {
           if (error.code === 'LIMIT_FILE_SIZE') {

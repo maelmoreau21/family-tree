@@ -10,6 +10,15 @@ const IMPORT_INDEXES = [
   'idx_persons_name'
 ]
 
+function parsePositiveInt(value, fallback) {
+  const parsed = Number.parseInt(value, 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
+}
+
+const PERSON_IMPORT_CHUNK_SIZE = parsePositiveInt(process.env.TREE_IMPORT_PERSON_CHUNK, 500)
+const RELATIONSHIP_IMPORT_CHUNK_SIZE = parsePositiveInt(process.env.TREE_IMPORT_RELATIONSHIP_CHUNK, 1000)
+const FTS_IMPORT_CHUNK_SIZE = parsePositiveInt(process.env.TREE_IMPORT_FTS_CHUNK, 500)
+
 let pool = null
 let ftsEnabled = true
 let dropIndexesByDefault = true
@@ -235,34 +244,15 @@ async function rebuildRelationalTables(client, payload, options = {}) {
     await client.query('TRUNCATE TABLE persons_fts')
   }
 
-  const insertPersonText = `
-    INSERT INTO persons (id, given_name, family_name, birth_date, metadata, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7)
-  `
-  const insertRelationshipText = `
-    INSERT INTO relationships (parent_id, child_id)
-    VALUES ($1, $2)
-    ON CONFLICT DO NOTHING
-  `
-
   const timestamp = new Date().toISOString()
-  const knownIds = new Set()
+  const personRecords = []
   const pendingPairs = []
   const ftsRecords = []
 
   for (const person of data) {
     const record = toPersonRecord(person)
     if (!record) continue
-    await client.query(insertPersonText, [
-      record.id,
-      record.givenName,
-      record.familyName,
-      record.birthDate,
-      record.metadata,
-      timestamp,
-      timestamp
-    ])
-    knownIds.add(record.id)
+    personRecords.push(record)
     if (ftsEnabled) {
       ftsRecords.push({
         id: record.id,
@@ -277,14 +267,68 @@ async function rebuildRelationalTables(client, payload, options = {}) {
     }
   }
 
+  if (personRecords.length) {
+    const chunkSize = PERSON_IMPORT_CHUNK_SIZE
+    for (let i = 0; i < personRecords.length; i += chunkSize) {
+      const chunk = personRecords.slice(i, i + chunkSize)
+      const values = []
+      const placeholders = chunk.map((record, index) => {
+        const base = index * 7
+        values.push(
+          record.id,
+          record.givenName,
+          record.familyName,
+          record.birthDate,
+          record.metadata,
+          timestamp,
+          timestamp
+        )
+        return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7})`
+      })
+      const sql = `
+        INSERT INTO persons (id, given_name, family_name, birth_date, metadata, created_at, updated_at)
+        VALUES ${placeholders.join(',')}
+        ON CONFLICT (id) DO UPDATE SET
+          given_name = EXCLUDED.given_name,
+          family_name = EXCLUDED.family_name,
+          birth_date = EXCLUDED.birth_date,
+          metadata = EXCLUDED.metadata,
+          updated_at = EXCLUDED.updated_at
+      `
+      await client.query(sql, values)
+    }
+  }
+
+  const knownIds = new Set(personRecords.map(record => record.id))
+  const relationshipRecords = []
   const seenPairs = new Set()
+
   for (const [parent, child] of pendingPairs) {
     if (!parent || !child) continue
     if (!knownIds.has(parent) || !knownIds.has(child)) continue
     const key = `${parent}→${child}`
     if (seenPairs.has(key)) continue
     seenPairs.add(key)
-    await client.query(insertRelationshipText, [parent, child])
+    relationshipRecords.push({ parent, child })
+  }
+
+  if (relationshipRecords.length) {
+    const chunkSize = RELATIONSHIP_IMPORT_CHUNK_SIZE
+    for (let i = 0; i < relationshipRecords.length; i += chunkSize) {
+      const chunk = relationshipRecords.slice(i, i + chunkSize)
+      const values = []
+      const placeholders = chunk.map((record, index) => {
+        const base = index * 2
+        values.push(record.parent, record.child)
+        return `($${base + 1}, $${base + 2})`
+      })
+      const sql = `
+        INSERT INTO relationships (parent_id, child_id)
+        VALUES ${placeholders.join(',')}
+        ON CONFLICT DO NOTHING
+      `
+      await client.query(sql, values)
+    }
   }
 
   await client.query('INSERT INTO closure (ancestor_id, descendant_id, depth) SELECT id, id, 0 FROM persons')
@@ -302,23 +346,38 @@ async function rebuildRelationalTables(client, payload, options = {}) {
   `)
 
   if (ftsEnabled) {
-    const insertFtsText = `
-      INSERT INTO persons_fts (id, given_name, family_name, metadata, search)
-      VALUES ($1, $2, $3, $4, to_tsvector('simple', $5))
-    `
     await client.query('TRUNCATE TABLE persons_fts')
-    for (const record of ftsRecords) {
-      const metadataText = JSON.stringify(record.metadata ?? {})
-      const searchSource = [record.id, record.givenName, record.familyName, metadataText]
-        .filter(Boolean)
-        .join(' ')
-      await client.query(insertFtsText, [
-        record.id,
-        record.givenName,
-        record.familyName,
-        metadataText,
-        searchSource
-      ])
+    if (ftsRecords.length) {
+      const chunkSize = FTS_IMPORT_CHUNK_SIZE
+      for (let i = 0; i < ftsRecords.length; i += chunkSize) {
+        const chunk = ftsRecords.slice(i, i + chunkSize)
+        const values = []
+        const placeholders = chunk.map((record, index) => {
+          const metadataText = JSON.stringify(record.metadata ?? {})
+          const searchSource = [record.id, record.givenName, record.familyName, metadataText]
+            .filter(Boolean)
+            .join(' ')
+          const base = index * 5
+          values.push(
+            record.id,
+            record.givenName,
+            record.familyName,
+            metadataText,
+            searchSource
+          )
+          return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, to_tsvector('simple', $${base + 5}))`
+        })
+        const sql = `
+          INSERT INTO persons_fts (id, given_name, family_name, metadata, search)
+          VALUES ${placeholders.join(',')}
+          ON CONFLICT (id) DO UPDATE SET
+            given_name = EXCLUDED.given_name,
+            family_name = EXCLUDED.family_name,
+            metadata = EXCLUDED.metadata,
+            search = EXCLUDED.search
+        `
+        await client.query(sql, values)
+      }
     }
   }
 
