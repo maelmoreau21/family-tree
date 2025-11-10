@@ -106,12 +106,17 @@ export function formCreatorSetup({
         const spouse = store.getDatum(spouse_id)
         if (!spouse) throw new Error('Spouse not found')
         const marriage_date_id = `${field.id}__ref__${spouse_id}`
+        // Build rel_label from spouse datum first name + last name to avoid
+        // trailing parenthesised dates or notes in generated labels.
+        const first = (spouse.data && spouse.data['first name']) || ''
+        const last = (spouse.data && spouse.data['last name']) || ''
+        const relLabel = `${first} ${last}`.trim()
         const rel_reference_field: RelReferenceField = {
           id: marriage_date_id,
           type: 'rel_reference',
           label: field.label,
           rel_id: spouse_id,
-          rel_label: field.getRelLabel(spouse),
+          rel_label: relLabel,
           initial_value: datum.data[marriage_date_id],
           rel_type: field.rel_type,
         }

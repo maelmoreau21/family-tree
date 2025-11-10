@@ -123,7 +123,9 @@ export default function CardHtml(props: {
     const attr_list = []
     attr_list.push(`data-rel-type="${d.data._new_rel_data.rel_type}"`)
     if (['son', 'daughter'].includes(d.data._new_rel_data.rel_type)) attr_list.push(`data-other-parent-id="${d.data._new_rel_data.other_parent_id}"`)
-    return `<div ${attr_list.join(' ')}>${d.data._new_rel_data.label}</div>`
+    const rawLabel = d.data._new_rel_data.label || ''
+    const sanitized = rawLabel.replace(/\s*\([^)]*\)\s*$/,'').trim()
+    return `<div ${attr_list.join(' ')}>${sanitized}</div>`
   }
 
   function getMiniTree(d: TreeDatum) {

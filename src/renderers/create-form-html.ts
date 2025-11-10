@@ -193,9 +193,10 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
     }
     if (field.type === 'rel_reference') {
       const rf = field as RelReferenceField
+      const relLabel = sanitizeRelLabel(rf.rel_label)
       return `
       <div class="f3-form-field">
-        <label>${rf.label} - <i>${rf.rel_label}</i></label>
+        <label>${rf.label} - <i>${relLabel}</i></label>
         <input type="text" 
           name="${rf.id}" 
           value="${rf.initial_value || ''}"
