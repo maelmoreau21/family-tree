@@ -1,4 +1,5 @@
 import * as d3 from "../d3"
+import type { D3ZoomEvent } from 'd3-zoom'
 import createSvg from "./svg"
 
 export default function htmlContSetup(cont: HTMLElement) {
@@ -26,9 +27,9 @@ function createHtmlSvg(cont: HTMLElement) {
 }
 
 export function onZoomSetup(getSvgView: () => HTMLElement, getHtmlView: () => HTMLElement) {
-  return function onZoom(e: any) {
+  return function onZoom(e: D3ZoomEvent<Element, unknown>) {
     const t = e.transform
-  
+
     d3.select(getSvgView()).style('transform', `translate(${t.x}px, ${t.y}px) scale(${t.k}) `)
     d3.select(getHtmlView()).style('transform', `translate(${t.x}px, ${t.y}px) scale(${t.k}) `)
   }

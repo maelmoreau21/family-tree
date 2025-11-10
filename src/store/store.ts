@@ -7,7 +7,7 @@ import { CalculateTreeOptions, Tree } from "../layout/calculate-tree"
 import { ViewProps } from "../renderers/view"
 
 export default function createStore(initial_state: StoreState): Store {
-  let onUpdate: (props?: any) => void | undefined;
+  let onUpdate: ((props?: ViewProps) => void) | undefined;
   const state = {
     transition_time: 1000,
     ...initial_state,

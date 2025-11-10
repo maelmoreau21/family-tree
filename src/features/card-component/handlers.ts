@@ -78,6 +78,6 @@ const _setupReactiveTreeData = setupReactiveTreeData
 export { _setupReactiveTreeData as setupReactiveTreeData }
 
 /** @deprecated This export will be removed in a future version. Use setupReactiveTreeData instead. */
-export function getUniqueId(d: any) {
+export function getUniqueId(d: TreeDatumComponent | { unique_id?: string }) {
   return d.unique_id
 }

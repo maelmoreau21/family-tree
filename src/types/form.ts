@@ -6,11 +6,21 @@ import { RemoveRelative } from "../core/remove-relative"
 import { EditTree } from "../core/edit"
 
 
+export interface LinkExistingRelative {
+  title?: string;
+  select_placeholder?: string;
+  options: {value: string; label: string}[];
+  onSelect: (e: Event) => void;
+}
+
 export interface FormCreatorSetupProps {
   datum: Datum
   store: Store
-  fields: any[]  // todo: Field[]
-  postSubmitHandler: (props: any) => void
+  // fields can be either final Field (used by internal code) or a field "creator"
+  // object used to describe what fields to create for the form. Creator types
+  // don't require `initial_value` because that is taken from the datum.
+  fields: Array<Field | RelReferenceFieldCreator | SelectFieldCreator | {id: string; type?: string; label?: string}>
+  postSubmitHandler: (props?: Record<string, unknown>) => void
   onCancel: () => void
   editFirst: boolean
   no_edit: boolean
@@ -20,19 +30,19 @@ export interface FormCreatorSetupProps {
   removeRelative?: RemoveRelative
   deletePerson?: () => void
   onSubmit?: (e: Event, datum: Datum, applyChanges: () => void, postSubmit: () => void) => void
-  onDelete?: (datum: Datum, deletePerson: () => void, postSubmit: (props: any) => void) => void
+  onDelete?: (datum: Datum, deletePerson: () => void, postSubmit: (props?: Record<string, unknown>) => void) => void
   canEdit?: (datum: Datum) => boolean
   canDelete?: (datum: Datum) => boolean
 }
 
 export interface BaseFormCreator {
   datum_id: string;
-  fields: any[];
-  onSubmit: (e: any) => void;
+  fields: Field[];
+  onSubmit: (e: Event) => void;
   onCancel: () => void;
   onFormCreation: FormCreatorSetupProps['onFormCreation']
   no_edit: boolean;
-  linkExistingRelative?: any;
+  linkExistingRelative?: LinkExistingRelative;
 }
 
 export interface EditDatumFormCreator extends BaseFormCreator {
@@ -71,6 +81,7 @@ export interface RelReferenceField extends Field {
 }
 
 export interface RelReferenceFieldCreator {
+  type?: 'rel_reference';
   rel_type: 'spouse';
   id: string;
   label: string;

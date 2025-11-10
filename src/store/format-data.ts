@@ -11,7 +11,7 @@ export interface LegacyDatum extends Omit<Datum, 'rels'> {
   };
 }
 
-export function formatData(data: any) {
+export function formatData(data: Data | LegacyDatum[]) {
   data.forEach((d: LegacyDatum) => {
     if (!d.rels.parents) d.rels.parents = []
     if (!d.rels.spouses) d.rels.spouses = []

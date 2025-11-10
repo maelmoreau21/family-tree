@@ -1,16 +1,19 @@
 import * as d3 from "../d3"
+import type { ZoomBehavior } from '../d3'
+import type { D3ZoomEvent } from 'd3-zoom'
 import { TreeDatum } from "../types/treeData"
 
 interface ZoomEl extends HTMLElement {
-  __zoomObj: any // ZoomBehavior<Element, unknown>
+  __zoomObj: ZoomBehavior<Element, unknown>
 }
 
 function positionTree({t, svg, transition_time=2000}: {t: {k: number, x: number, y: number}, svg: SVGElement, transition_time?: number}) {
   const el_listener = getZoomListener(svg)
-  const zoom = el_listener.__zoomObj
+  const zoomObj: ZoomBehavior<Element, unknown> = el_listener.__zoomObj
 
-  d3.select(el_listener).transition().duration(transition_time || 0).delay(transition_time ? 100 : 0)  // delay 100 because of weird error of undefined something in d3 zoom
-    .call(zoom.transform, d3.zoomIdentity.scale(t.k).translate(t.x, t.y))
+  const sel = d3.select(el_listener) as any
+  const tr = sel.transition().duration(transition_time || 0).delay(transition_time ? 100 : 0)  // delay 100 because of weird error of undefined something in d3 zoom
+  ;(tr as any).call((zoomObj as any).transform, d3.zoomIdentity.scale(t.k).translate(t.x, t.y))
 }
 
 type SvgDim = {width: number, height: number}
@@ -58,10 +61,11 @@ type ManualZoomProps = {
 }
 export function manualZoom({amount, svg, transition_time=500}: ManualZoomProps) {
   const el_listener = getZoomListener(svg)
-  const zoom = el_listener.__zoomObj
-  if (!zoom) throw new Error('Zoom object not found')
-  d3.select(el_listener).transition().duration(transition_time || 0).delay(transition_time ? 100 : 0)  // delay 100 because of weird error of undefined something in d3 zoom
-    .call(zoom.scaleBy, amount)
+  const zoomObj: ZoomBehavior<Element, unknown> = el_listener.__zoomObj
+  if (!zoomObj) throw new Error('Zoom object not found')
+  const sel = d3.select(el_listener) as any
+  const tr = sel.transition().duration(transition_time || 0).delay(transition_time ? 100 : 0)  // delay 100 because of weird error of undefined something in d3 zoom
+  ;(tr as any).call((zoomObj as any).scaleBy, amount)
 }
 
 export function getCurrentZoom(svg: SVGElement) {
@@ -78,34 +82,34 @@ export function zoomTo(svg: SVGElement, zoom_level: number) {
 
 function getZoomListener(svg: SVGElement) {
   const el_listener = (svg as any).__zoomObj ? svg : (svg.parentNode as ZoomEl)
-  if (!(el_listener as ZoomEl).__zoomObj) throw new Error('Zoom object not found')
+  if (!((el_listener as any).__zoomObj)) throw new Error('Zoom object not found')
   return el_listener as ZoomEl
 }
 
 export interface ZoomProps {
-  onZoom?: (e: any) => void
+  onZoom?: (e: D3ZoomEvent<Element, unknown>) => void
   zoom_polite?: boolean
 }
 
 
-export function setupZoom(el: any, props: ZoomProps = {}) {
-  if (el.__zoom) {
+export function setupZoom(el: Element, props: ZoomProps = {}) {
+  if ((el as any).__zoom) {
     console.log('zoom already setup')
     return
   }
   const view = el.querySelector('.view')!
-  const zoom = d3.zoom().on("zoom", (props.onZoom || zoomed))
+  const zoomBehavior: ZoomBehavior<Element, unknown> = (d3.zoom() as any).on("zoom", (props.onZoom || zoomed) as any)
 
-  d3.select(el).call(zoom)
-  el.__zoomObj = zoom
+  const sel = d3.select(el) as any
+  sel.call(zoomBehavior)
+  ;(el as any).__zoomObj = zoomBehavior
 
-  if (props.zoom_polite) zoom.filter(zoomFilter)
+  if (props.zoom_polite) (zoomBehavior as any).filter(zoomFilter)
 
-  function zoomed(e: any) {
-    d3.select(view).attr("transform", e.transform);
+  function zoomed(e: D3ZoomEvent<Element, unknown>) {
+    (d3.select(view) as any).attr("transform", (e as any).transform);
   }
-
-  function zoomFilter(e: any) {
+  function zoomFilter(e: Event & { touches?: TouchList; ctrlKey?: boolean; type?: string }) {
     if (e.type === "wheel" && !e.ctrlKey) return false
     else if (e.touches && e.touches.length < 2) return false
     else return true

@@ -11,7 +11,7 @@ export class AddRelative {
   onActivate: () => void
   cancelCallback: (datum: Datum) => void
   datum: Datum | null
-  onChange: ((updated_datum: Datum, props: any) => void) | null
+  onChange: ((updated_datum: Datum, props?: Record<string, unknown>) => void) | null
   onCancel: (() => void) | null
   is_active: boolean
   addRelLabels: {
@@ -59,9 +59,9 @@ export class AddRelative {
     this.onChange = onChange
     this.onCancel = () => onCancel(this)
   
-    function onChange(updated_datum: Datum, props: any) {
+    function onChange(updated_datum: Datum, props?: Record<string, unknown>) {
       if (updated_datum?._new_rel_data) {
-        if (props?.link_rel_id) handleLinkRel(updated_datum, props.link_rel_id, store.getData())
+        if (typeof props?.link_rel_id === 'string') handleLinkRel(updated_datum, props.link_rel_id as string, store.getData())
         else delete updated_datum._new_rel_data
       } else if (updated_datum.id === datum.id) {
         if (updated_datum.data.gender !== gender_stash) {

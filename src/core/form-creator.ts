@@ -81,13 +81,17 @@ export function formCreatorSetup({
   else if (editFirst) form_creator.editable = true
 
   fields.forEach(field => {
-    if (field.type === 'rel_reference') addRelReferenceField(field)
-    else if (field.type === 'select') addSelectField(field)
+    // field can be a creator descriptor. Normalize missing properties safely
+    const f_type = (field as any).type || 'text'
+    const f_label = (field as any).label || field.id
+
+    if (f_type === 'rel_reference') addRelReferenceField(field as any)
+    else if (f_type === 'select') addSelectField(field as any)
 
     else form_creator.fields.push({
       id: field.id,
-      type: field.type,
-      label: field.label,
+      type: f_type,
+      label: f_label,
       initial_value: datum.data[field.id],
     })
   })

@@ -55,7 +55,7 @@ function setupEventListenersBase(formContainer: HTMLElement, form_creator: EditD
 function setupEventListenersNew(formContainer: HTMLElement, form_creator: NewRelFormCreator) {
   const form = formContainer.querySelector('form')!;
   const link_existing_relative_select = form.querySelector('.f3-link-existing-relative select')!;
-  if (link_existing_relative_select) {
+  if (link_existing_relative_select && form_creator.linkExistingRelative) {
     link_existing_relative_select.addEventListener('change', form_creator.linkExistingRelative.onSelect);
   }
 }
@@ -92,7 +92,7 @@ function setupEventListenersEdit(formContainer: HTMLElement, form_creator: EditD
   }
 
   const link_existing_relative_select = form.querySelector('.f3-link-existing-relative select');
-  if (link_existing_relative_select) {
+  if (link_existing_relative_select && form_creator.linkExistingRelative) {
     link_existing_relative_select.addEventListener('change', form_creator.linkExistingRelative.onSelect);
   }
 

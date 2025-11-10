@@ -1,4 +1,4 @@
-import { EditDatumFormCreator, NewRelFormCreator, SelectField, RelReferenceField } from '../types/form'
+import { EditDatumFormCreator, NewRelFormCreator, SelectField, RelReferenceField, Field } from '../types/form'
 import * as icons from './icons'
 import fr from '../i18n/fr'
 
@@ -88,7 +88,7 @@ function editBtn(form_creator: EditDatumFormCreator) {
 function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
   if (!form_creator.editable) return infoField()
   const unionFields = new Map<string, { relLabel: string; dateField?: RelReferenceField; placeField?: RelReferenceField }>()
-  const orderedFields: any[] = []
+  const orderedFields: (RelReferenceField | SelectField | Field)[] = []
 
   form_creator.fields.forEach(field => {
     if (isUnionReferenceField(field)) {
@@ -127,13 +127,14 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
     let fields_html = ''
     form_creator.fields.forEach(field => {
       if (field.type === 'rel_reference') {
-        if (!field.initial_value) return
-        fields_html += `
-        <div class="f3-info-field">
-          <span class="f3-info-field-label">${field.label} - <i>${field.rel_label}</i></span>
-          <span class="f3-info-field-value">${field.initial_value || ''}</span>
-        </div>`
-      } else if (field.type === 'select') {
+          const rf = field as RelReferenceField
+          if (!rf.initial_value) return
+          fields_html += `
+          <div class="f3-info-field">
+            <span class="f3-info-field-label">${rf.label} - <i>${rf.rel_label}</i></span>
+            <span class="f3-info-field-value">${rf.initial_value || ''}</span>
+          </div>`
+        } else if (field.type === 'select') {
         const select_field = field as SelectField
         if (!field.initial_value) return
         fields_html += `
@@ -152,12 +153,14 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
     return fields_html
   }
 
-  function isUnionReferenceField(field: any): field is RelReferenceField {
-    if (!field || field.type !== 'rel_reference' || typeof field.id !== 'string') return false
-    return field.id.startsWith('union date__ref__') || field.id.startsWith('union place__ref__')
+  function isUnionReferenceField(field: unknown): field is RelReferenceField {
+    if (!field || typeof field !== 'object') return false
+    const f = field as any
+    if (f.type !== 'rel_reference' || typeof f.id !== 'string') return false
+    return f.id.startsWith('union date__ref__') || f.id.startsWith('union place__ref__')
   }
 
-  function renderFormField(field: any) {
+  function renderFormField(field: RelReferenceField | SelectField | Field) {
     if (field.type === 'text') {
       return `
       <div class="f3-form-field">
@@ -188,13 +191,14 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
       </div>`
     }
     if (field.type === 'rel_reference') {
+      const rf = field as RelReferenceField
       return `
       <div class="f3-form-field">
-        <label>${field.label} - <i>${field.rel_label}</i></label>
+        <label>${rf.label} - <i>${rf.rel_label}</i></label>
         <input type="text" 
-          name="${field.id}" 
-          value="${field.initial_value || ''}"
-          placeholder="${field.label}">
+          name="${rf.id}" 
+          value="${rf.initial_value || ''}"
+          placeholder="${rf.label}">
       </div>`
     }
     return ''
@@ -242,9 +246,10 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
 }
 
 function addLinkExistingRelative(form_creator: EditDatumFormCreator | NewRelFormCreator) {
-  const title = form_creator.linkExistingRelative.hasOwnProperty('title') ? form_creator.linkExistingRelative.title : 'Profil déjà présent ?'
-  const select_placeholder = form_creator.linkExistingRelative.hasOwnProperty('select_placeholder') ? form_creator.linkExistingRelative.select_placeholder : 'Sélectionnez un profil'
-  const options = form_creator.linkExistingRelative.options as SelectField['options']
+  const link = form_creator.linkExistingRelative!
+  const title = link && link.hasOwnProperty('title') ? link.title : 'Profil déjà présent ?'
+  const select_placeholder = link && link.hasOwnProperty('select_placeholder') ? link.select_placeholder : 'Sélectionnez un profil'
+  const options = link ? (link.options as SelectField['options']) : []
   return (`
     <div>
       <hr>

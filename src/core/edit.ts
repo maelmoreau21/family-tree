@@ -12,7 +12,7 @@ import { Store } from "../types/store"
 import { Data, Datum } from "../types/data"
 import { TreeDatum } from "../types/treeData"
 import { AddRelative } from "./add-relative"
-import { EditDatumFormCreator, FormCreator, FormCreatorSetupProps, NewRelFormCreator } from "../types/form"
+import { EditDatumFormCreator, FormCreator, FormCreatorSetupProps, NewRelFormCreator, RelReferenceFieldCreator, SelectFieldCreator } from "../types/form"
 import { CardHtml } from "./cards/card-html"
 import { CardSvg } from "./cards/card-svg"
 import { LegacyDatum, formatDataForExport } from "../store/format-data"
@@ -66,7 +66,11 @@ export default (cont: HTMLElement, store: Store) => new EditTree(cont, store)
 export class EditTree {
   cont: HTMLElement
   store: Store
-  fields: {type: string, label: string, id: string}[]
+  // fields holds field *definitions* used to create form fields. These objects
+  // don't include the `initial_value` (that's added when the form is built
+  // from the datum). They can be either a simple descriptor or a specialized
+  // creator (select / rel_reference).
+  fields: Array<{type?: string; label?: string; id: string} | RelReferenceFieldCreator | SelectFieldCreator>
   formCont: {
     el?: HTMLElement,
     populate: (form_element: HTMLElement) => void,
@@ -267,7 +271,7 @@ export class EditTree {
     const props: {
       onCancel?: () => void,
       addRelative?: AddRelative,
-      removeRelative?: any,  // todo: RemoveRelative
+      removeRelative?: RemoveRelative,
       deletePerson?: () => void,
     } = {}
     const is_new_rel = datum?._new_rel_data
@@ -287,7 +291,7 @@ export class EditTree {
     const form_creator = formCreatorSetup({
       store: this.store, 
       datum, 
-      postSubmitHandler: (props: any) => postSubmitHandler(this, props),
+  postSubmitHandler: (props?: Record<string, unknown>) => postSubmitHandler(this, props),
       fields: this.fields, 
       onCancel: () => {},
       editFirst: this.editFirst,
@@ -309,7 +313,7 @@ export class EditTree {
   
     this.openForm()
   
-    function postSubmitHandler(self: EditTree, props: any) {
+  function postSubmitHandler(self: EditTree, props?: Record<string, unknown>) {
       if (self.addRelativeInstance.is_active) {
         self.addRelativeInstance.onChange!(datum, props)
         if (self.postSubmit) self.postSubmit(datum, self.store.getData())
@@ -317,10 +321,11 @@ export class EditTree {
         if (!active_datum) throw new Error('Active datum not found')
         self.store.updateMainId(active_datum.id)
         self.openWithoutRelCancel(active_datum)
-      } else if ((datum.to_add || datum.unknown) && props?.link_rel_id) {
-        handleLinkRel(datum, props.link_rel_id, self.store.getData())
-        self.store.updateMainId(props.link_rel_id)
-        self.openFormWithId(props.link_rel_id)
+      } else if ((datum.to_add || datum.unknown) && typeof props?.link_rel_id === 'string') {
+        const linkRelId = props.link_rel_id as string
+        handleLinkRel(datum, linkRelId, self.store.getData())
+        self.store.updateMainId(linkRelId)
+        self.openFormWithId(linkRelId)
       } else if (!props?.delete) {
         if (self.postSubmit) self.postSubmit(datum, self.store.getData())
         self.openFormWithId(datum.id)
@@ -396,8 +401,8 @@ export class EditTree {
     return this
   }
   
-  setFields(fields: any[]) {  // todo: Field[]
-    const new_fields = []
+  setFields(fields: Array<string | {id: string; label?: string; type?: string} | RelReferenceFieldCreator | SelectFieldCreator>) {  // todo: Field[]
+    const new_fields: Array<{type?: string; label?: string; id: string} | RelReferenceFieldCreator | SelectFieldCreator> = []
     if (!Array.isArray(fields)) {
       console.error('fields must be an array')
       return this
@@ -406,13 +411,15 @@ export class EditTree {
       if (typeof field === 'string') {
         const id = field
         const label = FIELD_LABEL_MAP[id] || field
-        new_fields.push({type: 'text', label, id})
+  new_fields.push({type: 'text', label, id})
       } else if (typeof field === 'object') {
-        if (!field.id) {
+        if (!('id' in field) || !(field as any).id) {
           console.error('fields must be an array of objects with id property')
         } else {
-          const label = field.label || FIELD_LABEL_MAP[field.id] || field.id
-          new_fields.push({...field, label})
+          const fld = field as {id: string; label?: string; type?: string}
+          const label = fld.label || FIELD_LABEL_MAP[fld.id] || fld.id
+          const type = fld.type || 'text'
+          new_fields.push({id: fld.id, label, type})
         }
       } else {
         console.error('fields must be an array of strings or objects')

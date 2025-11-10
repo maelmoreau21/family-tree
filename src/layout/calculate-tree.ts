@@ -6,7 +6,11 @@ import type { Datum, Data } from "../types/data";
 import type { TreeDatum, TreeData } from "../types/treeData";
 
 
-interface HN extends d3.HierarchyNode<Datum> {}
+interface HN extends d3.HierarchyNode<Datum> {
+  parent: this | null;
+  children?: this[];
+  data: Datum;
+}
 
 export interface CalculateTreeOptions {
   main_id?: string | null;
@@ -84,8 +88,8 @@ export default function calculateTree(data: Data, {
     trimTree(root, is_ancestry)
     if (modifyTreeHierarchy) modifyTreeHierarchy(root, is_ancestry)
     d3_tree(root);
-    const tree = root.descendants() as any[]
-    tree.forEach((d: any) => {
+    const tree = root.descendants() as HN[]
+    tree.forEach((d: HN) => {
       if (d.x === undefined) d.x = 0
       if (d.y === undefined) d.y = 0
     })
@@ -103,15 +107,15 @@ export default function calculateTree(data: Data, {
       return offset
     }
 
-    function hasCh(d:any) {return !!d.children}
-    function sameParent(a:any, b:any) {return a.parent == b.parent}
-    function sameBothParents(a: any, b: any) {
+    function hasCh(d: HN) { return !!d.children }
+    function sameParent(a: HN, b: HN) { return a.parent == b.parent }
+    function sameBothParents(a: HN, b: HN) {
       const parentsA = [...a.data.rels.parents].sort();
       const parentsB = [...b.data.rels.parents].sort();
-      return parentsA.length === parentsB.length && parentsA.every((p: any, i: number) => p === parentsB[i]);
+      return parentsA.length === parentsB.length && parentsA.every((p: string, i: number) => p === parentsB[i]);
     }
-    function hasSpouses(d:any) {return d.data.rels.spouses && d.data.rels.spouses.length > 0}
-    function someSpouses(a:any, b:any) {return hasSpouses(a) || hasSpouses(b)}
+    function hasSpouses(d: HN) { return d.data.rels.spouses && d.data.rels.spouses.length > 0 }
+    function someSpouses(a: HN, b: HN) { return hasSpouses(a) || hasSpouses(b) }
 
     function hierarchyGetterChildren(d:Datum) {
       const children = [...(d.rels.children || [])]

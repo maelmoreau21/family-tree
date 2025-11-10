@@ -1,6 +1,8 @@
 import { Datum } from "../../types/data"
 
-export function processCardDisplay(card_display: any) {
+export type CardDisplay = Array<string | ((d: Datum) => string) | string[]> | ((d: Datum) => string) | string
+
+export function processCardDisplay(card_display: CardDisplay) {
   const card_display_arr = []
   if (Array.isArray(card_display)) {
     card_display.forEach(d => {
