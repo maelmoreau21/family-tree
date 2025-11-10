@@ -12,7 +12,8 @@ import {
   getTreePayload,
   setTreePayload,
   getLastUpdatedAt,
-  rebuildFts
+  rebuildFts,
+  getDatabaseUrl
 } from './db.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -23,9 +24,7 @@ const DIST_DIR = path.resolve(ROOT_DIR, 'dist')
 const STATIC_DIR = path.resolve(ROOT_DIR, 'static')
 const UPLOAD_DIR = path.resolve(ROOT_DIR, 'uploads')
 
-const DEFAULT_DB_PATH = path.resolve(ROOT_DIR, 'data', 'family.db')
-const TREE_DB_PATH = path.resolve(process.env.TREE_DB_PATH || process.env.TREE_DATA_PATH || DEFAULT_DB_PATH)
-const TREE_DATA_DIR = path.resolve(process.env.TREE_DATA_DIR || path.dirname(TREE_DB_PATH))
+const TREE_DATA_DIR = path.resolve(process.env.TREE_DATA_DIR || path.join(ROOT_DIR, 'data'))
 const TREE_BACKUP_DIR = path.resolve(process.env.TREE_BACKUP_DIR || path.join(TREE_DATA_DIR, 'backups'))
 const TREE_BACKUP_LIMIT = Math.max(0, Number.parseInt(process.env.TREE_BACKUP_LIMIT || '50', 10))
 const VIEWER_PORT = Number.parseInt(process.env.VIEWER_PORT || '7920', 10)
@@ -74,6 +73,19 @@ const DEFAULT_SEED_DATASET = {
 };
 
 let lastBackupHash = null
+
+function maskDatabaseUrl(rawUrl) {
+  if (!rawUrl) return ''
+  try {
+    const url = new URL(rawUrl)
+    if (url.password) {
+      url.password = '***'
+    }
+    return url.toString()
+  } catch (error) {
+    return rawUrl
+  }
+}
 
 const uploadStorage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -132,7 +144,7 @@ function cloneSeedPayload(payload) {
 async function ensureDatabase() {
   await fs.mkdir(TREE_DATA_DIR, { recursive: true })
   const seedPayload = await loadSeedPayload()
-  initialiseDatabase(TREE_DB_PATH, () => seedPayload)
+  await initialiseDatabase(() => seedPayload)
   try {
     const current = normaliseTreePayloadRoot(await readTreeData())
     const hasPersons = Array.isArray(current.data) && current.data.length > 0
@@ -167,12 +179,12 @@ async function loadSeedPayload() {
 }
 
 async function readTreeData() {
-  return getTreePayload(TREE_DB_PATH)
+  return getTreePayload()
 }
 
 async function writeTreeData(data, options) {
   const payloadString = serialiseTreeData(data)
-  setTreePayload(TREE_DB_PATH, data, () => payloadString, options)
+  await setTreePayload(data, () => payloadString, options)
   await writeBackupSnapshot(payloadString)
 }
 
@@ -717,7 +729,7 @@ function createTreeApi({ canWrite }) {
       const normalised = normaliseTreePayloadRoot(payload)
       const persons = Array.isArray(normalised.data) ? normalised.data : []
       const summaries = buildPeopleSummary(persons)
-      const updatedAt = getLastUpdatedAt(TREE_DB_PATH)
+  const updatedAt = await getLastUpdatedAt()
 
       res.json({
         total: persons.length,
@@ -809,7 +821,7 @@ function createTreeApi({ canWrite }) {
 
     router.post('/admin/rebuild-fts', async (req, res) => {
       try {
-        const result = rebuildFts(TREE_DB_PATH)
+  const result = await rebuildFts()
         res.json(result)
       } catch (error) {
         console.error('[server] rebuild-fts failed', error)
@@ -907,7 +919,7 @@ async function start() {
 
   viewerApp.listen(VIEWER_PORT, () => {
     console.log(`[server] Viewer running on port ${VIEWER_PORT}`)
-    console.log(`[server] Serving data from ${TREE_DB_PATH}`)
+    console.log(`[server] Using PostgreSQL at ${maskDatabaseUrl(getDatabaseUrl())}`)
   })
 
   builderApp.listen(BUILDER_PORT, () => {

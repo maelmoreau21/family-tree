@@ -1,117 +1,148 @@
-import path from 'node:path'
-import fs from 'node:fs/promises'
-import Database from 'better-sqlite3'
-import { fileURLToPath } from 'node:url'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+import { Pool } from 'pg'
 
 const DATASET_ID = 'default'
 const SCHEMA_VERSION = 1
-let dbInstance = null
-let ftsEnabled = false
-let dropIndexesByDefault = true
+const DEFAULT_DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/family_tree'
 
-function openDatabase(dbPath) {
-  if (dbInstance) return dbInstance
-  dbInstance = new Database(dbPath)
-  // Enable foreign keys and tuned pragmas for better concurrency/performance.
-  // WAL mode improves concurrent reads/writes which helps the viewer/builder usage.
-  try {
-    dbInstance.pragma('foreign_keys = ON')
-    dbInstance.pragma('journal_mode = WAL')
-    // Use NORMAL synchronous to balance durability and speed for typical desktop/server use.
-    dbInstance.pragma('synchronous = NORMAL')
-    // Prefer in-memory temp storage and a slightly larger page cache for heavier datasets
-    try {
-      dbInstance.pragma('temp_store = MEMORY')
-      dbInstance.pragma('cache_size = 2000')
-    } catch (e) {
-      // optional pragmas may fail on some SQLite builds; ignore silently
-    }
-  } catch (err) {
-    // If pragmas are unsupported for any reason, continue with defaults but log.
-    console.warn('[db] Unable to apply pragmas:', err && err.message ? err.message : err)
-  }
-  return dbInstance
+const IMPORT_INDEXES = [
+  'idx_persons_given_name',
+  'idx_persons_family_name',
+  'idx_persons_name'
+]
+
+let pool = null
+let ftsEnabled = true
+let dropIndexesByDefault = true
+let initialised = false
+
+function resolveDatabaseUrl() {
+  return process.env.TREE_DATABASE_URL || process.env.DATABASE_URL || DEFAULT_DATABASE_URL
 }
 
-function ensureSchema(db) {
-  db.exec(`
+function resolvePoolSize() {
+  const raw = process.env.TREE_DB_POOL_SIZE
+  if (!raw) return 10
+  const parsed = Number.parseInt(raw, 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 10
+}
+
+export function getDatabaseUrl() {
+  return resolveDatabaseUrl()
+}
+
+function getPool() {
+  if (!pool) {
+    const connectionString = resolveDatabaseUrl()
+    pool = new Pool({ connectionString, max: resolvePoolSize() })
+    pool.on('error', (error) => {
+      console.error('[db] Unexpected error on idle PostgreSQL client', error)
+    })
+  }
+  return pool
+}
+
+async function withClient(fn) {
+  const client = await getPool().connect()
+  try {
+    return await fn(client)
+  } finally {
+    client.release()
+  }
+}
+
+async function ensureSchema(client) {
+  await client.query(`
     CREATE TABLE IF NOT EXISTS dataset (
       id TEXT PRIMARY KEY,
       payload TEXT NOT NULL,
-      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `)
+
+  await client.query(`
     CREATE TABLE IF NOT EXISTS schema_meta (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
-    );
+    )
+  `)
+
+  await client.query(`
     CREATE TABLE IF NOT EXISTS persons (
       id TEXT PRIMARY KEY,
       given_name TEXT,
       family_name TEXT,
       birth_date TEXT,
-      metadata TEXT,
-      created_at TEXT,
-      updated_at TEXT
-    );
-    CREATE INDEX IF NOT EXISTS idx_persons_given_name ON persons(given_name);
-    CREATE INDEX IF NOT EXISTS idx_persons_family_name ON persons(family_name);
-  CREATE INDEX IF NOT EXISTS idx_persons_name ON persons(family_name, given_name);
-  CREATE INDEX IF NOT EXISTS idx_dataset_updated_at ON dataset(updated_at);
-    CREATE TABLE IF NOT EXISTS relationships (
-      parent_id TEXT NOT NULL,
-      child_id TEXT NOT NULL,
-      PRIMARY KEY (parent_id, child_id),
-      FOREIGN KEY (parent_id) REFERENCES persons(id) ON DELETE CASCADE,
-      FOREIGN KEY (child_id) REFERENCES persons(id) ON DELETE CASCADE
-    );
-    CREATE TABLE IF NOT EXISTS closure (
-      ancestor_id TEXT NOT NULL,
-      descendant_id TEXT NOT NULL,
-      depth INTEGER NOT NULL,
-      PRIMARY KEY (ancestor_id, descendant_id),
-      FOREIGN KEY (ancestor_id) REFERENCES persons(id) ON DELETE CASCADE,
-      FOREIGN KEY (descendant_id) REFERENCES persons(id) ON DELETE CASCADE
-    );
-    CREATE INDEX IF NOT EXISTS idx_relationships_parent ON relationships(parent_id);
-    CREATE INDEX IF NOT EXISTS idx_relationships_child ON relationships(child_id);
-    CREATE INDEX IF NOT EXISTS idx_closure_ancestor ON closure(ancestor_id);
-    CREATE INDEX IF NOT EXISTS idx_closure_descendant ON closure(descendant_id);
+      metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
   `)
 
-  // Best-effort: create an FTS5 virtual table for fast text search.
-  // Not all SQLite builds include FTS5, so wrap in try/catch and fall back silently.
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS relationships (
+      parent_id TEXT NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+      child_id TEXT NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+      PRIMARY KEY (parent_id, child_id)
+    )
+  `)
+
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS closure (
+      ancestor_id TEXT NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+      descendant_id TEXT NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+      depth INTEGER NOT NULL,
+      PRIMARY KEY (ancestor_id, descendant_id)
+    )
+  `)
+
   try {
-    db.exec("CREATE VIRTUAL TABLE IF NOT EXISTS persons_fts USING fts5(id, given_name, family_name, metadata)")
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS persons_fts (
+        id TEXT PRIMARY KEY,
+        given_name TEXT,
+        family_name TEXT,
+        metadata TEXT,
+        search TSVECTOR
+      )
+    `)
+    await client.query('CREATE INDEX IF NOT EXISTS idx_persons_fts_search ON persons_fts USING GIN (search)')
     ftsEnabled = true
-  } catch (e) {
+  } catch (error) {
+    console.warn('[db] FTS setup failed:', error && error.message ? error.message : error)
     ftsEnabled = false
   }
 
-  // Additional helpful indexes for large datasets: timestamps
-  try {
-    db.exec('CREATE INDEX IF NOT EXISTS idx_persons_created_at ON persons(created_at)')
-    db.exec('CREATE INDEX IF NOT EXISTS idx_persons_updated_at ON persons(updated_at)')
-  } catch (e) {
-    // ignore failures for older sqlite builds
-  }
+  await ensureIndexes(client)
 }
 
-function applyMigrations(db) {
-  const row = db.prepare('SELECT value FROM schema_meta WHERE key = ?').get('schema_version')
-  let currentVersion = row ? Number.parseInt(row.value, 10) || 0 : 0
+async function ensureIndexes(client) {
+  await client.query('CREATE INDEX IF NOT EXISTS idx_dataset_updated_at ON dataset(updated_at)')
+  await client.query('CREATE INDEX IF NOT EXISTS idx_persons_given_name ON persons (LOWER(given_name))')
+  await client.query('CREATE INDEX IF NOT EXISTS idx_persons_family_name ON persons (LOWER(family_name))')
+  await client.query('CREATE INDEX IF NOT EXISTS idx_persons_name ON persons (LOWER(family_name), LOWER(given_name))')
+  await client.query('CREATE INDEX IF NOT EXISTS idx_persons_created_at ON persons(created_at)')
+  await client.query('CREATE INDEX IF NOT EXISTS idx_persons_updated_at ON persons(updated_at)')
+  await client.query('CREATE INDEX IF NOT EXISTS idx_relationships_parent ON relationships(parent_id)')
+  await client.query('CREATE INDEX IF NOT EXISTS idx_relationships_child ON relationships(child_id)')
+  await client.query('CREATE INDEX IF NOT EXISTS idx_closure_ancestor ON closure(ancestor_id)')
+  await client.query('CREATE INDEX IF NOT EXISTS idx_closure_descendant ON closure(descendant_id)')
+}
 
-  const setVersion = (version) => {
-    db.prepare(`INSERT INTO schema_meta (key, value)
-      VALUES ('schema_version', ?)
-      ON CONFLICT(key) DO UPDATE SET value = excluded.value`).run(String(version))
+async function applyMigrations(client) {
+  const result = await client.query('SELECT value FROM schema_meta WHERE key = $1', ['schema_version'])
+  let currentVersion = result.rowCount ? Number.parseInt(result.rows[0].value, 10) || 0 : 0
+
+  const setVersion = async (version) => {
+    await client.query(
+      `INSERT INTO schema_meta (key, value)
+       VALUES ($1, $2)
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+      ['schema_version', String(version)]
+    )
   }
 
   if (currentVersion === 0) {
-    currentVersion = SCHEMA_VERSION
-    setVersion(currentVersion)
+    await setVersion(SCHEMA_VERSION)
     return
   }
 
@@ -124,8 +155,7 @@ function applyMigrations(db) {
   }
 
   // Placeholder for future migrations when SCHEMA_VERSION increases.
-  currentVersion = SCHEMA_VERSION
-  setVersion(currentVersion)
+  await setVersion(SCHEMA_VERSION)
 }
 
 function normalisePayload(payload) {
@@ -156,7 +186,7 @@ function toPersonRecord(person) {
   const givenName = typeof data['first name'] === 'string' ? data['first name'] : null
   const familyName = typeof data['last name'] === 'string' ? data['last name'] : null
   const birthDate = typeof data['birthday'] === 'string' ? data['birthday'] : null
-  const metadata = JSON.stringify({ data, rels, extras })
+  const metadata = { data, rels, extras }
   return { id, givenName, familyName, birthDate, metadata }
 }
 
@@ -182,150 +212,157 @@ function collectRelationshipPairs(person, personId) {
   return pairs
 }
 
-function rebuildRelationalTables(db, payload, options = {}) {
+async function dropImportIndexes(client) {
+  for (const name of IMPORT_INDEXES) {
+    await client.query(`DROP INDEX IF EXISTS ${name}`)
+  }
+}
+
+async function rebuildRelationalTables(client, payload, options = {}) {
   const { data } = normalisePayload(payload)
   const { dropIndexes = dropIndexesByDefault, fastImport = false } = options
-  // Attempt to drop non-essential indexes to speed up large imports. We'll recreate them after inserts.
-  let droppedIndexes = false
-  // If fastImport is requested, temporarily relax synchronous setting to speed inserts.
-  let originalSynchronous = null
-  if (fastImport) {
-    try {
-      // read current value if possible
-      try { originalSynchronous = db.pragma('synchronous', { simple: true }) } catch (e) { originalSynchronous = null }
-      db.pragma('synchronous = OFF')
-      // try to set a reasonable WAL auto-checkpoint to avoid unbounded WAL growth
-      try { db.pragma('wal_autocheckpoint = 1000') } catch (e) { /* ignore */ }
-    } catch (e) {
-      // ignore
-    }
-  }
+
   if (dropIndexes) {
-    try {
-      db.exec('DROP INDEX IF EXISTS idx_persons_given_name')
-      db.exec('DROP INDEX IF EXISTS idx_persons_family_name')
-      db.exec('DROP INDEX IF EXISTS idx_persons_name')
-      droppedIndexes = true
-    } catch (e) {
-      // ignore failures; proceed without dropping
-      droppedIndexes = false
-    }
+    await dropImportIndexes(client)
   }
 
-  const ftsRecords = []
-  const insertPerson = db.prepare(`
-    INSERT OR REPLACE INTO persons (id, given_name, family_name, birth_date, metadata, created_at, updated_at)
-    VALUES (@id, @givenName, @familyName, @birthDate, @metadata, @createdAt, @updatedAt)
-  `)
-  const insertRelationship = db.prepare(
-    'INSERT OR IGNORE INTO relationships (parent_id, child_id) VALUES (?, ?)' )
+  if (fastImport) {
+    await client.query('SET LOCAL synchronous_commit = OFF')
+  }
 
-  const clearPersons = db.prepare('DELETE FROM persons')
-  const clearRels = db.prepare('DELETE FROM relationships')
-  const clearClosure = db.prepare('DELETE FROM closure')
+  await client.query('TRUNCATE TABLE relationships, closure, persons_fts, persons RESTART IDENTITY CASCADE')
 
-  clearPersons.run()
-  clearRels.run()
-  clearClosure.run()
+  const insertPersonText = `
+    INSERT INTO persons (id, given_name, family_name, birth_date, metadata, created_at, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
+  `
+  const insertRelationshipText = `
+    INSERT INTO relationships (parent_id, child_id)
+    VALUES ($1, $2)
+    ON CONFLICT DO NOTHING
+  `
 
+  const timestamp = new Date().toISOString()
   const knownIds = new Set()
   const pendingPairs = []
-  data.forEach(person => {
+  const ftsRecords = []
+
+  for (const person of data) {
     const record = toPersonRecord(person)
-    if (!record) return
-    // populate timestamp fields during rebuild
-    const ts = new Date().toISOString()
-    const recWithTs = { ...record, createdAt: ts, updatedAt: ts }
-    insertPerson.run(recWithTs)
-    if (ftsEnabled) ftsRecords.push(recWithTs)
+    if (!record) continue
+    await client.query(insertPersonText, [
+      record.id,
+      record.givenName,
+      record.familyName,
+      record.birthDate,
+      record.metadata,
+      timestamp,
+      timestamp
+    ])
     knownIds.add(record.id)
+    if (ftsEnabled) {
+      ftsRecords.push({
+        id: record.id,
+        givenName: record.givenName,
+        familyName: record.familyName,
+        metadata: record.metadata
+      })
+    }
     const pairs = collectRelationshipPairs(person, record.id)
-    pairs.forEach(pair => pendingPairs.push(pair))
-  })
+    for (const pair of pairs) {
+      pendingPairs.push(pair)
+    }
+  }
 
   const seenPairs = new Set()
-  pendingPairs.forEach(([parent, child]) => {
-    if (!parent || !child) return
-    if (!knownIds.has(parent) || !knownIds.has(child)) return
+  for (const [parent, child] of pendingPairs) {
+    if (!parent || !child) continue
+    if (!knownIds.has(parent) || !knownIds.has(child)) continue
     const key = `${parent}→${child}`
-    if (seenPairs.has(key)) return
+    if (seenPairs.has(key)) continue
     seenPairs.add(key)
-    insertRelationship.run(parent, child)
+    await client.query(insertRelationshipText, [parent, child])
+  }
+
+  await client.query('INSERT INTO closure (ancestor_id, descendant_id, depth) SELECT id, id, 0 FROM persons')
+  await client.query(`
+    WITH RECURSIVE tree AS (
+      SELECT parent_id AS ancestor_id, child_id AS descendant_id, 1 AS depth FROM relationships
+      UNION ALL
+      SELECT t.ancestor_id, r.child_id, t.depth + 1
+      FROM tree t
+      JOIN relationships r ON r.parent_id = t.descendant_id
+    )
+    INSERT INTO closure (ancestor_id, descendant_id, depth)
+    SELECT ancestor_id, descendant_id, depth FROM tree
+    ON CONFLICT (ancestor_id, descendant_id) DO NOTHING
+  `)
+
+  if (ftsEnabled) {
+    const insertFtsText = `
+      INSERT INTO persons_fts (id, given_name, family_name, metadata, search)
+      VALUES ($1, $2, $3, $4, to_tsvector('simple', $5))
+    `
+    await client.query('TRUNCATE TABLE persons_fts')
+    for (const record of ftsRecords) {
+      const metadataText = JSON.stringify(record.metadata ?? {})
+      const searchSource = [record.id, record.givenName, record.familyName, metadataText]
+        .filter(Boolean)
+        .join(' ')
+      await client.query(insertFtsText, [
+        record.id,
+        record.givenName,
+        record.familyName,
+        metadataText,
+        searchSource
+      ])
+    }
+  }
+
+  if (dropIndexes) {
+    await ensureIndexes(client)
+  }
+}
+
+export async function initialiseDatabase(seedLoader) {
+  await withClient(async (client) => {
+    await client.query('BEGIN')
+    try {
+      await ensureSchema(client)
+      await applyMigrations(client)
+      await client.query('COMMIT')
+    } catch (error) {
+      await client.query('ROLLBACK')
+      throw error
+    }
   })
 
-  db.prepare('INSERT INTO closure (ancestor_id, descendant_id, depth) SELECT id, id, 0 FROM persons').run()
-  db.prepare(`
-    WITH RECURSIVE tree(ancestor_id, descendant_id, depth) AS (
-      SELECT parent_id, child_id, 1 FROM relationships
-      UNION
-      SELECT t.ancestor_id, r.child_id, t.depth + 1
-      FROM tree AS t
-      JOIN relationships AS r ON r.parent_id = t.descendant_id
-    )
-    INSERT OR IGNORE INTO closure (ancestor_id, descendant_id, depth)
-    SELECT ancestor_id, descendant_id, depth FROM tree
-  `).run()
+  const existing = await withClient(async (client) => {
+    const result = await client.query('SELECT payload FROM dataset WHERE id = $1', [DATASET_ID])
+    return result.rowCount ? result.rows[0] : null
+  })
 
-  // Populate FTS table if available
-  if (ftsEnabled) {
-    try {
-      db.prepare('DELETE FROM persons_fts').run()
-      const insertFts = db.prepare('INSERT INTO persons_fts (id, given_name, family_name, metadata) VALUES (?, ?, ?, ?)')
-      for (const r of ftsRecords) {
-        insertFts.run(r.id, r.givenName, r.familyName, r.metadata)
-      }
-    } catch (e) {
-      // If FTS operations fail, disable for this run but continue
-      console.warn('[db] FTS update failed:', e && e.message ? e.message : e)
-      ftsEnabled = false
-    }
+  if (!existing) {
+    const fallback = typeof seedLoader === 'function'
+      ? await Promise.resolve(seedLoader())
+      : { data: [], config: {}, meta: {} }
+    await setTreePayload(fallback)
   }
 
-  // Recreate dropped indexes
-  if (droppedIndexes) {
-    try {
-      db.exec('CREATE INDEX IF NOT EXISTS idx_persons_given_name ON persons(given_name)')
-      db.exec('CREATE INDEX IF NOT EXISTS idx_persons_family_name ON persons(family_name)')
-      db.exec('CREATE INDEX IF NOT EXISTS idx_persons_name ON persons(family_name, given_name)')
-      // Ensure timestamp indexes exist after import
-      try {
-        db.exec('CREATE INDEX IF NOT EXISTS idx_persons_created_at ON persons(created_at)')
-        db.exec('CREATE INDEX IF NOT EXISTS idx_persons_updated_at ON persons(updated_at)')
-      } catch (e) { /* ignore */ }
-    } catch (e) {
-      console.warn('[db] Failed to recreate indexes:', e && e.message ? e.message : e)
-    }
-  }
-
-  // Restore synchronous pragma if we modified it
-  if (fastImport) {
-    try {
-      if (originalSynchronous !== null && originalSynchronous !== undefined) db.pragma(`synchronous = ${String(originalSynchronous)}`)
-      else db.pragma('synchronous = NORMAL')
-    } catch (e) {
-      // ignore
-    }
-  }
+  initialised = true
+  return getPool()
 }
 
-export function initialiseDatabase(dbPath, seedLoader) {
-  const db = openDatabase(dbPath)
-  ensureSchema(db)
-  applyMigrations(db)
-  const row = db.prepare('SELECT payload FROM dataset WHERE id = ?').get(DATASET_ID)
-  if (!row) {
-    const fallback = seedLoader ? seedLoader() : { data: [], config: {}, meta: {} }
-    setTreePayload(dbPath, fallback)
-  }
-  return db
-}
+export async function getTreePayload() {
+  const row = await withClient(async (client) => {
+    const result = await client.query('SELECT payload FROM dataset WHERE id = $1', [DATASET_ID])
+    return result.rowCount ? result.rows[0] : null
+  })
 
-export function getTreePayload(dbPath) {
-  const db = openDatabase(dbPath)
-  const row = db.prepare('SELECT payload FROM dataset WHERE id = ?').get(DATASET_ID)
   if (!row) {
     return { data: [], config: {}, meta: {} }
   }
+
   try {
     return JSON.parse(row.payload)
   } catch (error) {
@@ -334,8 +371,7 @@ export function getTreePayload(dbPath) {
   }
 }
 
-export function setTreePayload(dbPath, payload, serialiser, options) {
-  const db = openDatabase(dbPath)
+export async function setTreePayload(payload, serialiser, options) {
   const normalised = normalisePayload(payload)
   const stringPayload = typeof payload === 'string'
     ? payload
@@ -343,50 +379,90 @@ export function setTreePayload(dbPath, payload, serialiser, options) {
       ? serialiser(payload)
       : JSON.stringify(payload)
   const timestamp = new Date().toISOString()
-  const save = db.prepare(`
-    INSERT INTO dataset (id, payload, updated_at)
-    VALUES (?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET payload = excluded.payload, updated_at = excluded.updated_at
-  `)
-  const tx = db.transaction(() => {
-    save.run(DATASET_ID, stringPayload, timestamp)
-    rebuildRelationalTables(db, payload, options)
+
+  await withClient(async (client) => {
+    await client.query('BEGIN')
+    try {
+      await client.query(
+        `INSERT INTO dataset (id, payload, updated_at)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (id) DO UPDATE SET payload = EXCLUDED.payload, updated_at = EXCLUDED.updated_at`,
+        [DATASET_ID, stringPayload, timestamp]
+      )
+
+      await rebuildRelationalTables(client, payload, options)
+
+      await client.query('COMMIT')
+    } catch (error) {
+      await client.query('ROLLBACK')
+      throw error
+    }
   })
-  tx()
+
   return normalised
 }
 
-export function getLastUpdatedAt(dbPath) {
-  const db = openDatabase(dbPath)
-  const row = db.prepare('SELECT updated_at FROM dataset WHERE id = ?').get(DATASET_ID)
-  return row ? row.updated_at : null
+export async function getLastUpdatedAt() {
+  const row = await withClient(async (client) => {
+    const result = await client.query('SELECT updated_at FROM dataset WHERE id = $1', [DATASET_ID])
+    return result.rowCount ? result.rows[0] : null
+  })
+
+  if (!row) return null
+  const value = row.updated_at
+  if (!value) return null
+  if (value instanceof Date) return value.toISOString()
+  return String(value)
 }
 
-export function rebuildFts(dbPath) {
-  const db = openDatabase(dbPath)
+export async function rebuildFts() {
   if (!ftsEnabled) {
-    throw new Error('FTS not enabled in this SQLite build')
+    throw new Error('FTS not enabled in this PostgreSQL instance')
   }
-  try {
-    db.prepare('DELETE FROM persons_fts').run()
-    const insertFts = db.prepare('INSERT INTO persons_fts (id, given_name, family_name, metadata) VALUES (?, ?, ?, ?)')
-    const rows = db.prepare('SELECT id, given_name, family_name, metadata FROM persons').all()
-    for (const r of rows) insertFts.run(r.id, r.given_name, r.family_name, r.metadata)
-    return { ok: true, inserted: rows.length }
-  } catch (e) {
-    console.warn('[db] rebuildFts failed', e && e.message ? e.message : e)
-    throw e
-  }
+
+  const insertFtsText = `
+    INSERT INTO persons_fts (id, given_name, family_name, metadata, search)
+    VALUES ($1, $2, $3, $4, to_tsvector('simple', $5))
+  `
+
+  return withClient(async (client) => {
+    await client.query('BEGIN')
+    try {
+      await client.query('TRUNCATE TABLE persons_fts')
+      const result = await client.query('SELECT id, given_name, family_name, metadata FROM persons')
+      let inserted = 0
+      for (const row of result.rows) {
+        const metadataText = JSON.stringify(row.metadata ?? {})
+        const searchSource = [row.id, row.given_name, row.family_name, metadataText]
+          .filter(Boolean)
+          .join(' ')
+        await client.query(insertFtsText, [
+          row.id,
+          row.given_name,
+          row.family_name,
+          metadataText,
+          searchSource
+        ])
+        inserted += 1
+      }
+      await client.query('COMMIT')
+      return { ok: true, inserted }
+    } catch (error) {
+      await client.query('ROLLBACK')
+      console.warn('[db] rebuildFts failed', error && error.message ? error.message : error)
+      throw error
+    }
+  })
 }
 
-export function resetToSeed(dbPath, seedPayload) {
-  // Overwrites dataset with provided seedPayload. Use with caution.
-  return setTreePayload(dbPath, seedPayload)
+export async function resetToSeed(seedPayload) {
+  return setTreePayload(seedPayload)
 }
 
-export function closeDatabase() {
-  if (dbInstance) {
-    dbInstance.close()
-    dbInstance = null
+export async function closeDatabase() {
+  if (pool) {
+    await pool.end()
+    pool = null
   }
+  initialised = false
 }

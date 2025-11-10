@@ -13,10 +13,11 @@ npm start        # démarre le serveur Express
 ```
 
 Par défaut :
-- Viewer : http://localhost:7920
-- Builder : http://localhost:7921
 
-La base SQLite par défaut est `data/family.db`. Pour changer : exportez `TREE_DB_PATH`.
+- Viewer : [http://localhost:7920](http://localhost:7920)
+- Builder : [http://localhost:7921](http://localhost:7921)
+
+Configurez `DATABASE_URL` (ou `TREE_DATABASE_URL`) vers votre instance PostgreSQL. À défaut, l'application tente `postgresql://postgres:postgres@localhost:5432/family_tree`.
 
 ## Test rapide (CDN)
 
@@ -30,21 +31,13 @@ Pour un aperçu sans build, chargez la librairie depuis un CDN :
 
 ## Docker (recommandé pour production)
 
-Docker est recommandé pour la stabilité et la gestion des volumes (données + uploads). Exemple PowerShell :
+Docker est recommandé pour la stabilité et la gestion des volumes (données + uploads). Utilisez simplement :
 
 ```powershell
-$dataDir    = "C:\path\to\tree-data"
-$uploadsDir = "C:\path\to\tree-uploads"
-
-docker build -t family-tree .
-docker run --rm -p 7920:7920 -p 7921:7921 \
-	-e TREE_DB_PATH=/data/family.db \
-	-v ${dataDir}:/data \
-	-v ${uploadsDir}:/app/uploads \
-	family-tree
+docker compose up --build
 ```
 
-Le conteneur initialise `/data/family.db` si absent et écrit des backups dans `/data/backups`.
+La stack démarre PostgreSQL (port hôte 5433 par défaut) et l'application (ports 7920/7921) avec des volumes persistants (`./data/backups`, `./uploads`).
 
 ## Intégration aux frameworks
 
@@ -52,5 +45,5 @@ Utilisez les snippets d'exemples pour Vue/React/Angular/Svelte : importez `famil
 
 ## Ressources
 
-- Exemples : https://donatso.github.io/family-chart-doc/examples/
-- Projet amont : https://github.com/donatso/family-chart
+- Exemples : [https://donatso.github.io/family-chart-doc/examples/](https://donatso.github.io/family-chart-doc/examples/)
+- Projet amont : [https://github.com/donatso/family-chart](https://github.com/donatso/family-chart)

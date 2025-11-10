@@ -1,13 +1,28 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: family-tree-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: family
+      POSTGRES_PASSWORD: family
+      POSTGRES_DB: family_tree
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+
   family-tree:
     build: .
     image: family-tree:latest
     container_name: family-tree
     restart: unless-stopped
+    depends_on:
+      - postgres
     environment:
-      TREE_DB_PATH: "/data/family.db"
-      TREE_DATA_PATH: "/data/family.db"
-      TREE_SEED_JSON: "/data/tree.json"
+      DATABASE_URL: "postgresql://family:family@postgres:5432/family_tree"
+      TREE_DATA_DIR: "/app/data"
+      TREE_BACKUP_DIR: "/app/data/backups"
       TREE_BACKUP_LIMIT: "50"
       TREE_PAYLOAD_LIMIT: "100mb"
       VIEWER_PORT: "7920"
@@ -16,20 +31,5 @@ services:
       - "7920:7920"
       - "7921:7921"
     volumes:
-      - ./data:/data
+      - ./data/backups:/app/data/backups
       - ./uploads:/app/uploads
-
-  family-tree-sqlite:
-    build:
-      context: .
-      dockerfile: tools/sqlite/Dockerfile
-    image: family-tree-sqlite:latest
-    container_name: family-tree-sqlite
-    restart: unless-stopped
-    environment:
-      FAMILY_SQLITE_PATH: "/data/family.db"
-      FAMILY_TREE_JSON_PATH: "/data/tree.json"
-    ports:
-      - "5001:5001"
-    volumes:
-      - ./data:/data

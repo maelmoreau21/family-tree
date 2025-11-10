@@ -52,14 +52,15 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "better-sqlite3": "^12.4.1",
     "compression": "^1.8.1",
     "cors": "^2.8.5",
     "d3": "^7.9.0",
     "express": "^4.21.1",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^1.4.5-lts.1",
+    "pg": "^8.13.1"
   },
   "devDependencies": {
+    "@types/pg": "^8.11.6",
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^12.1.4",
     "@types/d3": "^7.4.3",

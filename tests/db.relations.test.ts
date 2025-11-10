@@ -1,9 +1,13 @@
-import { describe, it, expect } from 'vitest'
-import { initialiseDatabase, setTreePayload } from '../server/db'
-import Database from 'better-sqlite3'
-import os from 'node:os'
-import path from 'node:path'
-import fs from 'node:fs'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import type { TestDatabaseContext } from './utils/dbTestUtils'
+import { createTestDatabase, dropTestDatabase, resolveBaseConnectionString } from './utils/dbTestUtils'
+import { Pool } from 'pg'
+
+let dbModule: typeof import('../server/db.js') | null = null
+let dbContext: TestDatabaseContext | null = null
+let queryPool: Pool | null = null
+
+const baseConnectionString = resolveBaseConnectionString()
 
 function createPayload() {
   return {
@@ -15,24 +19,51 @@ function createPayload() {
   }
 }
 
-describe('rebuildRelationalTables relationships and closure', () => {
-  it('populates relationships and closure correctly', () => {
-    const tmp = os.tmpdir()
-    const dbPath = path.join(tmp, `family-tree-rel-${Date.now()}.db`)
-    try {
-      initialiseDatabase(dbPath)
-      const payload = createPayload()
-      setTreePayload(dbPath, payload)
-
-      const conn = new Database(dbPath)
-      const rel = conn.prepare('SELECT parent_id, child_id FROM relationships WHERE parent_id = ? AND child_id = ?').get('p1', 'p2')
-      expect(rel).toBeTruthy()
-      const closure = conn.prepare('SELECT ancestor_id, descendant_id, depth FROM closure WHERE ancestor_id = ? AND descendant_id = ?').get('p1', 'p2')
-      expect(closure).toBeTruthy()
-      expect(closure.depth).toBeGreaterThanOrEqual(1)
-      conn.close()
-    } finally {
-      try { fs.unlinkSync(dbPath) } catch (e) {}
-    }
+if (!baseConnectionString) {
+  describe.skip('rebuildRelationalTables relationships and closure', () => {
+    it('skipped because no PostgreSQL connection string is configured', () => {
+      expect(true).toBe(true)
+    })
   })
-})
+} else {
+  describe('rebuildRelationalTables relationships and closure', () => {
+    beforeAll(async () => {
+      dbContext = await createTestDatabase(baseConnectionString)
+      process.env.TREE_DATABASE_URL = dbContext.connectionString
+      dbModule = await import('../server/db.js')
+      await dbModule.initialiseDatabase()
+      queryPool = new Pool({ connectionString: dbContext.connectionString })
+    }, 30_000)
+
+    afterAll(async () => {
+      if (queryPool) {
+        await queryPool.end()
+      }
+      if (dbModule?.closeDatabase) {
+        await dbModule.closeDatabase()
+      }
+      if (dbContext) {
+        await dropTestDatabase(dbContext)
+      }
+    }, 30_000)
+
+    it('populates relationships and closure correctly', async () => {
+      if (!dbModule || !queryPool) throw new Error('Database not initialised for test')
+      const payload = createPayload()
+      await dbModule.setTreePayload(payload)
+
+      const rel = await queryPool.query(
+        'SELECT parent_id, child_id FROM relationships WHERE parent_id = $1 AND child_id = $2',
+        ['p1', 'p2']
+      )
+      expect(rel.rowCount).toBe(1)
+
+      const closure = await queryPool.query(
+        'SELECT ancestor_id, descendant_id, depth FROM closure WHERE ancestor_id = $1 AND descendant_id = $2',
+        ['p1', 'p2']
+      )
+      expect(closure.rowCount).toBe(1)
+      expect(Number(closure.rows[0].depth)).toBeGreaterThanOrEqual(1)
+    }, 30_000)
+  })
+}
