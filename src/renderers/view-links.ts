@@ -66,32 +66,53 @@ function buildSmoothCurve(points: [number, number][], isHorizontal: boolean): st
   const deduped = dedupePoints(points)
   if (deduped.length < 2) return buildPolylinePath(deduped)
 
+  const pathParts: string[] = []
   const start = deduped[0]
-  const end = deduped[deduped.length - 1]
-  const deltaPrimary = isHorizontal ? end[0] - start[0] : end[1] - start[1]
-  if (deltaPrimary === 0) return buildPolylinePath(deduped)
+  pathParts.push(`M${formatNumber(start[0])},${formatNumber(start[1])}`)
 
-  const mid = deduped[Math.floor(deduped.length / 2)] ?? [(start[0] + end[0]) / 2, (start[1] + end[1]) / 2]
-  const maxOffset = Math.max(10, Math.abs(deltaPrimary) * 0.5)
-  const desiredOffset = Math.abs(deltaPrimary) * 0.45
-  const minOffset = Math.min(40, maxOffset)
-  const offset = clamp(desiredOffset, minOffset, maxOffset)
-  const sign = deltaPrimary > 0 ? 1 : -1
+  const DEFAULT_CORNER_RADIUS = isHorizontal ? 28 : 36
 
-  let control1: [number, number]
-  let control2: [number, number]
+  for (let i = 1; i < deduped.length; i++) {
+    const current = deduped[i]
+    const prev = deduped[i - 1]
 
-  if (isHorizontal) {
-    const midY = mid[1]
-    control1 = [start[0] + sign * offset, start[1] + (midY - start[1]) * 0.35]
-    control2 = [end[0] - sign * offset, end[1] + (midY - end[1]) * 0.35]
-  } else {
-    const midX = mid[0]
-    control1 = [start[0] + (midX - start[0]) * 0.35, start[1] + sign * offset]
-    control2 = [end[0] + (midX - end[0]) * 0.35, end[1] - sign * offset]
+    if (i === deduped.length - 1) {
+      pathParts.push(`L${formatNumber(current[0])},${formatNumber(current[1])}`)
+      continue
+    }
+
+    const next = deduped[i + 1]
+    const prevVec: [number, number] = [current[0] - prev[0], current[1] - prev[1]]
+    const nextVec: [number, number] = [next[0] - current[0], next[1] - current[1]]
+    const prevLength = Math.hypot(prevVec[0], prevVec[1])
+    const nextLength = Math.hypot(nextVec[0], nextVec[1])
+
+    if (prevLength === 0 || nextLength === 0) {
+      pathParts.push(`L${formatNumber(current[0])},${formatNumber(current[1])}`)
+      continue
+    }
+
+    const cornerRadius = Math.min(DEFAULT_CORNER_RADIUS, prevLength / 2, nextLength / 2)
+    if (cornerRadius <= 0.5) {
+      pathParts.push(`L${formatNumber(current[0])},${formatNumber(current[1])}`)
+      continue
+    }
+
+    const startCorner: [number, number] = [
+      current[0] - (prevVec[0] / prevLength) * cornerRadius,
+      current[1] - (prevVec[1] / prevLength) * cornerRadius
+    ]
+
+    const endCorner: [number, number] = [
+      current[0] + (nextVec[0] / nextLength) * cornerRadius,
+      current[1] + (nextVec[1] / nextLength) * cornerRadius
+    ]
+
+    pathParts.push(`L${formatNumber(startCorner[0])},${formatNumber(startCorner[1])}`)
+    pathParts.push(`Q${formatNumber(current[0])},${formatNumber(current[1])} ${formatNumber(endCorner[0])},${formatNumber(endCorner[1])}`)
   }
 
-  return `M${formatNumber(start[0])},${formatNumber(start[1])} C${formatNumber(control1[0])},${formatNumber(control1[1])} ${formatNumber(control2[0])},${formatNumber(control2[1])} ${formatNumber(end[0])},${formatNumber(end[1])}`
+  return pathParts.join(" ")
 }
 
 function dedupePoints(points: [number, number][]): [number, number][] {
@@ -104,11 +125,6 @@ function dedupePoints(points: [number, number][]): [number, number][] {
     deduped.push([x, y])
   }
   return deduped
-}
-
-function clamp(value: number, min: number, max: number): number {
-  if (min > max) return max
-  return Math.min(Math.max(value, min), max)
 }
 
 function formatNumber(value: number): string {
