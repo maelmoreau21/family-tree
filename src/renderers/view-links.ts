@@ -48,11 +48,71 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
 }
 
 function createPath(d: Link, is_: boolean = false, _is_horizontal: boolean = false) {
-  // choose appropriate straight connector for non-curve paths to limit overlap on large sibling groups
-  const line = d3.line().curve(d3.curveLinear)
-  const lineCurve = d3.line().curve(d3.curveBasis)
   const path_data: [number, number][] = is_ ? d._d() : d.d
 
-  if (!d.curve) return line(path_data)
-  else return lineCurve(path_data)
+  if (!d.curve) return buildPolylinePath(path_data)
+  return buildSmoothCurve(path_data, _is_horizontal)
+}
+
+function buildPolylinePath(points: [number, number][]): string {
+  const deduped = dedupePoints(points)
+  if (!deduped.length) return ""
+  return deduped
+    .map(([x, y], index) => `${index === 0 ? "M" : "L"}${formatNumber(x)},${formatNumber(y)}`)
+    .join(" ")
+}
+
+function buildSmoothCurve(points: [number, number][], isHorizontal: boolean): string {
+  const deduped = dedupePoints(points)
+  if (deduped.length < 2) return buildPolylinePath(deduped)
+
+  const start = deduped[0]
+  const end = deduped[deduped.length - 1]
+  const deltaPrimary = isHorizontal ? end[0] - start[0] : end[1] - start[1]
+  if (deltaPrimary === 0) return buildPolylinePath(deduped)
+
+  const mid = deduped[Math.floor(deduped.length / 2)] ?? [(start[0] + end[0]) / 2, (start[1] + end[1]) / 2]
+  const maxOffset = Math.max(10, Math.abs(deltaPrimary) * 0.5)
+  const desiredOffset = Math.abs(deltaPrimary) * 0.45
+  const minOffset = Math.min(40, maxOffset)
+  const offset = clamp(desiredOffset, minOffset, maxOffset)
+  const sign = deltaPrimary > 0 ? 1 : -1
+
+  let control1: [number, number]
+  let control2: [number, number]
+
+  if (isHorizontal) {
+    const midY = mid[1]
+    control1 = [start[0] + sign * offset, start[1] + (midY - start[1]) * 0.35]
+    control2 = [end[0] - sign * offset, end[1] + (midY - end[1]) * 0.35]
+  } else {
+    const midX = mid[0]
+    control1 = [start[0] + (midX - start[0]) * 0.35, start[1] + sign * offset]
+    control2 = [end[0] + (midX - end[0]) * 0.35, end[1] - sign * offset]
+  }
+
+  return `M${formatNumber(start[0])},${formatNumber(start[1])} C${formatNumber(control1[0])},${formatNumber(control1[1])} ${formatNumber(control2[0])},${formatNumber(control2[1])} ${formatNumber(end[0])},${formatNumber(end[1])}`
+}
+
+function dedupePoints(points: [number, number][]): [number, number][] {
+  if (points.length < 2) return points.slice()
+  const deduped: [number, number][] = [points[0]]
+  for (let i = 1; i < points.length; i++) {
+    const [x, y] = points[i]
+    const [prevX, prevY] = deduped[deduped.length - 1]
+    if (x === prevX && y === prevY) continue
+    deduped.push([x, y])
+  }
+  return deduped
+}
+
+function clamp(value: number, min: number, max: number): number {
+  if (min > max) return max
+  return Math.min(Math.max(value, min), max)
+}
+
+function formatNumber(value: number): string {
+  if (!Number.isFinite(value)) return "0"
+  const fixed = Number(value.toFixed(3))
+  return Number.isInteger(fixed) ? fixed.toString() : fixed.toString()
 }

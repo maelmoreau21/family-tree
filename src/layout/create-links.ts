@@ -67,7 +67,7 @@ export function createLinks(d: TreeDatum, is_horizontal: boolean = false) {
       links.push({
         d: Link(child, parent_pos),
         _d: () => Link(parent_pos, {x: _or(parent_pos, 'x'), y: _or(parent_pos, 'y')}),
-        curve: false,
+        curve: true,
         id: linkId(child, d, other_parent),
         depth: d.depth+1,
         is_ancestry: false,
