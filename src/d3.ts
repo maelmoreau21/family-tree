@@ -7,6 +7,7 @@ import { line, curveMonotoneY, curveBasis, curveMonotoneX, curveLinear } from 'd
 import { hierarchy, tree } from 'd3-hierarchy'
 import { zoom, zoomIdentity, zoomTransform } from 'd3-zoom'
 import { extent } from 'd3-array'
+import { easeCubicInOut, easeSinInOut } from 'd3-ease'
 import 'd3-transition'
 
 const d3 = {
@@ -18,6 +19,8 @@ const d3 = {
   curveMonotoneX,
   curveBasis,
   curveLinear,
+  easeCubicInOut,
+  easeSinInOut,
   hierarchy,
   tree,
   zoom,
@@ -37,6 +40,8 @@ export {
   curveMonotoneX,
   curveBasis,
   curveLinear,
+  easeCubicInOut,
+  easeSinInOut,
   hierarchy,
   tree,
   zoom,

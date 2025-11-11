@@ -1,4 +1,4 @@
-// Fixed typing issues for D3 selection and data binding
+// Render SVG link paths with smooth transitions and sibling-aware staggering
 import * as d3 from "../d3";
 import { createLinks } from "../layout/create-links";
 import { calculateDelay } from "../handlers/general";
@@ -6,14 +6,29 @@ import { ViewProps } from "./view";
 import { Tree } from "../layout/calculate-tree";
 import { Link } from "../layout/create-links";
 
+type AnimationMeta = {
+  index: number
+  count: number
+}
+
+type AnimatedLink = Link & {
+  __animation?: AnimationMeta
+}
+
 export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProps = {}) {
   const links_data_dct = tree.data.reduce((acc: Record<string, Link>, d) => {
     createLinks(d, tree.is_horizontal).forEach((l) => (acc[l.id] = l));
     return acc;
   }, {});
   const links_data: Link[] = Object.values(links_data_dct);
+  prepareAnimationMetadata(links_data, tree.is_horizontal)
 
-    const link: any = d3
+  const baseDuration = Math.max(260, Math.round((props.transition_time ?? 200) * 1.25))
+  const updateDuration = Math.max(220, Math.round(baseDuration * 0.85))
+  const exitDuration = Math.max(200, Math.round(baseDuration * 0.7))
+  const siblingDelayStep = Math.min(140, Math.round(baseDuration * 0.18))
+
+  const link: any = d3
     .select(svg)
     .select(".links_view")
     .selectAll<SVGPathElement, Link>("path.link")
@@ -22,13 +37,13 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
   if (props.transition_time === undefined)
     throw new Error("transition_time is undefined");
 
-    const link_exit = link.exit();
-    const link_enter = link.enter().append("path").attr("class", "link");
-    const link_update = link_enter.merge(link);
+  const link_exit = link.exit();
+  const link_enter = link.enter().append("path").attr("class", "link");
+  const link_update = link_enter.merge(link);
 
-    link_exit.each(linkExit);
-    link_enter.each(linkEnter);
-    link_update.each(linkUpdate);
+  link_exit.each(linkExit);
+  link_enter.each(linkEnter);
+  link_update.each(linkUpdate);
 
   function linkEnter(this: SVGPathElement, d: Link) {
     const path = d3.select(this)
@@ -38,31 +53,91 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
       .style("opacity", 0)
       .attr("d", createPath(d, true, tree.is_horizontal));
 
-    const delay = props.initial ? calculateDelay(tree, d, props.transition_time!) : 0
+    const meta = (d as AnimatedLink).__animation
+    const extraDelay = meta ? meta.index * siblingDelayStep : 0
+    const delay = (props.initial ? calculateDelay(tree, d, props.transition_time!) : 0) + extraDelay
+    const offset = computeEntryOffset(meta, tree.is_horizontal)
+    if (offset) {
+      path.attr("transform", `translate(${formatNumber(offset[0])},${formatNumber(offset[1])})`)
+    } else {
+      path.attr("transform", "translate(0,0)")
+    }
+
     // Animate to the final path and fade in in a single transition to avoid conflicts
-    path.transition().duration(props.transition_time!).delay(delay)
+    path.transition().duration(baseDuration).delay(delay).ease(d3.easeCubicInOut)
       .attr("d", createPath(d, false, tree.is_horizontal))
       .style("opacity", 1)
+      .attr("transform", "translate(0,0)")
   }
 
   function linkUpdate(this: SVGPathElement, d: Link) {
     const path = d3.select(this);
-    const delay = props.initial ? calculateDelay(tree, d, props.transition_time!) : 0
+    const meta = (d as AnimatedLink).__animation
+    const extraDelay = meta ? meta.index * Math.max(40, Math.round(siblingDelayStep * 0.6)) : 0
+    const delay = (props.initial ? calculateDelay(tree, d, props.transition_time!) : 0) + extraDelay
+
+    // Ensure transform is reset before applying new animation
+    path.interrupt().attr("transform", "translate(0,0)")
+
     // Use a single transition for both shape and opacity to keep animation smooth
-    path.transition().duration(props.transition_time!).delay(delay)
+    path.transition().duration(updateDuration).delay(delay).ease(d3.easeCubicInOut)
       .attr("d", createPath(d, false, tree.is_horizontal))
       .style("opacity", 1)
   }
 
   function linkExit(this: SVGPathElement, d: unknown | Link) {
     const path = d3.select(this);
-    const exitDuration = Math.max(200, Math.floor((props.transition_time || 200) * 0.75))
+    const meta = (d as AnimatedLink | undefined)?.__animation
+    const extraDelay = meta ? (meta.count - meta.index - 1) * Math.max(30, Math.round(siblingDelayStep * 0.35)) : 0
     // Transition shape back to collapsed (_d) and fade out in one transition, then remove
-    path.transition().duration(exitDuration)
+    path.transition().duration(exitDuration).delay(extraDelay).ease(d3.easeSinInOut)
       .attr("d", createPath(d as Link, true, tree.is_horizontal))
       .style("opacity", 0)
+      .attr("transform", "translate(0,0)")
       .on("end", () => path.remove());
   }
+}
+
+function prepareAnimationMetadata(links: Link[], isHorizontal: boolean): void {
+  const groups = new Map<string, AnimatedLink[]>()
+
+  links.forEach(link => {
+    const animated = link as AnimatedLink
+    animated.__animation = undefined
+    if (link.spouse || link.is_ancestry === true) return
+    if (!Array.isArray(link.source)) return
+
+    const primaryParent = Array.isArray(link.source) ? (link.source[0] as unknown as Record<string, unknown>) : (link.source as unknown as Record<string, unknown>)
+    const parentData = primaryParent?.data as Record<string, unknown> | undefined
+    const parentId = parentData?.id ?? primaryParent?.id ?? primaryParent?.tid
+    const groupKey = parentId ? `child:${String(parentId)}` : `child:${link.id}`
+
+    if (!groups.has(groupKey)) groups.set(groupKey, [])
+    groups.get(groupKey)!.push(animated)
+  })
+
+  groups.forEach(group => {
+    const sorted = group.slice().sort((a, b) => {
+      const sourceA = (Array.isArray(a.target) ? a.target[0] : a.target) as unknown as Record<string, number>
+      const sourceB = (Array.isArray(b.target) ? b.target[0] : b.target) as unknown as Record<string, number>
+      const posA = isHorizontal ? (sourceA?.y ?? 0) : (sourceA?.x ?? 0)
+      const posB = isHorizontal ? (sourceB?.y ?? 0) : (sourceB?.x ?? 0)
+      return posA - posB
+    })
+
+    sorted.forEach((link, index) => {
+      link.__animation = { index, count: sorted.length }
+    })
+  })
+}
+
+function computeEntryOffset(meta: AnimationMeta | undefined, isHorizontal: boolean): [number, number] | null {
+  if (!meta || meta.count <= 1) return null
+  const center = (meta.count - 1) / 2
+  const offsetIndex = meta.index - center
+  const spreadStep = Math.min(14, 6 + meta.count)
+  const displacement = offsetIndex * spreadStep
+  return isHorizontal ? [0, displacement] : [displacement, 0]
 }
 
 function createPath(d: Link, is_: boolean = false, _is_horizontal: boolean = false) {
