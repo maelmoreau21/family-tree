@@ -47,9 +47,9 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
 
 }
 
-function createPath(d: Link, is_: boolean = false, is_horizontal: boolean = false) {
-  // choose appropriate monotone curve based on orientation to avoid bad angles
-  const line = d3.line().curve(is_horizontal ? d3.curveMonotoneX : d3.curveMonotoneY)
+function createPath(d: Link, is_: boolean = false, _is_horizontal: boolean = false) {
+  // choose appropriate straight connector for non-curve paths to limit overlap on large sibling groups
+  const line = d3.line().curve(d3.curveLinear)
   const lineCurve = d3.line().curve(d3.curveBasis)
   const path_data: [number, number][] = is_ ? d._d() : d.d
 

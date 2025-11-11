@@ -3,7 +3,7 @@ import {
   selectAll,
   create
 } from 'd3-selection'
-import { line, curveMonotoneY, curveBasis, curveMonotoneX } from 'd3-shape'
+import { line, curveMonotoneY, curveBasis, curveMonotoneX, curveLinear } from 'd3-shape'
 import { hierarchy, tree } from 'd3-hierarchy'
 import { zoom, zoomIdentity, zoomTransform } from 'd3-zoom'
 import { extent } from 'd3-array'
@@ -17,6 +17,7 @@ const d3 = {
   curveMonotoneY,
   curveMonotoneX,
   curveBasis,
+  curveLinear,
   hierarchy,
   tree,
   zoom,
@@ -35,6 +36,7 @@ export {
   curveMonotoneY,
   curveMonotoneX,
   curveBasis,
+  curveLinear,
   hierarchy,
   tree,
   zoom,
