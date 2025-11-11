@@ -47,7 +47,8 @@
     "docs": "typedoc",
   "docs:deploy": "npm run docs && gh-pages -d docs/api -b gh-pages",
     "prepublishOnly": "node prePublish.js",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "eslint \"src/**/*.{ts,tsx,js,jsx}\" --max-warnings=0"
   },
   "sideEffects": false,
   "dependencies": {
@@ -71,6 +72,11 @@
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
     "vitest": "^4.0.8",
-    "sharp": "^0.32.0"
+    "sharp": "^0.32.0",
+    "eslint": "^8.46.0",
+    "@typescript-eslint/parser": "^6.2.0",
+    "@typescript-eslint/eslint-plugin": "^6.2.0",
+    "eslint-config-prettier": "^9.0.0",
+    "prettier": "^3.0.0"
   }
 }

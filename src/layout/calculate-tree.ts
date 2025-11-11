@@ -127,7 +127,7 @@ export default function calculateTree(data: Data, {
     }
 
     function hierarchyGetterParents(d:Datum) {
-      let parents = [...d.rels.parents]
+      const parents = [...d.rels.parents]
       const p1 = data_stash.find(d0 => d0.id === parents[0])
       if (p1 && p1.data.gender === "F") parents.reverse()
 

@@ -130,7 +130,7 @@ export default function createStore(initial_state: StoreState): Store {
 
   function checkIfFmFormat(data: LegacyDatum[]) {
     if (state.legacy_format !== undefined) return  // already checked
-    for (let d of data) {
+    for (const d of data) {
       if (d.rels.father || d.rels.mother) {
         state.legacy_format = true
         return

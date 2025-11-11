@@ -5,8 +5,8 @@ import { CardHtmlSelection, LinkSelection } from "../types/view"
 export default function pathToMain(cards: CardHtmlSelection, links: LinkSelection, datum: TreeDatum, main_datum: TreeDatum) {
   const is_ancestry = datum.is_ancestry
   const links_data = links.data()
-  let links_node_to_main: {link: Link, node: SVGPathElement}[] = []
-  let cards_node_to_main: {card: TreeDatum, node: HTMLDivElement}[] = []
+  const links_node_to_main: {link: Link, node: SVGPathElement}[] = []
+  const cards_node_to_main: {card: TreeDatum, node: HTMLDivElement}[] = []
 
   if (is_ancestry) {
     const links_to_main: Link[] = []
@@ -71,7 +71,7 @@ export default function pathToMain(cards: CardHtmlSelection, links: LinkSelectio
       }
     })
   } else {
-    let links_to_main: Link[] = []
+    const links_to_main: Link[] = []
 
     let child = datum
     let itteration1 = 0

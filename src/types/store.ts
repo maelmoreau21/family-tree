@@ -52,7 +52,7 @@ export interface Store {
   getTreeMainDatum: () => TreeDatum;
   getTreeDatum: (id: Datum['id']) => TreeDatum | undefined;
   getLastAvailableMainDatum: () => Datum;
-  methods: { [key: string]: (...args: any[]) => any };
+  methods: { [key: string]: (...args: unknown[]) => unknown };
 }
 
 export interface UpdateTreeProps {

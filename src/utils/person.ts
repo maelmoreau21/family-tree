@@ -5,9 +5,11 @@ import { Datum } from "../types/data"
 export function formatPersonName(input: Pick<Datum, "id" | "data"> | Datum | null | undefined): string {
   if (!input) return ""
 
-  const datum: Pick<Datum, "id" | "data"> = (typeof (input as Datum).data === "object")
-    ? (input as Datum)
-    : { id: (input as any)?.id ?? "", data: (input as any) }
+  // Normalize input into an object with `id` and `data` without using `any`.
+  const asUnknown = input as unknown
+  const datum: Pick<Datum, "id" | "data"> = (asUnknown && typeof (asUnknown as Datum).data === "object")
+    ? (asUnknown as Datum)
+    : ({ id: ((asUnknown as { id?: unknown })?.id as string) ?? "", data: (asUnknown as { data?: unknown })?.data ?? {} } as unknown as Pick<Datum, "id" | "data">)
 
   const rawFirst = datum.data?.["first name"]
   const rawLast = datum.data?.["last name"]

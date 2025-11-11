@@ -94,7 +94,7 @@ export interface ZoomProps {
 
 export function setupZoom(el: Element, props: ZoomProps = {}) {
   if ((el as any).__zoom) {
-    console.log('zoom already setup')
+    // zoom already setup; silently return to avoid noisy logs in consumers
     return
   }
   const view = el.querySelector('.view')!

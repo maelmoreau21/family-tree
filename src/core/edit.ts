@@ -140,13 +140,7 @@ export class EditTree {
    */
   open(datum: Datum) {
     if (!datum.rels) datum = datum.data as unknown as Datum  // if TreeDatum is used, it will be converted to Datum. will be removed in a future version.
-    if (this.addRelativeInstance.is_active) handleAddRelative(this)
-    else if (this.removeRelativeInstance.is_active) handleRemoveRelative(this, this.store.getTreeDatum(datum.id))
-    else {
-      this.cardEditForm(datum)
-    }
-  
-    function handleAddRelative(self: EditTree) {
+    const handleAddRelative = (self: EditTree) => {
       if (datum._new_rel_data) {
         self.cardEditForm(datum)
       } else {
@@ -156,8 +150,8 @@ export class EditTree {
         self.store.updateTree({})
       }
     }
-  
-    function handleRemoveRelative(self: EditTree, tree_datum: TreeDatum | undefined) {
+
+    const handleRemoveRelative = (self: EditTree, tree_datum: TreeDatum | undefined) => {
       if (!tree_datum) throw new Error('Tree datum not found')
       if (!self.removeRelativeInstance.datum) throw new Error('Remove relative datum not found')
       if (!self.removeRelativeInstance.onCancel) throw new Error('Remove relative onCancel not found')
@@ -167,52 +161,67 @@ export class EditTree {
         self.removeRelativeInstance.onCancel()
         self.cardEditForm(datum)
       } else {
-        self.removeRelativeInstance.onChange(tree_datum, onAccept.bind(self))
-  
-        function onAccept() {
+        const onAccept = () => {
           self.removeRelativeInstance.onCancel!()
           self.updateHistory()
           self.store.updateTree({})
         }
+        self.removeRelativeInstance.onChange(tree_datum, onAccept.bind(self))
       }
+    }
+
+    if (this.addRelativeInstance.is_active) handleAddRelative(this)
+    else if (this.removeRelativeInstance.is_active) handleRemoveRelative(this, this.store.getTreeDatum(datum.id))
+    else {
+      this.cardEditForm(datum)
     }
   }
 
   private setupAddRelative() {
-    return addRelative(this.store, () => onActivate(this), (datum: Datum) => cancelCallback(this, datum))
-  
-    function onActivate(self: EditTree) {
+    const onActivate = (self: EditTree) => {
       if (self.removeRelativeInstance.is_active) self.removeRelativeInstance.onCancel!()
     }
-  
-    function cancelCallback(self: EditTree, datum: Datum) {
+
+    const cancelCallback = (self: EditTree, datum: Datum) => {
       self.store.updateMainId(datum.id)
       self.store.updateTree({})
       self.openFormWithId(datum.id)
     }
+
+    return addRelative(this.store, () => onActivate(this), (datum: Datum) => cancelCallback(this, datum))
   }
   
   private setupRemoveRelative() {
-    return removeRelative(this.store, onActivate.bind(this), cancelCallback.bind(this), this.modal)
-  
-    function onActivate(this: EditTree) {
+    const setClass = (cont: HTMLElement, add: boolean) => {
+      d3.select(cont).select('#f3Canvas').classed('f3-remove-relative-active', add)
+    }
+
+    const onActivate = function(this: EditTree) {
       if (this.addRelativeInstance.is_active) this.addRelativeInstance.onCancel!()
       setClass(this.cont, true)
     }
-  
-    function cancelCallback(this: EditTree, datum: Datum) {
+
+    const cancelCallback = function(this: EditTree, datum: Datum) {
       setClass(this.cont, false)
       this.store.updateMainId(datum.id)
       this.store.updateTree({})
       this.openFormWithId(datum.id)
     }
-  
-    function setClass(cont: HTMLElement, add: boolean) {
-      d3.select(cont).select('#f3Canvas').classed('f3-remove-relative-active', add)
-    }
+
+    return removeRelative(this.store, onActivate.bind(this), cancelCallback.bind(this), this.modal)
   }
 
   private createHistory() {
+    const historyUpdateTree = function(this: EditTree) {
+      // history updated; avoid logging to keep output clean
+      if (this.addRelativeInstance.is_active) this.addRelativeInstance.onCancel!()
+      if (this.removeRelativeInstance.is_active) this.removeRelativeInstance.onCancel!()
+      this.store.updateTree({initial: false})
+      this.history.controls.updateButtons()
+      this.openFormWithId(this.store.getMainDatum()?.id)
+      if (this.onChange) this.onChange()
+    }
+
     const history = createHistory(this.store, this._getStoreDataCopy.bind(this), historyUpdateTree.bind(this))
 
     const nav_cont = this.cont.querySelector('.f3-nav-cont') as HTMLElement
@@ -221,18 +230,8 @@ export class EditTree {
 
     history.changed()
     controls.updateButtons()
-  
+
     return {...history, controls}
-  
-    function historyUpdateTree(this: EditTree) {
-      console.log('historyUpdateTree')
-      if (this.addRelativeInstance.is_active) this.addRelativeInstance.onCancel!()
-      if (this.removeRelativeInstance.is_active) this.removeRelativeInstance.onCancel!()
-      this.store.updateTree({initial: false})
-      this.history.controls.updateButtons()
-      this.openFormWithId(this.store.getMainDatum()?.id)
-      if (this.onChange) this.onChange()
-    }
   }
   
   /**
@@ -288,10 +287,35 @@ export class EditTree {
       }
     }
   
+    const postSubmitHandler = (self: EditTree, props?: Record<string, unknown>) => {
+      if (self.addRelativeInstance.is_active) {
+        self.addRelativeInstance.onChange!(datum, props)
+        if (self.postSubmit) self.postSubmit(datum, self.store.getData())
+        const active_datum = self.addRelativeInstance.datum
+        if (!active_datum) throw new Error('Active datum not found')
+        self.store.updateMainId(active_datum.id)
+        self.openWithoutRelCancel(active_datum)
+      } else if ((datum.to_add || datum.unknown) && typeof props?.link_rel_id === 'string') {
+        const linkRelId = props.link_rel_id as string
+        handleLinkRel(datum, linkRelId, self.store.getData())
+        self.store.updateMainId(linkRelId)
+        self.openFormWithId(linkRelId)
+      } else if (!props?.delete) {
+        if (self.postSubmit) self.postSubmit(datum, self.store.getData())
+        self.openFormWithId(datum.id)
+      }
+
+      if (!self.is_fixed) self.closeForm()
+      
+      self.store.updateTree({})
+
+      self.updateHistory()
+    }
+
     const form_creator = formCreatorSetup({
       store: this.store, 
       datum, 
-  postSubmitHandler: (props?: Record<string, unknown>) => postSubmitHandler(this, props),
+      postSubmitHandler: (props?: Record<string, unknown>) => postSubmitHandler(this, props),
       fields: this.fields, 
       onCancel: () => {},
       editFirst: this.editFirst,
@@ -313,30 +337,7 @@ export class EditTree {
   
     this.openForm()
   
-  function postSubmitHandler(self: EditTree, props?: Record<string, unknown>) {
-      if (self.addRelativeInstance.is_active) {
-        self.addRelativeInstance.onChange!(datum, props)
-        if (self.postSubmit) self.postSubmit(datum, self.store.getData())
-        const active_datum = self.addRelativeInstance.datum
-        if (!active_datum) throw new Error('Active datum not found')
-        self.store.updateMainId(active_datum.id)
-        self.openWithoutRelCancel(active_datum)
-      } else if ((datum.to_add || datum.unknown) && typeof props?.link_rel_id === 'string') {
-        const linkRelId = props.link_rel_id as string
-        handleLinkRel(datum, linkRelId, self.store.getData())
-        self.store.updateMainId(linkRelId)
-        self.openFormWithId(linkRelId)
-      } else if (!props?.delete) {
-        if (self.postSubmit) self.postSubmit(datum, self.store.getData())
-        self.openFormWithId(datum.id)
-      }
   
-      if (!self.is_fixed) self.closeForm()
-      
-      self.store.updateTree({})
-  
-      self.updateHistory()
-    }
   }
   
   openForm() {
