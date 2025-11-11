@@ -1,12 +1,10 @@
 export type * from './types/index'
 
-// export { default as calculateTree } from "./layout/calculate-tree"  // handled in deprecated section
 export { default as createStore } from "./store/store"
 export { default as view } from "./renderers/view"
 export { default as createSvg } from "./renderers/svg"
 export * as handlers from './handlers'
 export * as elements from './elements'
-// export * as htmlHandlers from './renderers/html'  // handled in deprecated section
 export * as icons from './renderers/icons'
 export { default as createChart } from './core/chart'
 export { default as cardSvg } from './core/cards/card-svg'
@@ -14,9 +12,6 @@ export { default as cardHtml } from './core/cards/card-html'
 
 export { formatData, formatDataForExport } from "./store/format-data"
 
-
-
-// deprecated
 export { CalculateTree } from "./layout/calculate-tree"
 
 export { calculateTreeWithV1Data as calculateTree } from "./layout/calculate-tree"
@@ -29,7 +24,6 @@ import cardHtml from './core/cards/card-html'
 export const CardSvg = cardSvg
 /** @deprecated Use cardHtml instead. This export will be removed in a future version. */
 export const CardHtml = cardHtml
-// re-export card types with the new names
 export { CardHtml as CardHtmlClass } from './core/cards/card-html'
 export { CardSvg as CardSvgClass } from './core/cards/card-svg'
 

@@ -75,7 +75,6 @@ export default function calculateTree(data: Data, {
   tree.forEach(d => d.all_rels_displayed = isAllRelativeDisplayed(d, tree))
   if (private_cards_config) handlePrivateCards({tree, data_stash, private_cards_config})
   setupTid(tree)
-  // setupFromTo(tree)
   const dim = calculateTreeDim(tree, node_separation, level_separation)
 
   return {data: tree, data_stash, dim, main_id: main.id, is_horizontal}

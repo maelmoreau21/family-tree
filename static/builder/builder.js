@@ -266,8 +266,7 @@ function buildPersonLabel(datum) {
   const first = safeTrim(person['first name'])
   const last = safeTrim(person['last name'])
   const base = (first || last) ? [first, last].filter(Boolean).join(' ').trim() : `Profil ${datum.id}`
-  const birth = safeTrim(person['birthday'])
-  return birth ? `${base} (${birth})` : base
+  return base || 'Profil sans nom'
 }
 
 function createSearchOptionFromDatum(datum) {

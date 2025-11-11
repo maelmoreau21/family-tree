@@ -104,7 +104,6 @@ export function createLinks(d: TreeDatum, is_horizontal: boolean = false) {
     }
   }
 
-  ///
   function getMid(d1: LinkPoint, d2: LinkPoint, side: 'x' | 'y', is_: boolean = false) {
     if (is_) return _or(d1, side) - (_or(d1, side) - _or(d2, side))/2
     else return d1[side] - (d1[side] - d2[side])/2
