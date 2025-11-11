@@ -100,18 +100,33 @@ export function formCreatorSetup({
     const label = getLabel(field)
 
     if (type === 'rel_reference') {
-      if ('getRelLabel' in field && typeof field.getRelLabel === 'function') {
-        const relField: RelReferenceFieldCreator = {
-          id: field.id,
-          type: 'rel_reference',
-          label,
-          rel_type: 'rel_type' in field ? field.rel_type : 'spouse',
-          getRelLabel: field.getRelLabel,
+      // Provide a safe fallback for getRelLabel so callers (including external
+      // builder scripts) that forget to supply it don't break form creation.
+      const providedGetRelLabel = 'getRelLabel' in field && typeof field.getRelLabel === 'function'
+        ? (field as any).getRelLabel as (d: Datum) => string
+        : undefined
+
+      const defaultGetRelLabel = (d: Datum) => {
+        try {
+          if (d) return formatPersonName(d)
+        } catch (e) {
+          // ignore and fall through
         }
-        addRelReferenceField(relField)
-      } else {
-        console.error('rel_reference field creators must define getRelLabel')
+        return 'Profil sans nom'
       }
+
+      const relField: RelReferenceFieldCreator = {
+        id: field.id,
+        type: 'rel_reference',
+        label,
+        rel_type: 'rel_type' in field ? (field as any).rel_type : 'spouse',
+        getRelLabel: providedGetRelLabel || defaultGetRelLabel,
+      }
+      if (!providedGetRelLabel) {
+        // preserve the previous behavior of logging a helpful message
+        console.warn('rel_reference field creator did not provide getRelLabel — using default')
+      }
+      addRelReferenceField(relField)
       return
     }
 

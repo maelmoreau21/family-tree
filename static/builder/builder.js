@@ -167,6 +167,7 @@ const EDITABLE_DEFAULTS = [
   { value: 'birthplace', label: 'Lieu de naissance', checked: true },
   { value: 'deathplace', label: 'Lieu de Décès', checked: true },
   { value: 'bio', label: 'Biographie', checked: false }
+  ,{ value: 'union paragraph', label: "Paragraphe d'union", checked: true }
 ]
 
 const DEFAULT_CARD_DISPLAY = [
@@ -176,12 +177,10 @@ const DEFAULT_CARD_DISPLAY = [
 
 const UNION_PARAGRAPH_KEY = 'union paragraph'
 
-const DEFAULT_EDITABLE_FIELDS = removeUnionParagraphField(
-  sanitizeFieldValues(
-    EDITABLE_DEFAULTS
-      .filter(def => def.checked !== false)
-      .map(def => def.value)
-  )
+const DEFAULT_EDITABLE_FIELDS = sanitizeFieldValues(
+  EDITABLE_DEFAULTS
+    .filter(def => def.checked !== false)
+    .map(def => def.value)
 )
 
 const TEXTAREA_FIELD_KEYS = new Set(['bio', 'notes', 'biographie', 'description', 'union paragraph'])
@@ -808,7 +807,6 @@ function setupChart(payload) {
   if (!currentEditableFields.length) {
     currentEditableFields = [...DEFAULT_EDITABLE_FIELDS]
   }
-  currentEditableFields = removeUnionParagraphField(currentEditableFields)
 
   const initialEditableFields = [...currentEditableFields]
   const initialFieldDescriptors = buildFieldDescriptors(initialEditableFields)
@@ -1605,7 +1603,7 @@ function attachPanelControls({ chart, card }) {
     if (!Array.isArray(chartConfig.editableFields)) return
     chartConfig.editableFields.forEach(field => {
       const key = normalizeFieldKey(field)
-  if (getUnionFieldKind(key) || key === UNION_PARAGRAPH_KEY) return
+  if (getUnionFieldKind(key)) return
       if (!key) return
       const label = ensureFieldLabel(field, fieldLabelStore.get(key))
       const selector = `[data-field-key="${escapeSelector(key)}"]`
@@ -1821,8 +1819,8 @@ function attachPanelControls({ chart, card }) {
     const values = [...editableList.querySelectorAll('input[type="checkbox"]')]
       .filter(input => input.checked)
       .map(input => input.value)
-    let applied = values.length ? values : (chartConfig.editableFields.length ? [...chartConfig.editableFields] : ['first name'])
-    applied = removeUnionParagraphField(sanitizeFieldValues(applied))
+  let applied = values.length ? values : (chartConfig.editableFields.length ? [...chartConfig.editableFields] : ['first name'])
+  applied = sanitizeFieldValues(applied)
     if (!applied.length) {
       const fallbackField = DEFAULT_EDITABLE_FIELDS[0] || 'first name'
       applied = [fallbackField]
@@ -1833,8 +1831,7 @@ function attachPanelControls({ chart, card }) {
         if (fallbackInput) fallbackInput.checked = true
       }
     }
-
-  currentEditableFields = removeUnionParagraphField([...applied])
+  currentEditableFields = [...applied]
     const fieldDescriptors = createFieldDescriptors(applied)
     editTreeInstance.setFields(fieldDescriptors)
 
