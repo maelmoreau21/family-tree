@@ -185,10 +185,27 @@ const DEFAULT_EDITABLE_FIELDS = removeUnionParagraphField(
 )
 
 const TEXTAREA_FIELD_KEYS = new Set(['bio', 'notes', 'biographie', 'description', 'union paragraph'])
-const REL_REFERENCE_FIELD_KEYS = new Set(['union date', 'union place'])
+const UNION_FIELD_SPECS = [
+  { key: 'union date', kind: 'date' },
+  { key: 'union place', kind: 'place' }
+]
+
+function getUnionFieldKind(value) {
+  if (value === undefined || value === null) return null
+  const normalized = normalizeFieldKey(value)
+  if (!normalized) return null
+  const cleaned = normalized.replace(/[^a-z]+/g, '')
+  if (cleaned === 'uniondate' || (normalized.startsWith('union') && normalized.includes('date'))) {
+    return 'date'
+  }
+  if (cleaned === 'unionplace' || (normalized.startsWith('union') && normalized.includes('place'))) {
+    return 'place'
+  }
+  return null
+}
 
 function createFieldDescriptor(key, value, label) {
-  if (REL_REFERENCE_FIELD_KEYS.has(key)) {
+  if (getUnionFieldKind(key)) {
     return {
       id: value,
       label,
@@ -213,8 +230,8 @@ function appendUnionFieldDescriptors(descriptors, labelLookup) {
     return labelLookup[key] || key
   }
 
-  REL_REFERENCE_FIELD_KEYS.forEach(key => {
-    const exists = descriptors.some(descriptor => normalizeFieldKey(descriptor.id) === key)
+  UNION_FIELD_SPECS.forEach(({ key, kind }) => {
+    const exists = descriptors.some(descriptor => getUnionFieldKind(descriptor.id) === kind)
     if (exists) return
     const label = getLabel(key)
     descriptors.push(createFieldDescriptor(key, key, label))
@@ -1588,7 +1605,7 @@ function attachPanelControls({ chart, card }) {
     if (!Array.isArray(chartConfig.editableFields)) return
     chartConfig.editableFields.forEach(field => {
       const key = normalizeFieldKey(field)
-      if (REL_REFERENCE_FIELD_KEYS.has(key) || key === UNION_PARAGRAPH_KEY) return
+  if (getUnionFieldKind(key) || key === UNION_PARAGRAPH_KEY) return
       if (!key) return
       const label = ensureFieldLabel(field, fieldLabelStore.get(key))
       const selector = `[data-field-key="${escapeSelector(key)}"]`
