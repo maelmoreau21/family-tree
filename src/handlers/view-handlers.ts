@@ -36,23 +36,35 @@ export function calculateTreeFit(svg_dim: SvgDim, tree_dim: TreeDim) {
   let k = Math.min(width_scale, height_scale, 1)
   if (!Number.isFinite(k) || k <= 0) k = 1
 
-  const clamp = (value: number, min: number, max: number) => {
+  const stabiliseRange = (min: number, max: number) => {
+    if (!Number.isFinite(min) || !Number.isFinite(max)) {
+      return { min: 0, max: 0 }
+    }
     if (min > max) {
       const mid = (min + max) / 2
-      return mid
+      return { min: mid, max: mid }
     }
-    return Math.min(Math.max(value, min), max)
+    return { min, max }
   }
 
-  const min_tx = -k * tree_dim.min_x
-  const max_tx = svg_dim.width - k * tree_dim.max_x
-  const desired_tx = svg_dim.width / 2 - k * tree_dim.center_x
-  const tx = clamp(desired_tx, min_tx, max_tx)
+  const withOverscroll = (desired: number, min: number, max: number, viewportSize: number) => {
+    const overscroll = viewportSize * 0.25
+    if (desired < min) {
+      return Math.max(desired, min - overscroll)
+    }
+    if (desired > max) {
+      return Math.min(desired, max + overscroll)
+    }
+    return desired
+  }
 
-  const min_ty = -k * tree_dim.min_y
-  const max_ty = svg_dim.height - k * tree_dim.max_y
+  const txRange = stabiliseRange(-k * tree_dim.min_x, svg_dim.width - k * tree_dim.max_x)
+  const desired_tx = svg_dim.width / 2 - k * tree_dim.center_x
+  const tx = withOverscroll(desired_tx, txRange.min, txRange.max, svg_dim.width)
+
+  const tyRange = stabiliseRange(-k * tree_dim.min_y, svg_dim.height - k * tree_dim.max_y)
   const desired_ty = svg_dim.height / 2 - k * tree_dim.center_y
-  const ty = clamp(desired_ty, min_ty, max_ty)
+  const ty = withOverscroll(desired_ty, tyRange.min, tyRange.max, svg_dim.height)
 
   const x = tx / k
   const y = ty / k
