@@ -32,3 +32,10 @@ f3Chart.updateTree({ initial: true });
 
 - Référentiel source (amont) : https://github.com/donatso/family-chart
 - Exemples live : https://donatso.github.io/family-chart-doc/examples/
+
+## Changements récents
+
+- Viewer : bouton de masquage/affichage du panneau latéral (recherche / informations complémentaires). Le réglage est persistant côté navigateur.
+- Rendu des liens : amélioration des courbes descendant vers les enfants pour limiter la superposition sur de grandes fratries (courbes de Bézier avec rayon borné).
+- Mini Tree : l'icône s'affiche seulement quand des proches (parents/conjoints/enfants) sont masqués dans la vue.
+

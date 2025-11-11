@@ -26,6 +26,19 @@ npm start
 npm test
 ```
 
+## Nouveautés récentes
+
+- Ajout d'un bouton de masquage/affichage du panneau latéral dans le viewer : vous pouvez maintenant replier le panneau (recherche / informations complémentaires) pour agrandir l'aire du graphique. L'état est conservé dans le navigateur.
+- Amélioration du rendu des liens entre cartes : les courbes descendant vers les enfants utilisent désormais des courbes de Bézier homogènes avec un rayon borné pour éviter les fortes superpositions lorsque de nombreux enfants sont affichés (fratries importantes). Cela rend les arcs plus lisibles sans supprimer les courbures.
+- Clarification du comportement du mini-tree : l'icône "Cartes compactes (Mini Tree)" apparaît uniquement quand des proches (parents, conjoints ou enfants) sont masqués dans la vue actuelle.
+
+Après ces changements, regénérez les bundles pour que les interfaces statiques intègrent les modifications :
+
+```powershell
+# générer les bundles (production)
+npm run build
+```
+
 Accès locaux :
 
 - Viewer : [http://localhost:7920](http://localhost:7920)
@@ -72,7 +85,7 @@ Exemple d'appel PowerShell pour un import rapide :
 - Backups rolling : contrôlés par `TREE_BACKUP_DIR` et `TREE_BACKUP_LIMIT`.
 - Imports massifs : pour ajuster la taille des batchs SQL, utilisez `TREE_IMPORT_PERSON_CHUNK`, `TREE_IMPORT_RELATIONSHIP_CHUNK` et `TREE_IMPORT_FTS_CHUNK` (valeurs par défaut respectives : 500, 1000 et 500).
 - Limite de téléversement : la taille maximale d'upload d'un fichier (images) est contrôlée par `TREE_MAX_UPLOAD_MB` (par défaut 5). Vous pouvez aussi fournir `TREE_MAX_UPLOAD_SIZE` en octets pour un contrôle fin. En cas de dépassement, le serveur renvoie HTTP 413 avec un message indiquant la limite active.
- - Générer les icônes (PNG) depuis le SVG : utilisez le script de génération qui produit des fallbacks PNG (48/32/16) et une `apple-touch-icon` :
+- Générer les icônes (PNG) depuis le SVG : utilisez le script de génération qui produit des fallbacks PNG (48/32/16) et une `apple-touch-icon` :
 
 ```powershell
 # installer les dépendances (sharp est nécessaire pour la génération)
