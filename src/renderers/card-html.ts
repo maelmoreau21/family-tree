@@ -124,7 +124,7 @@ export default function CardHtml(props: {
     attr_list.push(`data-rel-type="${d.data._new_rel_data.rel_type}"`)
     if (['son', 'daughter'].includes(d.data._new_rel_data.rel_type)) attr_list.push(`data-other-parent-id="${d.data._new_rel_data.other_parent_id}"`)
     const rawLabel = d.data._new_rel_data.label || ''
-    const sanitized = rawLabel.replace(/\s*\([^)]*\)\s*$/,'').trim()
+    const sanitized = sanitizeLabel(rawLabel)
     return `<div ${attr_list.join(' ')}>${sanitized}</div>`
   }
 
@@ -207,6 +207,16 @@ export default function CardHtml(props: {
 
   function getCardDuplicateTag(d: TreeDatum) {
     return `<div class="f3-card-duplicate-tag">x${d.duplicate}</div>`
+  }
+
+  function sanitizeLabel(label: string) {
+    if (!label) return ''
+    return label
+      .replace(/\s*\([^)]*\)/g, ' ')
+      .replace(/\b\d{1,2}[\.\/\-]\d{1,2}[\.\/\-]\d{2,4}\b/g, ' ')
+      .replace(/\b\d{4}\b/g, ' ')
+      .replace(/\s{2,}/g, ' ')
+      .trim()
   }
 
   function handleCardDuplicateHover(node: HTMLElement, d: TreeDatum) {
