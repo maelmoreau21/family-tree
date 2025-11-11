@@ -1310,7 +1310,15 @@ function collectSpouseUnionDetails(datum) {
     if (!storeDatum && !hasUnionInfo) {
       return
     }
-    const name = storeDatum ? buildDatasetLabel(storeDatum) : `Profil ${id}`
+    // For union entries we prefer to show the spouse's name without birthdate suffix
+    // (birthdates are shown elsewhere). Build a short label (first + last) when possible.
+    let name = `Profil ${id}`
+    if (storeDatum) {
+      const pd = storeDatum.data || {}
+      const f = safeTrim(pd['first name'])
+      const l = safeTrim(pd['last name'])
+      name = (f || l) ? [f, l].filter(Boolean).join(' ').trim() : (storeDatum.id ? `Profil ${storeDatum.id}` : `Profil ${id}`)
+    }
     details.push({
       id,
       name,
