@@ -17,6 +17,74 @@ const datasetMeta = document.querySelector('[data-role="dataset-meta"]')
 const visibleCountEl = document.querySelector('[data-role="visible-count"]')
 const branchCountEl = document.querySelector('[data-role="branch-count"]')
 const totalCountEl = document.querySelector('[data-role="total-count"]')
+const panelToggleBtn = document.querySelector('[data-action="toggle-panel"]')
+
+const VIEWER_PANEL_STATE_KEY = 'family-tree:viewer:panelCollapsed'
+
+function getViewerStorageSafe() {
+  try {
+    return window.localStorage
+  } catch (error) {
+    return null
+  }
+}
+
+function readPanelCollapsedState() {
+  const storage = getViewerStorageSafe()
+  if (!storage) return false
+  try {
+    return storage.getItem(VIEWER_PANEL_STATE_KEY) === '1'
+  } catch (error) {
+    return false
+  }
+}
+
+function writePanelCollapsedState(collapsed) {
+  const storage = getViewerStorageSafe()
+  if (!storage) return
+  try {
+    if (collapsed) {
+      storage.setItem(VIEWER_PANEL_STATE_KEY, '1')
+    } else {
+      storage.removeItem(VIEWER_PANEL_STATE_KEY)
+    }
+  } catch (error) {
+    // silently ignore storage errors
+  }
+}
+
+function applyPanelCollapsedState(collapsed) {
+  if (collapsed) {
+    document.body.classList.add('viewer-details-collapsed')
+  } else {
+    document.body.classList.remove('viewer-details-collapsed')
+  }
+  if (panelToggleBtn) {
+    panelToggleBtn.setAttribute('aria-expanded', String(!collapsed))
+    panelToggleBtn.textContent = collapsed ? 'Afficher le panneau' : 'Replier le panneau'
+  }
+  if (detailsPanel) {
+    if (collapsed) {
+      detailsPanel.setAttribute('aria-hidden', 'true')
+      detailsPanel.hidden = true
+    } else {
+      detailsPanel.removeAttribute('aria-hidden')
+      detailsPanel.hidden = false
+    }
+  }
+}
+
+function togglePanelCollapsed(force) {
+  const next = typeof force === 'boolean' ? force : !document.body.classList.contains('viewer-details-collapsed')
+  applyPanelCollapsedState(next)
+  writePanelCollapsedState(next)
+}
+
+const initialPanelCollapsed = readPanelCollapsedState()
+applyPanelCollapsedState(initialPanelCollapsed)
+if (panelToggleBtn) {
+  panelToggleBtn.addEventListener('click', () => togglePanelCollapsed())
+}
 
 function normalizeFieldKey(value) {
   if (value === undefined || value === null) return ''
