@@ -9,6 +9,7 @@ import { Link } from "../layout/create-links";
 type AnimationMeta = {
   index: number
   count: number
+  offset?: { dx: number; dy: number }
 }
 
 type AnimatedLink = Link & {
@@ -56,7 +57,7 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
     const meta = (d as AnimatedLink).__animation
     const extraDelay = meta ? meta.index * siblingDelayStep : 0
     const delay = (props.initial ? calculateDelay(tree, d, props.transition_time!) : 0) + extraDelay
-    const offset = computeEntryOffset(meta, tree.is_horizontal)
+  const offset = computeEntryOffset(meta, tree.is_horizontal)
     if (offset) {
       path.attr("transform", `translate(${formatNumber(offset[0])},${formatNumber(offset[1])})`)
     } else {
@@ -126,25 +127,60 @@ function prepareAnimationMetadata(links: Link[], isHorizontal: boolean): void {
     })
 
     sorted.forEach((link, index) => {
-      link.__animation = { index, count: sorted.length }
+      const offset = computeSiblingOffsetVector(index, sorted.length, isHorizontal)
+      link.__animation = { index, count: sorted.length, offset }
     })
   })
 }
 
 function computeEntryOffset(meta: AnimationMeta | undefined, isHorizontal: boolean): [number, number] | null {
-  if (!meta || meta.count <= 1) return null
-  const center = (meta.count - 1) / 2
-  const offsetIndex = meta.index - center
-  const spreadStep = Math.min(14, 6 + meta.count)
-  const displacement = offsetIndex * spreadStep
-  return isHorizontal ? [0, displacement] : [displacement, 0]
+  if (!meta?.offset) return null
+  const easeFactor = isHorizontal ? 0.3 : 0.35
+  const dx = meta.offset.dx * easeFactor
+  const dy = meta.offset.dy * easeFactor
+  if (Math.abs(dx) < 0.25 && Math.abs(dy) < 0.25) return null
+  return [dx, dy]
 }
 
-function createPath(d: Link, is_: boolean = false, _is_horizontal: boolean = false) {
-  const path_data: [number, number][] = is_ ? d._d() : d.d;
+function createPath(link: Link, collapsed: boolean = false, isHorizontal: boolean = false) {
+  const animated = link as AnimatedLink
+  const sourcePoints = (collapsed ? link._d() : link.d).map(([x, y]) => [x, y] as [number, number])
+  const adjusted = applySiblingOffset(sourcePoints, animated.__animation)
 
-  if (!d.curve) return buildPolylinePath(path_data);
-  return buildSmoothCurve(path_data, _is_horizontal);
+  if (!link.curve) return buildPolylinePath(adjusted)
+  return buildSmoothCurve(adjusted, isHorizontal)
+}
+
+function applySiblingOffset(points: [number, number][], meta: AnimationMeta | undefined): [number, number][] {
+  if (!meta?.offset) return points
+  const { dx, dy } = meta.offset
+  if (Math.abs(dx) < 0.01 && Math.abs(dy) < 0.01) return points
+
+  const totalSegments = points.length - 1
+  if (totalSegments <= 1) return points
+
+  const adjusted = points.map(([x, y]) => [x, y] as [number, number])
+  for (let i = 1; i < totalSegments; i++) {
+    const t = i / totalSegments
+    const weight = Math.sin(Math.PI * t)
+    if (!Number.isFinite(weight)) continue
+    if (Math.abs(dx) > 0.01) adjusted[i][0] += dx * weight
+    if (Math.abs(dy) > 0.01) adjusted[i][1] += dy * weight
+  }
+  return adjusted
+}
+
+function computeSiblingOffsetVector(index: number, count: number, isHorizontal: boolean): { dx: number; dy: number } | undefined {
+  if (count <= 1) return undefined
+  const center = (count - 1) / 2
+  const offsetIndex = index - center
+  if (Math.abs(offsetIndex) < 0.05) return undefined
+
+  const baseSpread = isHorizontal ? 12 : 14
+  const scale = Math.min(28, baseSpread + count * 2)
+  const displacement = offsetIndex * scale
+
+  return isHorizontal ? { dx: 0, dy: displacement } : { dx: displacement, dy: 0 }
 }
 
 function buildPolylinePath(points: [number, number][]): string {

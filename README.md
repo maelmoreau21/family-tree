@@ -143,13 +143,4 @@ Invoke-RestMethod -Method Post -Uri 'http://localhost:7921/api/admin/import?drop
 
 ---
 
-## 8) Ressources GitHub (priorité)
-
-- Dépôt : https://github.com/maelmoreau21/family-tree
-- Issues : ouvrez une issue pour bugs / nouvelles fonctionnalités
-- Releases : utilisez les tags Git/GitHub pour publier des versions
-- Pages / Demos : la CI/docs peut déployer la documentation sur gh-pages
-
----
-
 Licence : MIT — voir `LICENSE.txt`
