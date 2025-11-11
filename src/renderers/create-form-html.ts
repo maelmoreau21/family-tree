@@ -96,9 +96,9 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
       const relId = unionField.rel_id
       if (!relId) return
       const bucket = unionFields.get(relId) || { relLabel: unionField.rel_label }
-  const fieldPrefix = getUnionFieldPrefix(unionField.id)
-  if (fieldPrefix === 'union date') bucket.dateField = unionField
-  else if (fieldPrefix === 'union place') bucket.placeField = unionField
+      const unionFieldType = getUnionFieldType(unionField.id)
+      if (unionFieldType === 'date') bucket.dateField = unionField
+      else if (unionFieldType === 'place') bucket.placeField = unionField
       else orderedFields.push(unionField)
       unionFields.set(relId, bucket)
       return
@@ -159,9 +159,7 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
     if (!field || typeof field !== 'object') return false
     const candidate = field as Partial<RelReferenceField>
     if (candidate.type !== 'rel_reference' || typeof candidate.id !== 'string') return false
-    const prefix = getUnionFieldPrefix(candidate.id)
-    if (!prefix) return false
-    return prefix.startsWith('union')
+    return getUnionFieldType(candidate.id) !== null
   }
 
   function renderFormField(field: RelReferenceField | SelectField | Field) {
@@ -265,12 +263,21 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
   }
 }
 
-function getUnionFieldPrefix(fieldId: string) {
-  if (typeof fieldId !== 'string') return ''
+type UnionFieldType = 'date' | 'place'
+
+function getUnionFieldType(fieldId: string): UnionFieldType | null {
+  if (typeof fieldId !== 'string') return null
   const delimiterIndex = fieldId.indexOf('__ref__')
-  if (delimiterIndex === -1) return ''
-  const prefix = fieldId.slice(0, delimiterIndex).trim().toLowerCase()
-  return prefix.replace(/[-_]+/g, ' ')
+  if (delimiterIndex === -1) return null
+  const prefix = fieldId.slice(0, delimiterIndex)
+  const normalized = prefix
+    .toLowerCase()
+    .replace(/[^a-z]+/g, ' ')
+    .trim()
+  const cleaned = normalized.replace(/[^a-z]+/g, '')
+  if (cleaned === 'uniondate' || (normalized.startsWith('union') && normalized.includes('date'))) return 'date'
+  if (cleaned === 'unionplace' || (normalized.startsWith('union') && normalized.includes('place'))) return 'place'
+  return null
 }
 
 function addLinkExistingRelative(form_creator: EditDatumFormCreator | NewRelFormCreator) {
