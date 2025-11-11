@@ -1279,9 +1279,11 @@ function applySubtreePayload(payload, context = {}) {
 }
 
 function resetDetails() {
-  if (!detailsPanel || !emptyState || !detailsList || !detailsSummary) return
-  detailsSummary.textContent = ''
-  detailsSummary.classList.add('hidden')
+  if (!detailsPanel || !emptyState || !detailsList) return
+  if (detailsSummary) {
+    detailsSummary.textContent = ''
+    detailsSummary.classList.add('hidden')
+  }
   emptyState.textContent = 'Sélectionnez une personne pour afficher les informations.'
   emptyState.classList.remove('hidden')
   detailsList.innerHTML = ''
@@ -1552,7 +1554,7 @@ function createDetailItem(field, display) {
 }
 
 function showDetailsForDatum(datum) {
-  if (!detailsPanel || !detailsList || !emptyState || !detailsSummary) return
+  if (!detailsPanel || !detailsList || !emptyState) return
   const person = datum?.data || {}
 
   detailsList.innerHTML = ''
@@ -1562,15 +1564,17 @@ function showDetailsForDatum(datum) {
   if (person['birthday']) highlight.push(`Né(e) : ${person['birthday']}`)
   if (person['death']) highlight.push(`Décès : ${person['death']}`)
 
-  if (fullName) {
-    detailsSummary.textContent = highlight.length ? `${fullName} · ${highlight.join(' · ')}` : fullName
-    detailsSummary.classList.remove('hidden')
-  } else if (highlight.length) {
-    detailsSummary.textContent = highlight.join(' · ')
-    detailsSummary.classList.remove('hidden')
-  } else {
-    detailsSummary.textContent = ''
-    detailsSummary.classList.add('hidden')
+  if (detailsSummary) {
+    if (fullName) {
+      detailsSummary.textContent = highlight.length ? `${fullName} · ${highlight.join(' · ')}` : fullName
+      detailsSummary.classList.remove('hidden')
+    } else if (highlight.length) {
+      detailsSummary.textContent = highlight.join(' · ')
+      detailsSummary.classList.remove('hidden')
+    } else {
+      detailsSummary.textContent = ''
+      detailsSummary.classList.add('hidden')
+    }
   }
 
   const entries = buildDetailEntries(person)
