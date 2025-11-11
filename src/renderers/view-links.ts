@@ -31,34 +31,36 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
     link_update.each(linkUpdate);
 
   function linkEnter(this: SVGPathElement, d: Link) {
-    d3.select(this)
+    const path = d3.select(this)
       .attr("fill", "none")
       .attr("stroke", "#fff")
       .attr("stroke-width", 1)
       .style("opacity", 0)
       .attr("d", createPath(d, true, tree.is_horizontal));
+
+    const delay = props.initial ? calculateDelay(tree, d, props.transition_time!) : 0
+    // Animate to the final path and fade in in a single transition to avoid conflicts
+    path.transition().duration(props.transition_time!).delay(delay)
+      .attr("d", createPath(d, false, tree.is_horizontal))
+      .style("opacity", 1)
   }
 
   function linkUpdate(this: SVGPathElement, d: Link) {
     const path = d3.select(this);
-    const delay = props.initial
-      ? calculateDelay(tree, d, props.transition_time!)
-      : 0;
-    path
-      .transition("path")
-      .duration(props.transition_time!)
-      .delay(delay)
+    const delay = props.initial ? calculateDelay(tree, d, props.transition_time!) : 0
+    // Use a single transition for both shape and opacity to keep animation smooth
+    path.transition().duration(props.transition_time!).delay(delay)
       .attr("d", createPath(d, false, tree.is_horizontal))
-      .style("opacity", 1);
+      .style("opacity", 1)
   }
 
   function linkExit(this: SVGPathElement, d: unknown | Link) {
     const path = d3.select(this);
-    path.transition("op").duration(800).style("opacity", 0);
-    path
-      .transition("path")
-      .duration(props.transition_time!)
+    const exitDuration = Math.max(200, Math.floor((props.transition_time || 200) * 0.75))
+    // Transition shape back to collapsed (_d) and fade out in one transition, then remove
+    path.transition().duration(exitDuration)
       .attr("d", createPath(d as Link, true, tree.is_horizontal))
+      .style("opacity", 0)
       .on("end", () => path.remove());
   }
 }
