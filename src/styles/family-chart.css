@@ -368,7 +368,8 @@
 }
 
 .f3 .card.card-has-hidden-relatives {
-  box-shadow: 0 0 0 2px rgba(97, 191, 82, 0.35);
+  /* Removed green halo: kept for historical reasons but disabled by default */
+  box-shadow: none;
 }
 
 .f3 .card.card-has-hidden-relatives .card-inner {
@@ -381,8 +382,9 @@
 }
 
 .f3 .card.card-has-hidden-relatives .mini-tree:focus-visible {
-  outline: 2px solid #61bf52;
-  outline-offset: 2px;
+  /* Remove green focus outline to avoid strong visual highlight */
+  outline: none;
+  outline-offset: 0;
 }
 
 .f3 .f3-card-duplicate-tag {
