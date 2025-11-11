@@ -1,5 +1,5 @@
 // Render SVG link paths with smooth transitions and sibling-aware staggering
-import * as d3 from "../d3";
+import * as d3 from "d3";
 import { createLinks } from "../layout/create-links";
 import { calculateDelay } from "../handlers/general";
 import { ViewProps } from "./view";
@@ -28,7 +28,7 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
   const exitDuration = Math.max(200, Math.round(baseDuration * 0.7))
   const siblingDelayStep = Math.min(140, Math.round(baseDuration * 0.18))
 
-  const link: any = d3
+  const link = d3
     .select(svg)
     .select(".links_view")
     .selectAll<SVGPathElement, Link>("path.link")

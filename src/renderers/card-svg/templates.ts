@@ -1,5 +1,7 @@
 import { TreeDatum } from "../../types/treeData"
 
+export type CardDisplayRenderer = ((data: TreeDatum['data']) => string) | Array<(data: TreeDatum['data']) => string>
+
 export interface CardDim {
   w: number
   h: number
@@ -11,7 +13,7 @@ export interface CardDim {
   img_y: number
 }
 
-export function CardBody({d,card_dim,card_display}: {d: TreeDatum, card_dim: CardDim, card_display: (data: TreeDatum['data']) => string}) {
+export function CardBody({d,card_dim,card_display}: {d: TreeDatum, card_dim: CardDim, card_display: CardDisplayRenderer}) {
   return {template: (`
     <g class="card-body">
       <rect width="${card_dim.w}" height="${card_dim.h}" class="card-body-rect" />
@@ -34,7 +36,7 @@ export function CardBodyAddNewRel({card_dim,label}: {d: TreeDatum, card_dim: Car
   }
 }
 
-export function CardText({d,card_dim,card_display}: {d: TreeDatum, card_dim: CardDim, card_display: (data: TreeDatum['data']) => string}) {
+export function CardText({d,card_dim,card_display}: {d: TreeDatum, card_dim: CardDim, card_display: CardDisplayRenderer}) {
   return {template: (`
     <g>
       <g class="card-text" clip-path="url(#card_text_clip)">
@@ -103,11 +105,12 @@ export function LinkBreakIcon({x,y,rt,closed}: {x: number, y: number, rt: number
 }
 
 export function LinkBreakIconWrapper({d,card_dim}: {d: TreeDatum, card_dim: CardDim}) {
-  let g = "",
-    r = d.data.rels, _r = d.data._rels || {},
-    closed = d.data.hide_rels,
-    areParents = (r: TreeDatum['data']['rels' ]) => r.parents.length > 0,
-    areChildren = (r: TreeDatum['data']['rels']) => r.children && r.children.length > 0
+  let g = ""
+  const r = d.data.rels
+  const _r: Partial<TreeDatum['data']['rels']> = d.data._rels || {}
+  const closed = Boolean(d.data.hide_rels)
+  const areParents = (rels: Partial<TreeDatum['data']['rels']>) => Array.isArray(rels.parents) && rels.parents.length > 0
+  const areChildren = (rels: Partial<TreeDatum['data']['rels']>) => Array.isArray(rels.children) && rels.children.length > 0
   if ((d.is_ancestry || d.data.main) && (areParents(r) || areParents(_r))) {g+=LinkBreakIcon({x:card_dim.w/2,y:0, rt: -45, closed}).template}
   if (!d.is_ancestry && d.added) {
     const sp = d.spouse!, sp_r = sp.data.rels, _sp_r = sp.data._rels || {};

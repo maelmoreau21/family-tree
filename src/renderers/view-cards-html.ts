@@ -1,4 +1,4 @@
-import * as d3 from "../d3"
+import * as d3 from "d3"
 import {calculateEnterAndExitPositions} from "../layout/handlers"
 import {calculateDelay} from "../handlers/general"
 import { Tree } from "../layout/calculate-tree"
@@ -6,7 +6,9 @@ import { ViewProps } from "./view"
 import { TreeDatum } from "../types/treeData"
 import { CardHtmlSelection } from "../types/view"
 
-export default function updateCardsHtml(svg: SVGElement, tree: Tree, Card: any, props: ViewProps = {}) {
+type HtmlCardRenderer = (this: HTMLDivElement, datum: TreeDatum) => void
+
+export default function updateCardsHtml(svg: SVGElement, tree: Tree, Card: HtmlCardRenderer, props: ViewProps = {}) {
   const div = getHtmlDiv(svg)
   const card: CardHtmlSelection = d3.select(div).select(".cards_view").selectAll<HTMLDivElement, TreeDatum>("div.card_cont").data(tree.data, d => (d as TreeDatum).tid!)
   const card_exit = card.exit()

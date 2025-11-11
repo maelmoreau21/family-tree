@@ -109,7 +109,7 @@ export function createLinks(d: TreeDatum, is_horizontal: boolean = false) {
   }
 
   function _or(d: LinkPoint, side: 'x' | 'y') {
-    const n = d.hasOwnProperty(`_${side}`) ? d[`_${side}`] : d[side]
+  const n = Object.prototype.hasOwnProperty.call(d, `_${side}`) ? d[`_${side}`] : d[side]
     if (typeof n !== 'number') throw new Error(`${side} is not a number`)
     return n
   }

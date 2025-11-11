@@ -1,4 +1,4 @@
-import * as d3 from "../../d3"
+import * as d3 from "d3"
 import { Datum, Data } from "../../types/data"
 import { Kinships, findSameAncestor } from "./calculate-kinships";
 
@@ -15,7 +15,8 @@ export function getKinshipsDataStash(main_id: Datum['id'], rel_id: Datum['id'], 
     if (kinship.includes('sister') || kinship.includes('brother')) {
       rel_id = main_id
     } else {
-      rel_id = datum.rels.spouses?.find(d_id => kinships[d_id] && !kinships[d_id].includes('in-law'))!
+      const spouseCandidate = datum.rels.spouses?.find(d_id => kinships[d_id] && !kinships[d_id].includes('in-law'))
+      if (spouseCandidate) rel_id = spouseCandidate
     }
   }
 

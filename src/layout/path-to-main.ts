@@ -79,7 +79,12 @@ export default function pathToMain(cards: CardHtmlSelection, links: LinkSelectio
       itteration1++  // to prevent infinite loop
       const child_link = links_data.find(d => d.target === child && Array.isArray(d.source))
       if (child_link) {
-        const spouse_link = links_data.find(d => d.spouse === true && sameArray([d.source, d.target], child_link.source as TreeDatum[]))!
+        const spouse_link = links_data.find(d => {
+          if (d.spouse !== true) return false
+          if (Array.isArray(d.source) || Array.isArray(d.target)) return false
+          const spousePair: TreeDatum[] = [d.source, d.target]
+          return sameArray(spousePair, child_link.source as TreeDatum[])
+        })!
         links_to_main.push(child_link)
         links_to_main.push(spouse_link)
         if (spouse_link) child = spouse_link.source as TreeDatum
@@ -107,7 +112,7 @@ export default function pathToMain(cards: CardHtmlSelection, links: LinkSelectio
   }
   return {cards_node_to_main, links_node_to_main}
 
-  function sameArray(arr1: any[], arr2: any[]) {
+  function sameArray(arr1: readonly TreeDatum[], arr2: readonly TreeDatum[]) {
     return arr1.every(d1 => arr2.some(d2 => d1 === d2))
   }
 

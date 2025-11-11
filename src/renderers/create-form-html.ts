@@ -155,10 +155,10 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
   }
 
   function isUnionReferenceField(field: unknown): field is RelReferenceField {
-  if (!field || typeof field !== 'object') return false
-  const f = field as any
-  if (f.type !== 'rel_reference' || typeof f.id !== 'string') return false
-  return f.id.startsWith('union date__ref__') || f.id.startsWith('union place__ref__')
+    if (!field || typeof field !== 'object') return false
+    const candidate = field as Partial<RelReferenceField>
+    if (candidate.type !== 'rel_reference' || typeof candidate.id !== 'string') return false
+    return candidate.id.startsWith('union date__ref__') || candidate.id.startsWith('union place__ref__')
   }
 
   function renderFormField(field: RelReferenceField | SelectField | Field) {
@@ -252,7 +252,7 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
       // remove any parenthesised suffixes such as "(31.02.1949)" or notes
       .replace(/\s*\([^)]*\)/g, ' ')
       // remove standalone date-like fragments e.g. "31.02.1949" or "31/02/1949"
-      .replace(/\b\d{1,2}[\.\/\-]\d{1,2}[\.\/\-]\d{2,4}\b/g, ' ')
+  .replace(/\b\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b/g, ' ')
       // remove trailing year-only fragments
       .replace(/\b\d{4}\b/g, ' ')
       // collapse multiple spaces
@@ -264,8 +264,8 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
 
 function addLinkExistingRelative(form_creator: EditDatumFormCreator | NewRelFormCreator) {
   const link = form_creator.linkExistingRelative!
-  const title = link && link.hasOwnProperty('title') ? link.title : 'Profil déjà présent ?'
-  const select_placeholder = link && link.hasOwnProperty('select_placeholder') ? link.select_placeholder : 'Sélectionnez un profil'
+  const title = link && Object.prototype.hasOwnProperty.call(link, 'title') ? link.title : 'Profil déjà présent ?'
+  const select_placeholder = link && Object.prototype.hasOwnProperty.call(link, 'select_placeholder') ? link.select_placeholder : 'Sélectionnez un profil'
   const options = link ? (link.options as SelectField['options']) : []
   return (`
     <div>

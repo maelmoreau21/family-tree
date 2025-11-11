@@ -1,4 +1,4 @@
-import * as d3 from "../d3"
+import * as d3 from "d3"
 import { TreeDatum } from "../types/treeData"
 import { Data, Datum } from "../types/data"
 import { CalculateTreeOptions } from "./calculate-tree"
@@ -167,7 +167,7 @@ export function handlePrivateCards({
 
     function checkParentsAndSpouses(d_id: Datum['id']) {
       if (is_private) return
-      if (private_persons.hasOwnProperty(d_id)) {
+  if (Object.prototype.hasOwnProperty.call(private_persons, d_id)) {
         is_private = private_persons[d_id]
         return is_private
       }

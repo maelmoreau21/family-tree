@@ -81,19 +81,58 @@ export function formCreatorSetup({
   if (no_edit) form_creator.editable = false
   else if (editFirst) form_creator.editable = true
 
+  const toInitialValue = (value: unknown) => {
+    if (value === null || value === undefined) return ''
+    return String(value)
+  }
+
+  type FieldInput = FormCreatorSetupProps['fields'][number]
+  const getLabel = (field: FieldInput) => ('label' in field && field.label) ? field.label : field.id
+  const getType = (field: FieldInput) => ('type' in field && field.type) ? field.type : 'text'
+
   fields.forEach(field => {
-    // field can be a creator descriptor. Normalize missing properties safely
-    const f_type = (field as any).type || 'text'
-    const f_label = (field as any).label || field.id
+    if ('initial_value' in field) {
+      form_creator.fields.push(field)
+      return
+    }
 
-    if (f_type === 'rel_reference') addRelReferenceField(field as any)
-    else if (f_type === 'select') addSelectField(field as any)
+    const type = getType(field)
+    const label = getLabel(field)
 
-    else form_creator.fields.push({
+    if (type === 'rel_reference') {
+      if ('getRelLabel' in field && typeof field.getRelLabel === 'function') {
+        const relField: RelReferenceFieldCreator = {
+          id: field.id,
+          type: 'rel_reference',
+          label,
+          rel_type: 'rel_type' in field ? field.rel_type : 'spouse',
+          getRelLabel: field.getRelLabel,
+        }
+        addRelReferenceField(relField)
+      } else {
+        console.error('rel_reference field creators must define getRelLabel')
+      }
+      return
+    }
+
+    if (type === 'select') {
+      const selectCreator: SelectFieldCreator = {
+        id: field.id,
+        type: 'select',
+        label,
+        placeholder: 'placeholder' in field ? field.placeholder : undefined,
+        options: 'options' in field ? field.options : undefined,
+        optionCreator: 'optionCreator' in field ? field.optionCreator : undefined,
+      }
+      addSelectField(selectCreator)
+      return
+    }
+
+    form_creator.fields.push({
       id: field.id,
-      type: f_type,
-      label: f_label,
-      initial_value: datum.data[field.id],
+      type,
+      label,
+      initial_value: toInitialValue(datum.data[field.id])
     })
   })
 
@@ -114,7 +153,7 @@ export function formCreatorSetup({
           label: field.label,
           rel_id: spouse_id,
           rel_label: relLabel,
-          initial_value: datum.data[marriage_date_id],
+          initial_value: toInitialValue(datum.data[marriage_date_id]),
           rel_type: field.rel_type,
         }
         form_creator.fields.push(rel_reference_field)
@@ -124,13 +163,14 @@ export function formCreatorSetup({
 
   function addSelectField(field: SelectFieldCreator) {
     if (!field.options && !field.optionCreator) return console.error('optionCreator or options is not set for field', field)
+    const options = field.options || (field.optionCreator ? field.optionCreator(datum) : [])
     const select_field: SelectField = {
       id: field.id,
       type: field.type,
       label: field.label,
-      initial_value: datum.data[field.id],
+      initial_value: toInitialValue(datum.data[field.id]),
       placeholder: field.placeholder,
-      options: field.options || field.optionCreator!(datum),
+      options,
     }
     form_creator.fields.push(select_field)
   }

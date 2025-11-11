@@ -1,9 +1,10 @@
 import cardSvgRenderer from "../../renderers/card-svg/card-svg"
 import {updateCardSvgDefs} from "../../renderers/card-svg/defs"
-import {processCardDisplay} from "./utils"
+import {processCardDisplay, CardDisplay} from "./utils"
 import { Store } from "../../types/store"
 import { TreeDatum } from "../../types/treeData"
 import { CardDim } from "../../renderers/card-svg/templates"
+import { Datum } from "../../types/data"
 
 export default function CardSvgWrapper(cont: HTMLElement, store: Store) { return new CardSvg(cont, store) }
 
@@ -12,7 +13,7 @@ export class CardSvg {
   store: Store
   svg: SVGElement
   card_dim: CardDim
-  card_display: any
+  card_display: Array<(datum: Datum) => string>
   mini_tree: boolean
   link_break: boolean
   onCardClick: (e: MouseEvent, d: TreeDatum) => void
@@ -23,7 +24,7 @@ export class CardSvg {
     this.store = store
     this.svg = this.cont.querySelector('svg.main_svg')!
     this.card_dim = {w:220,h:70,text_x:75,text_y:15,img_w:60,img_h:60,img_x:5,img_y:5}
-    this.card_display = []
+  this.card_display = []
     this.mini_tree = true
     this.link_break = false
     this.onCardClick = this.onCardClickDefault.bind(this)
@@ -44,7 +45,7 @@ export class CardSvg {
     })
   }
 
-  setCardDisplay(card_display: CardSvg['card_display']) {
+  setCardDisplay(card_display: CardDisplay) {
     this.card_display = processCardDisplay(card_display)
   
     return this

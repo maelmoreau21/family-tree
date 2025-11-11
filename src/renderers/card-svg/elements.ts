@@ -1,9 +1,10 @@
-import * as d3 from "../../d3"
+import * as d3 from "d3"
 import {cardChangeMain} from "./methods"
 import {
   CardBody,
   CardImage,
   MiniTree,
+  type CardDisplayRenderer,
 } from "./templates"
 import { Store } from "../../types/store"
 import { TreeDatum } from "../../types/treeData"
@@ -31,7 +32,7 @@ function miniTree(d: TreeDatum, props: {card_dim: CardDim, onMiniTreeClick?: (e:
   return g.node()
 }
 
-function cardBody(d: TreeDatum, props: {card_dim: CardDim, onCardClick: (e: MouseEvent, d: TreeDatum) => void, store: Store, card_display: (data: TreeDatum['data']) => string}) {
+function cardBody(d: TreeDatum, props: {card_dim: CardDim, onCardClick: (e: MouseEvent, d: TreeDatum) => void, store: Store, card_display: CardDisplayRenderer}) {
   const card_dim = props.card_dim;
   const g = d3.create('svg:g').html(CardBody({d, card_dim, card_display: props.card_display}).template)
   g.on("click", function (e) {
@@ -46,7 +47,8 @@ function cardBody(d: TreeDatum, props: {card_dim: CardDim, onCardClick: (e: Mous
 function cardImage(d: TreeDatum, props: {card_dim: CardDim, store: Store}) {
   if (d.data.to_add) return
   const card_dim = props.card_dim;
-  const g = d3.create('svg:g').html(CardImage({d, image: d.data.data.avatar || null, card_dim, maleIcon: undefined, femaleIcon: undefined}).template)
+  const avatar = typeof d.data.data.avatar === "string" ? d.data.data.avatar : ""
+  const g = d3.create('svg:g').html(CardImage({d, image: avatar, card_dim, maleIcon: undefined, femaleIcon: undefined}).template)
   return g.node()
 }
 

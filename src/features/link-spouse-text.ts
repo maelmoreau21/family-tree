@@ -1,4 +1,4 @@
-import * as d3 from "../d3"
+import * as d3 from "d3"
 import {calculateDelay} from "../handlers/general"
 import { Tree } from "../layout/calculate-tree"
 import { TreeDatum } from "../types/treeData"

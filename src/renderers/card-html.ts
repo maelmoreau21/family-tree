@@ -1,15 +1,16 @@
-import * as d3 from "../d3"
-import type { BaseType } from '../d3'
+import * as d3 from "d3"
+import type { BaseType } from "d3-selection"
 import {personSvgIcon, miniTreeSvgIcon, plusSvgIcon} from "./icons"
 import { Store } from "../types/store";
 import { TreeDatum } from "../types/treeData";
 import { CardDim } from "../types/card";
+import { Datum } from "../types/data";
 
 export default function CardHtml(props: {
   style: 'default' | 'imageCircleRect' | 'imageCircle' | 'imageRect' | 'rect';
   cardInnerHtmlCreator?: (d: TreeDatum) => string;
   onCardClick: (e: Event, d: TreeDatum) => void;
-  onCardUpdate: (d: TreeDatum) => void;
+  onCardUpdate?: (this: HTMLElement, d: TreeDatum) => void;
   onCardMouseenter?: (e: Event, d: TreeDatum) => void;
   onCardMouseleave?: (e: Event, d: TreeDatum) => void;
   mini_tree: boolean;
@@ -18,7 +19,7 @@ export default function CardHtml(props: {
   empty_card_label: string;
   unknown_card_label: string;
   cardImageField: string;
-  card_display: ((d: TreeDatum['data']) => string)[];
+  card_display: ((datum: Datum) => string)[];
   store: Store;
   onMiniTreeClick?: (e: Event, d: TreeDatum) => void;
 }) {
@@ -38,7 +39,9 @@ export default function CardHtml(props: {
       ${(props.cardInnerHtmlCreator && !d.data._new_rel_data) ? props.cardInnerHtmlCreator(d) : cardInner(d)}
     </div>
     `)
-    const cardNode = this.querySelector('.card')!
+    const hostSelection = d3.select<HTMLElement, TreeDatum>(this)
+    const cardSelection = hostSelection.select<HTMLElement>('.card')
+    const cardNode = cardSelection.node()!
     cardNode.addEventListener('click', (e: Event) => props.onCardClick(e, d))
     if (!d.data.to_add && !d.data._new_rel_data && !d.all_rels_displayed) {
       cardNode.classList.add('card-has-hidden-relatives')
@@ -65,17 +68,31 @@ export default function CardHtml(props: {
         }
       })
     }
-    if (props.onCardUpdate) props.onCardUpdate.call(this, d)
+  if (props.onCardUpdate) props.onCardUpdate.call(this, d)
 
-    if (props.onCardMouseenter) d3.select(this).select('.card').on('mouseenter', (e: Event) => props.onCardMouseenter!(e, d))
-    if (props.onCardMouseleave) d3.select(this).select('.card').on('mouseleave', (e: Event) => props.onCardMouseleave!(e, d))
+    if (props.onCardMouseenter) {
+      cardSelection.on('mouseenter', function(event: Event, datum: TreeDatum) {
+        props.onCardMouseenter!(event, datum)
+      })
+    }
+    if (props.onCardMouseleave) {
+      cardSelection.on('mouseleave', function(event: Event, datum: TreeDatum) {
+        props.onCardMouseleave!(event, datum)
+      })
+    }
     if (d.duplicate) handleCardDuplicateHover(this, d)
     if (location.origin.includes('localhost')) {
       d.__node = this.querySelector('.card') as HTMLElement
-      d.__label = d.data.data['first name']
+      const labelValue = d.data.data['first name']
+      d.__label = typeof labelValue === 'string' ? labelValue : undefined
       if (d.data.to_add) {
         const spouse = d.spouse || d.coparent || null
-        if (spouse) d3.select(this).select('.card').attr('data-to-add', spouse.data.data['first name'])
+        if (spouse) {
+          const spouseName = spouse.data.data['first name']
+          if (typeof spouseName === 'string') {
+            cardSelection.attr('data-to-add', spouseName)
+          }
+        }
       }
     }
   }
@@ -83,7 +100,7 @@ export default function CardHtml(props: {
   function getCardInnerImageCircle(d: TreeDatum) {
     return (`
     <div class="card-inner card-image-circle" ${getCardStyle()}>
-  ${d.data.data[props.cardImageField] ? `<img loading="lazy" decoding="async" src="${d.data.data[props.cardImageField]}" ${getCardImageStyle()}>` : noImageIcon(d)}
+  ${getCardImageMarkup(d)}
       <div class="card-label">${textDisplay(d)}</div>
       ${d.duplicate ? getCardDuplicateTag(d) : ''}
     </div>
@@ -93,7 +110,7 @@ export default function CardHtml(props: {
   function getCardInnerImageRect(d: TreeDatum) {
     return (`
     <div class="card-inner card-image-rect" ${getCardStyle()}>
-  ${d.data.data[props.cardImageField] ? `<img loading="lazy" decoding="async" src="${d.data.data[props.cardImageField]}" ${getCardImageStyle()}>` : noImageIcon(d)}
+  ${getCardImageMarkup(d)}
       <div class="card-label">${textDisplay(d)}</div>
       ${d.duplicate ? getCardDuplicateTag(d) : ''}
     </div>
@@ -110,7 +127,7 @@ export default function CardHtml(props: {
   }
 
   function textDisplay(d: TreeDatum) {
-    if (d.data._new_rel_data) return newRelDataDisplay(d)
+  if (d.data._new_rel_data) return newRelDataDisplay(d)
   if (d.data.to_add) return `<div>${props.empty_card_label || 'À AJOUTER'}</div>`
   if (d.data.unknown) return `<div>${props.unknown_card_label || 'INCONNU'}</div>`
   const baseRows = props.card_display.map(display => `<div>${display(d.data)}</div>`).join('')
@@ -120,10 +137,12 @@ export default function CardHtml(props: {
   }
 
   function newRelDataDisplay(d: TreeDatum) {
-    const attr_list = []
-    attr_list.push(`data-rel-type="${d.data._new_rel_data.rel_type}"`)
-    if (['son', 'daughter'].includes(d.data._new_rel_data.rel_type)) attr_list.push(`data-other-parent-id="${d.data._new_rel_data.other_parent_id}"`)
-    const rawLabel = d.data._new_rel_data.label || ''
+  const relData = d.data._new_rel_data
+  if (!relData) return ''
+  const attr_list: string[] = []
+  attr_list.push(`data-rel-type="${relData.rel_type}"`)
+  if (['son', 'daughter'].includes(relData.rel_type) && relData.other_parent_id) attr_list.push(`data-other-parent-id="${relData.other_parent_id}"`)
+  const rawLabel = relData.label || ''
     const sanitized = sanitizeLabel(rawLabel)
     return `<div ${attr_list.join(' ')}>${sanitized}</div>`
   }
@@ -213,18 +232,24 @@ export default function CardHtml(props: {
     if (!label) return ''
     return label
       .replace(/\s*\([^)]*\)/g, ' ')
-      .replace(/\b\d{1,2}[\.\/\-]\d{1,2}[\.\/\-]\d{2,4}\b/g, ' ')
+  .replace(/\b\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b/g, ' ')
       .replace(/\b\d{4}\b/g, ' ')
       .replace(/\s{2,}/g, ' ')
       .trim()
   }
 
   function handleCardDuplicateHover(node: HTMLElement, d: TreeDatum) {
-    d3.select(node).on('mouseenter', (_event: Event) => {
-      d3.select(node.closest('.cards_view')).selectAll('.card_cont').select('.card').classed('f3-card-duplicate-hover', function(this: BaseType, d0: unknown) { return (d0 as TreeDatum).data.id === d.data.id })
+  d3.select(node).on('mouseenter', () => {
+      d3.select(node.closest('.cards_view')).selectAll<HTMLElement, TreeDatum>('.card_cont').select('.card').classed('f3-card-duplicate-hover', function(this: BaseType, d0: TreeDatum) { return d0.data.id === d.data.id })
     })
-    d3.select(node).on('mouseleave', (_event: Event) => {
-      d3.select(node.closest('.cards_view')).selectAll('.card_cont').select('.card').classed('f3-card-duplicate-hover', false)
+  d3.select(node).on('mouseleave', () => {
+      d3.select(node.closest('.cards_view')).selectAll<HTMLElement, TreeDatum>('.card_cont').select('.card').classed('f3-card-duplicate-hover', false)
     })
+  }
+
+  function getCardImageMarkup(d: TreeDatum) {
+    const imageValue = d.data.data[props.cardImageField]
+    const imageSrc = typeof imageValue === 'string' ? imageValue : undefined
+    return imageSrc ? `<img loading="lazy" decoding="async" src="${imageSrc}" ${getCardImageStyle()}>` : noImageIcon(d)
   }
 }

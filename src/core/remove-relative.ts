@@ -1,4 +1,4 @@
-import * as d3 from "../d3"
+import * as d3 from "d3"
 import { TreeDatum } from "../types/treeData"
 import { Store } from "../types/store"
 import { Datum } from "../types/data"

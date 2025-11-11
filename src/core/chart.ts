@@ -1,4 +1,4 @@
-import * as d3 from "../d3"
+import * as d3 from "d3"
 import htmlContSetup from "../renderers/html"
 import { removeToAddFromData } from "../store/edit"
 import createStore from "../store/store"
@@ -20,6 +20,7 @@ import { ViewProps } from "../renderers/view"
 
 import { KinshipInfoConfig } from "../features/kinships/calculate-kinships"
 type LinkSpouseText = ((sp1: TreeDatum, sp2: TreeDatum) => string) | null
+type AutocompleteInstance = ReturnType<typeof autocomplete>
 
 export default function createChart(cont: HTMLElement | string, data: Data) {
   return new Chart(cont, data)
@@ -48,9 +49,9 @@ export class Chart {
 
   transition_time: number
   linkSpouseText: LinkSpouseText | null
-  personSearch: any
-  beforeUpdate: Function | null
-  afterUpdate: Function | null
+  personSearch: AutocompleteInstance | null
+  beforeUpdate: ((props?: ViewProps) => void) | null
+  afterUpdate: ((props?: ViewProps) => void) | null
 
   editTreeInstance: EditTree | null
 
@@ -394,7 +395,8 @@ export class Chart {
    * @param duplicate_branch_toggle - Whether to show toggable tree branches are duplicated.
    * @returns The CreateChart instance
    */
-  setDuplicateBranchToggle(_duplicate_branch_toggle: boolean | any) {
+  setDuplicateBranchToggle(_duplicateBranchToggle?: boolean) {
+    void _duplicateBranchToggle
     // duplicate branch toggle removed: keep method for compatibility but do not modify state
     return this
   }
@@ -413,10 +415,8 @@ export class Chart {
    * @returns The CreateChart instance
    */
   updateMain(d: Datum) {
-    let d_id: Datum['id']
-    if (d.id) d_id = d.id
-    else d_id = d.data.id
-    this.store.updateMainId(d_id)
+    const datumId = resolveDatumId(d)
+    this.store.updateMainId(datumId)
     this.store.updateTree({})
 
     return this
@@ -446,7 +446,7 @@ export class Chart {
    * @param fn - The function to call before the update.
    * @returns The CreateChart instance
    */
-  setBeforeUpdate(fn: Function) {
+  setBeforeUpdate(fn: (props?: ViewProps) => void) {
     this.beforeUpdate = fn
     return this
   }
@@ -456,7 +456,7 @@ export class Chart {
    * @param fn - The function to call after the update.
    * @returns The CreateChart instance
    */
-  setAfterUpdate(fn: Function) {
+  setAfterUpdate(fn: (props?: ViewProps) => void) {
     this.afterUpdate = fn
     return this
   }
@@ -471,7 +471,7 @@ export class Chart {
    * @returns The CreateChart instance
    */
   setPersonDropdown(
-    getLabel: Function,
+    getLabel: (datum: Datum) => string,
     {
       cont=this.cont!.querySelector('.f3-nav-cont') as HTMLElement,
   onSelect,
@@ -485,7 +485,7 @@ export class Chart {
     if (!onSelect) onSelect = onSelectDefault.bind(this)
     this.personSearch = autocomplete(cont, onSelect, {placeholder})
 
-    this.personSearch.setOptionsGetterPerson(this.store.getData, getLabel)
+  this.personSearch.setOptionsGetterPerson(this.store.getData, getLabel)
 
     function onSelectDefault(this: Chart, d_id: Datum['id']) {
       const datum = this.store.getDatum(d_id)
@@ -502,8 +502,10 @@ export class Chart {
    * @returns The CreateChart instance
    */
   unSetPersonSearch() {
-    this.personSearch.destroy()
-    this.personSearch = null
+    if (this.personSearch) {
+      this.personSearch.destroy()
+      this.personSearch = null
+    }
     return this
   }
 }
@@ -517,4 +519,11 @@ function setCont(cont: HTMLElement | string) {
 
 function createNavCont(cont: HTMLElement) {
   d3.select(cont).append('div').attr('class', 'f3-nav-cont')
+}
+
+function resolveDatumId(d: Datum): string {
+  if (typeof d.id === 'string' && d.id) return d.id
+  const dataId = (d.data as { id?: unknown }).id
+  if (typeof dataId === 'string' && dataId) return dataId
+  throw new Error('Datum id must be a non-empty string')
 }

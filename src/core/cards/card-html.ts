@@ -1,10 +1,11 @@
-import * as d3 from "../../d3"
+import * as d3 from "d3"
 import cardHtmlRenderer from "../../renderers/card-html"
-import {processCardDisplay} from "./utils"
+import {processCardDisplay, CardDisplay} from "./utils"
 import pathToMain from "../../layout/path-to-main"
 import { Store } from "../../types/store"
 import { Datum } from "../../types/data"
 import { TreeDatum } from "../../types/treeData"
+import type { CardDim } from "../../types/card"
 import { CardHtmlSelection, LinkSelection } from "../../types/view"
 
 export default function CardHtmlWrapper(cont: HTMLElement, store: Store) { return new CardHtml(cont, store) }
@@ -24,14 +25,14 @@ export class CardHtml {
   cont: HTMLElement
   svg: SVGElement
   store: Store
-  card_display: any
+  card_display: Array<(datum: Datum) => string>
   cardImageField: string
-  onCardClick: any
-  onMiniTreeClick: any
+  onCardClick: (event: Event, datum: TreeDatum) => void
+  onMiniTreeClick: (event: Event, datum: TreeDatum) => void
   style: 'default' | 'imageCircleRect' | 'imageCircle' | 'imageRect' | 'rect'
   mini_tree: boolean
-  onCardUpdate: any
-  card_dim: { [key: string]: number | boolean }
+  onCardUpdate: ((this: HTMLElement, datum: TreeDatum) => void) | undefined
+  card_dim: CardDim
   cardInnerHtmlCreator: undefined | ((d:TreeDatum) => string)
   defaultPersonIcon: undefined | ((d:TreeDatum) => string)
   onCardMouseenter: undefined | ((e:Event, d:TreeDatum) => void)
@@ -44,13 +45,28 @@ export class CardHtml {
     this.store = store
     this.card_display = [(d:Datum) => `${d.data["first name"]} ${d.data["last name"]}`]
     this.cardImageField = 'avatar'
-    this.onCardClick = this.onCardClickDefault.bind(this)
-    this.onMiniTreeClick = this.onMiniTreeClickDefault.bind(this)
+  this.onCardClick = this.onCardClickDefault.bind(this)
+  this.onMiniTreeClick = this.onMiniTreeClickDefault.bind(this)
     this.style = 'default'
     this.mini_tree = false
     this.card_dim = {}
 
     return this
+  }
+
+  private static normalizeDimKey(key: string): keyof CardDim | 'height_auto' | null {
+    const aliases: Record<string, keyof CardDim> = {
+      width: 'w',
+      height: 'h',
+      img_width: 'img_w',
+      img_height: 'img_h'
+    }
+    const normalized = aliases[key] || key
+    if (['w', 'h', 'text_x', 'text_y', 'img_w', 'img_h', 'img_x', 'img_y'].includes(normalized)) {
+      return normalized as keyof CardDim
+    }
+    if (normalized === 'height_auto') return 'height_auto'
+    return null
   }
 
   getCard(): (d:TreeDatum) => void {  
@@ -73,7 +89,7 @@ export class CardHtml {
     })
   }
 
-  setCardDisplay(card_display: CardHtml['card_display']) {
+  setCardDisplay(card_display: CardDisplay) {
     this.card_display = processCardDisplay(card_display)
   
     return this
@@ -99,12 +115,12 @@ export class CardHtml {
     return this
   }
   
-  onCardClickDefault(_event:MouseEvent, d:TreeDatum) {
+  onCardClickDefault(_event:Event, d:TreeDatum) {
     this.store.updateMainId(d.data.id)
     this.store.updateTree({})
   }
 
-  onMiniTreeClickDefault(_event:MouseEvent, d:TreeDatum) {
+  onMiniTreeClickDefault(_event:Event, d:TreeDatum) {
     this.store.updateMainId(d.data.id)
     this.store.updateTree({ tree_position: 'main_to_middle' })
   }
@@ -125,25 +141,33 @@ export class CardHtml {
     return this
   }
   
-  setCardDim(card_dim: CardHtml['card_dim']) {
-    if (typeof card_dim !== 'object') {
+  setCardDim(card_dim: Partial<CardDim> & {
+    width?: number
+    height?: number
+    img_width?: number
+    img_height?: number
+  }) {
+    if (!card_dim || typeof card_dim !== 'object') {
       console.error('card_dim must be an object')
       return this
     }
-    for (let key in card_dim) {
-      const val = card_dim[key]
-      if (typeof val !== 'number' && typeof val !== 'boolean') {
-        console.error(`card_dim.${key} must be a number or boolean`)
-        return this
+    Object.entries(card_dim).forEach(([rawKey, val]) => {
+      const key = CardHtml.normalizeDimKey(rawKey)
+      if (!key) return
+      if (key === 'height_auto') {
+        if (typeof val !== 'boolean') {
+          console.error(`card_dim.${rawKey} must be a boolean`)
+          return
+        }
+        this.card_dim.height_auto = val
+      } else {
+        if (typeof val !== 'number') {
+          console.error(`card_dim.${rawKey} must be a number`)
+          return
+        }
+        this.card_dim[key] = val
       }
-      if (key === 'width') key = 'w'
-      if (key === 'height') key = 'h'
-      if (key === 'img_width') key = 'img_w'
-      if (key === 'img_height') key = 'img_h'
-      if (key === 'img_x') key = 'img_x'
-      if (key === 'img_y') key = 'img_y'
-      this.card_dim[key] = val
-    }
+    })
   
     return this
   }
@@ -193,7 +217,7 @@ export class CardHtml {
     return this
   }
   
-  onLeavePathToMain(_event:Event, _datum:TreeDatum) {
+  onLeavePathToMain() {
     this.to_transition = false
     d3.select(this.cont).select('div.cards_view').selectAll('div.card-inner').classed('f3-path-to-main', false)
     d3.select(this.cont).select('svg.main_svg .links_view').selectAll('.link').classed('f3-path-to-main', false)

@@ -26,7 +26,9 @@ export interface CalculateTreeOptions {
   progeny_depth?: number | null;
   show_siblings_of_main?: boolean;
   modifyTreeHierarchy?: (tree: HN, is_ancestry: boolean) => void;
-  private_cards_config?: any;
+  private_cards_config?: {
+    condition: (d: Datum) => boolean;
+  };
 }
 
 export interface TreeDimensions {

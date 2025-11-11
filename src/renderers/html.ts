@@ -1,4 +1,4 @@
-import * as d3 from "../d3"
+import * as d3 from "d3"
 import type { D3ZoomEvent } from 'd3-zoom'
 import createSvg from "./svg"
 

@@ -1,11 +1,13 @@
-import * as d3 from "../d3"
+import * as d3 from "d3"
 import {calculateEnterAndExitPositions} from "../layout/handlers"
 import {calculateDelay} from "../handlers/general"
 import { Tree } from "../layout/calculate-tree"
 import { ViewProps } from "./view"
 import { TreeDatum } from "../types/treeData"
 
-export default function updateCardsSvg(svg: SVGElement, tree: Tree, Card: any, props: ViewProps = {}) {
+type SvgCardRenderer = (this: SVGGElement, datum: TreeDatum) => void
+
+export default function updateCardsSvg(svg: SVGElement, tree: Tree, Card: SvgCardRenderer, props: ViewProps = {}) {
   const card = d3
     .select(svg)
     .select(".cards_view")

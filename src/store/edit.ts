@@ -32,7 +32,8 @@ export function onDeleteSyncRelReference(datum: Datum, data_stash: Data) {
   })
 }
 
-export function moveToAddToAdded(datum: Datum, _dataStash: Data) {
+export function moveToAddToAdded(datum: Datum, dataStash: Data) {
+  void dataStash
   delete datum.to_add
   return datum
 }

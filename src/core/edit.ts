@@ -1,4 +1,4 @@
-import * as d3 from "../d3"
+import * as d3 from "d3"
 import { formCreatorSetup } from "./form-creator"
 import { createHistory, createHistoryControls, HistoryWithControls } from "../features/history"
 import { createFormEdit, createFormNew } from "../renderers/create-form"
@@ -87,7 +87,7 @@ export class EditTree {
 
   addRelativeInstance: AddRelative
   removeRelativeInstance: RemoveRelative
-  history: HistoryWithControls
+  history: HistoryWithControls | null
   modal: Modal
 
   createFormEdit: ((form_creator: FormCreator, closeCallback: () => void) => HTMLElement) | null
@@ -217,7 +217,7 @@ export class EditTree {
       if (this.addRelativeInstance.is_active) this.addRelativeInstance.onCancel!()
       if (this.removeRelativeInstance.is_active) this.removeRelativeInstance.onCancel!()
       this.store.updateTree({initial: false})
-      this.history.controls.updateButtons()
+  this.history?.controls.updateButtons()
       this.openFormWithId(this.store.getMainDatum()?.id)
       if (this.onChange) this.onChange()
     }
@@ -364,14 +364,15 @@ export class EditTree {
   }
   
   setCardClickOpen(card: Card) {
-    card.setOnCardClick((e: MouseEvent, d: TreeDatum) => {
+    card.setOnCardClick((event: Event, d: TreeDatum) => {
+      const mouseEvent = event as MouseEvent
       if (this.isAddingRelative()) {
         this.open(d.data)
       } else if (this.isRemovingRelative()) {
         this.open(d.data)
       } else {
         this.open(d.data)
-        card.onCardClickDefault(e, d)
+        card.onCardClickDefault(mouseEvent, d)
       }
     })
   
@@ -413,8 +414,8 @@ export class EditTree {
         const id = field
         const label = FIELD_LABEL_MAP[id] || field
   new_fields.push({type: 'text', label, id})
-      } else if (typeof field === 'object') {
-        if (!('id' in field) || !(field as any).id) {
+      } else if (typeof field === 'object' && field !== null) {
+        if (!('id' in field) || typeof field.id !== 'string' || !field.id) {
           console.error('fields must be an array of objects with id property')
         } else {
           const fld = field as {id: string; label?: string; type?: string}
@@ -539,9 +540,10 @@ export class EditTree {
   }
   
   updateHistory() {
-    if (this.history) {
-      this.history.changed()
-      this.history.controls.updateButtons()
+    const history = this.history
+    if (history) {
+      history.changed()
+      history.controls.updateButtons()
     }
   
     if (this.onChange) this.onChange()
@@ -564,8 +566,10 @@ export class EditTree {
   }
   
   destroy() {
-    this.history.controls.destroy()
-    this.history = null as any
+    if (this.history) {
+      this.history.controls.destroy()
+      this.history = null
+    }
     if (this.formCont.el) d3.select(this.formCont.el).remove()
     if (this.addRelativeInstance.onCancel) this.addRelativeInstance.onCancel()
     this.store.updateTree({})

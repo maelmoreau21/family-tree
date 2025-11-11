@@ -1,4 +1,4 @@
-# Family Tree (README amélioré)
+# Family Tree
 
 > Priorité : GitHub — instructions pour cloner/télécharger, construire une image Docker et lancer l'application (PowerShell inclus).
 
@@ -149,18 +149,6 @@ Invoke-RestMethod -Method Post -Uri 'http://localhost:7921/api/admin/import?drop
 - Issues : ouvrez une issue pour bugs / nouvelles fonctionnalités
 - Releases : utilisez les tags Git/GitHub pour publier des versions
 - Pages / Demos : la CI/docs peut déployer la documentation sur gh-pages
-
----
-
-## 9) Propositions d'amélioration du README
-
-Je peux continuer et ajouter selon vos besoins :
-- guide de contribution (`CONTRIBUTING.md`),
-- instructions de backup/restore détaillées,
-- ajout de badges GitHub Actions / npm / couverture,
-- guides de déploiement cloud (Kubernetes, DigitalOcean, etc.).
-
-Indiquez ce que vous voulez prioriser et je l'ajoute.
 
 ---
 

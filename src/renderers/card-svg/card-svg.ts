@@ -1,5 +1,5 @@
-import * as d3 from "../../d3"
-import {appendTemplate, CardBodyOutline, CardBodyAddNewRel, CardBody} from "./templates"
+import * as d3 from "d3"
+import {appendTemplate, CardBodyOutline, CardBodyAddNewRel, CardBody, type CardDisplayRenderer} from "./templates"
 import cardElements, {appendElement} from "./elements"
 import setupCardSvgDefs from "./defs"
 import {plusIcon} from "../icons"
@@ -12,7 +12,7 @@ interface CardSvgProps {
   store: Store
   svg: SVGElement
   card_dim: CardDim
-  card_display: Array<(data: TreeDatum['data']) => string>
+  card_display: CardDisplayRenderer
   onCardClick: (e: MouseEvent, d: TreeDatum) => void
   img?: boolean
   mini_tree?: boolean
@@ -42,8 +42,9 @@ export default function CardSvg(props: CardSvgProps) {
     })
 
     if (d.data._new_rel_data) {
-      appendTemplate(CardBodyOutline({d,card_dim,is_new:d.data.to_add}).template, card.node()!, true)
-      appendTemplate(CardBodyAddNewRel({d,card_dim,label: d.data._new_rel_data.label}).template, this.querySelector('.card-inner')!, true)
+      appendTemplate(CardBodyOutline({d,card_dim,is_new:Boolean(d.data.to_add)}).template, card.node()!, true)
+      const newRelLabel = d.data._new_rel_data?.label ?? ''
+      appendTemplate(CardBodyAddNewRel({d,card_dim,label: newRelLabel}).template, this.querySelector('.card-inner')!, true)
       d3.select(this.querySelector('.card-inner'))
       .append('g')
       .attr('class', 'card-edit-icon')
@@ -51,7 +52,7 @@ export default function CardSvg(props: CardSvgProps) {
       .attr('transform', `translate(-1,2)scale(${card_dim.img_h/22})`)
       .html(plusIcon())
     } else {
-      appendTemplate(CardBodyOutline({d,card_dim,is_new:d.data.to_add}).template, card.node()!, true)
+      appendTemplate(CardBodyOutline({d,card_dim,is_new:Boolean(d.data.to_add)}).template, card.node()!, true)
   appendTemplate(CardBody({d,card_dim,card_display: props.card_display}).template, this.querySelector('.card-inner')!, false)
 
       if (props.img) appendElement(cardElements.cardImage(d, props)!, this.querySelector('.card')!)
@@ -61,18 +62,14 @@ export default function CardSvg(props: CardSvgProps) {
     if (props.onCardUpdate) props.onCardUpdate.call(this, d)
   }
 
-  function setupProps(props: CardSvgProps) {
-    const default_props = {
+  function setupProps(props: CardSvgProps): CardSvgProps {
+    const defaultProps: Pick<CardSvgProps, 'img' | 'mini_tree' | 'link_break' | 'card_dim'> = {
       img: true,
       mini_tree: true,
       link_break: false,
-      card_dim: {w:220,h:70,text_x:75,text_y:15,img_w:60,img_h:60,img_x:5,img_y:5}
+      card_dim: { w: 220, h: 70, text_x: 75, text_y: 15, img_w: 60, img_h: 60, img_x: 5, img_y: 5 }
     }
-    if (!props) props = {} as CardSvgProps
-    for (const k in default_props) {
-      if (typeof props[k as keyof CardSvgProps] === 'undefined') props[k as keyof CardSvgProps] = default_props[k as keyof typeof default_props] as any
-    }
-    return props
+    return { ...defaultProps, ...props }
   }
 }
 

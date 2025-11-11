@@ -1,4 +1,4 @@
-import * as d3 from "../d3"
+import * as d3 from "d3"
 import * as icons from "../renderers/icons"
 import { Store } from "../types/store"
 import { Data } from "../types/data"
