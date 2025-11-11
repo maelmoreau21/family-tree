@@ -106,7 +106,6 @@ export default function calculateTree(data: Data, {
       return offset
     }
 
-    function hasCh(d: HN) { return !!d.children }
     function sameParent(a: HN, b: HN) { return a.parent == b.parent }
     function sameBothParents(a: HN, b: HN) {
       const parentsA = [...a.data.rels.parents].sort();

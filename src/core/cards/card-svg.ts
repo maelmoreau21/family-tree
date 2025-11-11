@@ -1,4 +1,3 @@
-import * as d3 from "../../d3"
 import cardSvgRenderer from "../../renderers/card-svg/card-svg"
 import {updateCardSvgDefs} from "../../renderers/card-svg/defs"
 import {processCardDisplay} from "./utils"
@@ -93,7 +92,7 @@ export class CardSvg {
     return this
   }
   
-  onCardClickDefault(e: MouseEvent, d: TreeDatum) {
+  onCardClickDefault(_event: MouseEvent, d: TreeDatum) {
     this.store.updateMainId(d.data.id)
     this.store.updateTree({})
   }

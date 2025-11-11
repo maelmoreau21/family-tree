@@ -32,7 +32,7 @@ export default function updateCardsSvg(svg: SVGElement, tree: Tree, Card: any, p
     Card.call(this, d)
   }
 
-  function cardUpdateNoEnter(this: SVGGElement, d: TreeDatum) {}
+  function cardUpdateNoEnter(this: SVGGElement) {}
 
   function cardUpdate(this: SVGGElement, d: TreeDatum) {
     Card.call(this, d)

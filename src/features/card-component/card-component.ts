@@ -30,7 +30,7 @@ export default function updateCardsComponent(svg: SVGElement, tree: Tree, Card: 
       .style("transform", `translate(${d._x}px, ${d._y}px)`)
   }
 
-  function cardUpdateNoEnter(d: TreeDatum) {}
+  function cardUpdateNoEnter() {}
 
   function cardUpdate(d: TreeDatum) {
     const card_element = d3.select(Card(d))

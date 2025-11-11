@@ -80,7 +80,7 @@ export default function CardSvg(props: CardSvgProps) {
  * @deprecated Use cardSvg instead. This export will be removed in a future version.
  */
 export function Card(props: CardSvgProps & {store: Store}) {
-  if (props.onCardClick === undefined) props.onCardClick = (e, d) => {
+  if (props.onCardClick === undefined) props.onCardClick = (_event, d) => {
     props.store.updateMainId(d.data.id)
     props.store.updateTree({})
   }

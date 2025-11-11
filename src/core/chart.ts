@@ -394,7 +394,7 @@ export class Chart {
    * @param duplicate_branch_toggle - Whether to show toggable tree branches are duplicated.
    * @returns The CreateChart instance
    */
-  setDuplicateBranchToggle(duplicate_branch_toggle: boolean | any) {
+  setDuplicateBranchToggle(_duplicate_branch_toggle: boolean | any) {
     // duplicate branch toggle removed: keep method for compatibility but do not modify state
     return this
   }

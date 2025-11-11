@@ -5,7 +5,6 @@ import pathToMain from "../../layout/path-to-main"
 import { Store } from "../../types/store"
 import { Datum } from "../../types/data"
 import { TreeDatum } from "../../types/treeData"
-import { Link } from "../../layout/create-links"
 import { CardHtmlSelection, LinkSelection } from "../../types/view"
 
 export default function CardHtmlWrapper(cont: HTMLElement, store: Store) { return new CardHtml(cont, store) }
@@ -45,8 +44,8 @@ export class CardHtml {
     this.store = store
     this.card_display = [(d:Datum) => `${d.data["first name"]} ${d.data["last name"]}`]
     this.cardImageField = 'avatar'
-  this.onCardClick = this.onCardClickDefault.bind(this)
-  this.onMiniTreeClick = this.onMiniTreeClickDefault.bind(this)
+    this.onCardClick = this.onCardClickDefault.bind(this)
+    this.onMiniTreeClick = this.onMiniTreeClickDefault.bind(this)
     this.style = 'default'
     this.mini_tree = false
     this.card_dim = {}
@@ -100,12 +99,12 @@ export class CardHtml {
     return this
   }
   
-  onCardClickDefault(e:MouseEvent, d:TreeDatum) {
+  onCardClickDefault(_event:MouseEvent, d:TreeDatum) {
     this.store.updateMainId(d.data.id)
     this.store.updateTree({})
   }
 
-  onMiniTreeClickDefault(e:MouseEvent, d:TreeDatum) {
+  onMiniTreeClickDefault(_event:MouseEvent, d:TreeDatum) {
     this.store.updateMainId(d.data.id)
     this.store.updateTree({ tree_position: 'main_to_middle' })
   }
@@ -172,7 +171,7 @@ export class CardHtml {
     return this
   }
   
-  onEnterPathToMain(e:Event, datum:TreeDatum) {
+  onEnterPathToMain(_event:Event, datum:TreeDatum) {
     this.to_transition = datum.data.id
     const main_datum = this.store.getTreeMainDatum()
     const cards: CardHtmlSelection = d3.select(this.cont).select('div.cards_view').selectAll('.card_cont')
@@ -194,7 +193,7 @@ export class CardHtml {
     return this
   }
   
-  onLeavePathToMain(e:Event, d:TreeDatum) {
+  onLeavePathToMain(_event:Event, _datum:TreeDatum) {
     this.to_transition = false
     d3.select(this.cont).select('div.cards_view').selectAll('div.card-inner').classed('f3-path-to-main', false)
     d3.select(this.cont).select('svg.main_svg .links_view').selectAll('.link').classed('f3-path-to-main', false)

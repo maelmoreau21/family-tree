@@ -220,10 +220,10 @@ export default function CardHtml(props: {
   }
 
   function handleCardDuplicateHover(node: HTMLElement, d: TreeDatum) {
-    d3.select(node).on('mouseenter', (e: Event) => {
-  d3.select(node.closest('.cards_view')).selectAll('.card_cont').select('.card').classed('f3-card-duplicate-hover', function(this: BaseType, d0: unknown) { return (d0 as TreeDatum).data.id === d.data.id })
+    d3.select(node).on('mouseenter', (_event: Event) => {
+      d3.select(node.closest('.cards_view')).selectAll('.card_cont').select('.card').classed('f3-card-duplicate-hover', function(this: BaseType, d0: unknown) { return (d0 as TreeDatum).data.id === d.data.id })
     })
-    d3.select(node).on('mouseleave', (e: Event) => {
+    d3.select(node).on('mouseleave', (_event: Event) => {
       d3.select(node.closest('.cards_view')).selectAll('.card_cont').select('.card').classed('f3-card-duplicate-hover', false)
     })
   }

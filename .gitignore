@@ -5,3 +5,7 @@
 /tests/debugging/
 docs/api
 data/
+static/builder/builder.bundle.js
+static/builder/builder.bundle.js.map
+static/viewer/viewer.bundle.js
+static/viewer/viewer.bundle.js.map

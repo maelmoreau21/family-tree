@@ -4,7 +4,6 @@ import { getKinshipsDataStash } from './kinships-data'
 import { infoSvgIcon } from '../../renderers/icons'
 import createInfoPopup, { InfoPopup } from '../info-popup'
 import createChart from '../../core/chart'
-import CardHtml from '../../core/cards/card-html'
 import { getCurrentZoom, zoomTo } from '../../handlers/view-handlers'
 import { KinshipInfoConfig, Kinships } from './calculate-kinships'
 import { Datum, Data } from '../../types/data'
@@ -99,12 +98,12 @@ function createSmallTree(
       .setCardInnerHtmlCreator((d: TreeDatumKinship) => {
         return getCardInnerRect(d)
       })
-      .setOnCardUpdate(function(this: HTMLElement, d: TreeDatumKinship) {
+  .setOnCardUpdate(function(this: HTMLElement) {
         const card = d3.select(this).select('.card')
         card.classed('card-main', false)
       })
 
-    f3Card.onCardClick = ((e: MouseEvent, d: TreeDatumKinship) => {})
+  f3Card.onCardClick = (() => {})
   
     f3Chart.updateTree({initial: true})
 
@@ -143,7 +142,7 @@ function createSmallTree(
         .append('input')
           .attr('type', 'checkbox')
           .attr('checked', true)
-          .on('change', (e) => {
+          .on('change', () => {
             kinship_label_toggle = !kinship_label_toggle
             f3Chart.updateTree({initial: false, tree_position: 'inherit'})
           })

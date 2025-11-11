@@ -129,7 +129,7 @@ class Autocomplete {
       dropdown.selectAll("div.f3-autocomplete-item")
         .data(filtered_options, d => (d as AutocompleteOption)?.value).join("div")
         .attr("class", "f3-autocomplete-item")
-        .on("click", (e, d) => {
+  .on("click", (_event, d) => {
           self.onSelect(d.value)
         })
         .html(d => d.optionHtml ? d.optionHtml(d) : itemHtml(d))

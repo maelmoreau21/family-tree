@@ -1,5 +1,5 @@
 import { Datum, Data } from './data';
-import { TreeData, TreeDatum } from './treeData';
+import { TreeDatum } from './treeData';
 import { CalculateTreeOptions, Tree } from '../layout/calculate-tree';
 import { ViewProps } from '../renderers/view';
 

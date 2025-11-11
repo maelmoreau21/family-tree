@@ -3,12 +3,9 @@ import {
   selectAll,
   create
 } from 'd3-selection'
-import type { Selection, BaseType } from 'd3-selection'
 import { line, curveMonotoneY, curveBasis, curveMonotoneX } from 'd3-shape'
 import { hierarchy, tree } from 'd3-hierarchy'
-import type { HierarchyNode } from 'd3-hierarchy'
 import { zoom, zoomIdentity, zoomTransform } from 'd3-zoom'
-import type { ZoomBehavior } from 'd3-zoom'
 import { extent } from 'd3-array'
 import 'd3-transition'
 

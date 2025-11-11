@@ -59,7 +59,7 @@ export default function linkSpouseText(svg: SVGElement, tree: Tree, props: LinkS
     text_g.transition('text-op').duration(100).delay(delay + props.transition_time!).style('opacity', 1)
   }
 
-  function linkExit(this: SVGGElement, d: unknown) {
+  function linkExit(this: SVGGElement) {
     const text_g = d3.select(this);
     text_g.transition('text').duration(100).style('opacity', 0)
       .on("end", () => text_g.remove())

@@ -22,7 +22,7 @@ export function CardBody({d,card_dim,card_display}: {d: TreeDatum, card_dim: Car
 }
 
 
-export function CardBodyAddNewRel({d,card_dim,label}: {d: TreeDatum, card_dim: CardDim, label: string}) {
+export function CardBodyAddNewRel({card_dim,label}: {d: TreeDatum, card_dim: CardDim, label: string}) {
   return {template: (`
     <g class="card-body">
       <rect class="card-body-rect" width="${card_dim.w}" height="${card_dim.h}" />
@@ -57,7 +57,7 @@ export function CardBodyOutline({d,card_dim,is_new}: {d: TreeDatum, card_dim: Ca
   }
 }
 
-export function MiniTree({d,card_dim}: {d: TreeDatum, card_dim: CardDim}) {
+export function MiniTree({card_dim}: {d: TreeDatum, card_dim: CardDim}) {
   return ({template: (`
     <g class="card_family_tree" style="cursor: pointer">
       <rect x="-31" y="-25" width="72" height="15" fill="rgba(0,0,0,0)"></rect>

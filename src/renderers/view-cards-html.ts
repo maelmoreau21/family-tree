@@ -31,7 +31,7 @@ export default function updateCardsHtml(svg: SVGElement, tree: Tree, Card: any, 
     Card.call(this, d)
   }
 
-  function cardUpdateNoEnter(this: HTMLDivElement, d: TreeDatum) {}
+  function cardUpdateNoEnter(this: HTMLDivElement) {}
 
   function cardUpdate(this: HTMLDivElement, d: TreeDatum) {
     Card.call(this, d)

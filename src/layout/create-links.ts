@@ -1,5 +1,4 @@
 import { TreeDatum } from "../types/treeData"
-import { Tree } from "./calculate-tree"
 
 export interface Link {
   d: [number, number][]
@@ -52,7 +51,7 @@ export function createLinks(d: TreeDatum, is_horizontal: boolean = false) {
   function handleProgenySide(d: TreeDatum) {
     if (!d.children || d.children.length === 0) return
 
-    d.children.forEach((child, i) => {
+  d.children.forEach((child) => {
       const other_parent = otherParent(child, d) || d
       const anchorX = child.psx ?? other_parent.sx ?? d.x
       const anchorY = child.psy ?? other_parent.sy ?? other_parent.sx ?? d.y
