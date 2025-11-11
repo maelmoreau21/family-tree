@@ -1,183 +1,167 @@
-# Family Tree
+# Family Tree (README amélioré)
 
-Family Tree est un fork maintenu de **family-chart** fournissant une bibliothèque de rendu (ESM + typages) ainsi que deux applications web : un visualiseur (viewer) et un éditeur (builder). Le backend est un serveur Express qui persiste le dataset dans PostgreSQL.
+> Priorité : GitHub — instructions pour cloner/télécharger, construire une image Docker et lancer l'application (PowerShell inclus).
 
-> IMPORTANT — Docker-first
->
-> Ce dépôt est prévu pour être exécuté dans un conteneur Docker / via Docker Compose en production. L'utilisation en local sans conteneur (par ex. en lançant directement `npm start`) peut fonctionner pour du développement, mais n'est pas testée ni supportée de façon exhaustive : la configuration par défaut, les volumes et la persistance sont orientés vers un déploiement Docker. Si vous utilisez ce projet en production, démarrez-le avec Docker Compose (instructions ci‑dessous).
+Family Tree est un fork maintenu de **family-chart**. Il fournit :
+- une bibliothèque TypeScript/ESM avec typages (`dist/`),
+- deux applications web statiques (viewer & builder),
+- un serveur Express pour l'API et la persistance (PostgreSQL).
 
-Cette documentation rapide couvre le démarrage local, l'utilisation recommandée via Docker, les endpoints d'administration et les opérations de maintenance pour des jeux de données volumineux.
+Ce document explique comment récupérer le dépôt depuis GitHub, construire une image Docker et démarrer l'application (méthode manuelle et via Docker Compose).
 
-## Démarrage rapide (local)
+---
 
-Prérequis : Node.js 20+ et npm 10+ (développement). Pour la production nous recommandons Docker (voir plus bas).
+## 1) Récupérer le code (GitHub)
+
+Option A — cloner (recommandé si vous comptez modifier le code) :
 
 ```powershell
-# installer les dépendances
-npm install
+# Cloner le dépôt
+git clone https://github.com/maelmoreau21/family-tree.git
+cd family-tree
 
-# générer les bundles (production)
-npm run build
-
-# lancer le serveur (production)
-npm start
-
-# tests
-npm test
+# (Option SSH)
+# git clone git@github.com:maelmoreau21/family-tree.git
 ```
 
-## Nouveautés récentes
+Option B — télécharger un ZIP via l'interface GitHub
 
-- Ajout d'un bouton de masquage/affichage du panneau latéral dans le viewer : vous pouvez maintenant replier le panneau (recherche / informations complémentaires) pour agrandir l'aire du graphique. L'état est conservé dans le navigateur.
-- Amélioration du rendu des liens entre cartes : les courbes descendant vers les enfants utilisent désormais des courbes de Bézier homogènes avec un rayon borné pour éviter les fortes superpositions lorsque de nombreux enfants sont affichés (fratries importantes). Cela rend les arcs plus lisibles sans supprimer les courbures.
-- Clarification du comportement du mini-tree : l'icône "Cartes compactes (Mini Tree)" apparaît uniquement quand des proches (parents, conjoints ou enfants) sont masqués dans la vue actuelle.
+- Rendez-vous sur https://github.com/maelmoreau21/family-tree
+- Cliquez sur « Code » → « Download ZIP » → décompressez.
 
-Après ces changements, regénérez les bundles pour que les interfaces statiques intègrent les modifications :
+---
+
+## 2) Préparer l'environnement (rapide)
+
+Prérequis : Node.js (pour développement). Pour la production, Docker est recommandé.
 
 ```powershell
-# générer les bundles (production)
-npm run build
+# installer les dépendances (dev)
+npm.cmd install
+
+# lancer les tests
+npm.cmd test
+
+# compiler (génère dist/)
+npm.cmd run build
 ```
 
-Accès locaux :
+> Remarque : sur PowerShell utilisez `npm.cmd` pour éviter les problèmes liés aux shims `.ps1`.
 
-- Viewer : [http://localhost:7920](http://localhost:7920)
-- Builder : [http://localhost:7921](http://localhost:7921)
+---
 
-Configurez `DATABASE_URL` (ou `TREE_DATABASE_URL`) vers votre instance PostgreSQL. À défaut, l'application tente `postgresql://postgres:postgres@localhost:5432/family_tree`.
+## 3) Construire une image Docker (manuellement)
 
-## Utilisation recommandée : Docker (recommandé pour production)
-
-Exécuter l'application dans un conteneur Docker est recommandé pour la cohérence d'environnement, la persistance et la gestion des volumes (backups, uploads). Le fichier `docker-compose.yml` démarre une base PostgreSQL et l'application avec les bons volumes :
+1) Construire l'image :
 
 ```powershell
-docker compose up --build
+# depuis la racine du projet
+docker build -t family-tree:latest .
+```
+
+2) Lancer le conteneur (exemple simple) :
+
+```powershell
+# Exemple : expose viewer (7920) et builder (7921)
+docker run -d `
+  -p 7920:7920 -p 7921:7921 `
+  -e "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/family_tree" `
+  --name family-tree `
+  family-tree:latest
+```
+
+3) Vérifier :
+
+- Viewer : http://localhost:7920
+- Builder : http://localhost:7921
+
+Notes :
+- En production, fournissez une base PostgreSQL séparée et montez des volumes pour `./uploads` et `./data/backups`.
+
+---
+
+## 4) Lancer avec Docker Compose (recommandé)
+
+Le dépôt contient `docker-compose.yml` qui démarre PostgreSQL + l'application.
+
+```powershell
+# build & start en arrière-plan
+docker compose up --build -d
+
+# suivre les logs
+docker compose logs -f
+
+# arrêter et supprimer
+docker compose down
 ```
 
 Par défaut :
+- PostgreSQL peut écouter sur `localhost:5433` selon la configuration du compose.
+- Viewer → http://localhost:7920
+- Builder → http://localhost:7921
 
-- PostgreSQL écoute sur `localhost:5433` (modifiable dans `docker-compose.yml`).
-- L'application expose le viewer sur [http://localhost:7920](http://localhost:7920) et le builder sur [http://localhost:7921](http://localhost:7921).
-- Les sauvegardes JSON sont stockées dans `./data/backups` et les uploads dans `./uploads`.
+Consultez `docker-compose.yml` pour adapter ports, volumes et variables d'environnement.
 
-## Endpoints d'administration importants
+---
 
-Ces endpoints sont destinés à un usage admin (protégez-les en production) :
+## 5) Variables d'environnement importantes
 
-- `POST /api/admin/import` — importe un snapshot JSON (même format que le builder). Paramètres utiles :
-  - `dropIndexes=true|false` : supprimer les indexes avant import et les recréer après (accélère les imports massifs).
-  - `fastImport=true|false` : désactive temporairement `synchronous_commit` pendant l'import, ce qui accélère considérablement l'écriture au prix d'une durabilité réduite (prenez une sauvegarde avant).
+- `DATABASE_URL` (ou `TREE_DATABASE_URL`) — URL de connexion PostgreSQL.
+- `TREE_ADMIN_TOKEN` — jeton admin pour protéger les endpoints d'admin (header `X-Admin-Token` ou `Authorization: Bearer`).
+- `TREE_MAX_UPLOAD_MB` — taille max upload images (par défaut 5).
 
-- `POST /api/admin/rebuild-fts` — reconstruit le tsvector de recherche à partir de la table `persons`.
-
-- `POST /api/admin/reset-to-seed?confirm=yes` — réinitialise la base au seed configuré (nécessite `confirm=yes`).
-
-Exemple d'appel PowerShell pour un import rapide :
+Exemple `docker run` avec variables :
 
 ```powershell
-# $json = Get-Content .\import.json -Raw
-# Invoke-RestMethod -Method Post -Uri 'http://localhost:7921/api/admin/import?dropIndexes=true&fastImport=true' -Body $json -ContentType 'application/json'
+docker run -d -p 7920:7920 -p 7921:7921 `
+  -e DATABASE_URL="postgresql://user:pass@db:5432/family_tree" `
+  -e TREE_ADMIN_TOKEN="votre-token" `
+  --name family-tree family-tree:latest
 ```
 
-## Maintenance & sauvegardes
+---
 
-- Script utile : `scripts/db-maintenance.mjs` — exécute `ANALYZE`, `VACUUM` et écrit un snapshot JSON horodaté dans le dossier de backup (`data/backups` par défaut). Activez `FORCE_VACUUM=1` pour lancer `VACUUM (FULL, ANALYZE)` si une compaction complète est nécessaire.
-- Backups rolling : contrôlés par `TREE_BACKUP_DIR` et `TREE_BACKUP_LIMIT`.
-- Imports massifs : pour ajuster la taille des batchs SQL, utilisez `TREE_IMPORT_PERSON_CHUNK`, `TREE_IMPORT_RELATIONSHIP_CHUNK` et `TREE_IMPORT_FTS_CHUNK` (valeurs par défaut respectives : 500, 1000 et 500).
-- Limite de téléversement : la taille maximale d'upload d'un fichier (images) est contrôlée par `TREE_MAX_UPLOAD_MB` (par défaut 5). Vous pouvez aussi fournir `TREE_MAX_UPLOAD_SIZE` en octets pour un contrôle fin. En cas de dépassement, le serveur renvoie HTTP 413 avec un message indiquant la limite active.
-- Générer les icônes (PNG) depuis le SVG : utilisez le script de génération qui produit des fallbacks PNG (48/32/16) et une `apple-touch-icon` :
+## 6) CI / Docs / Déploiement GitHub
+
+- La CI (GitHub Actions) est configurée dans `.github/workflows/` pour lancer lint/tests/build sur push/PR.
+- Générer la doc API : `npm run docs`.
+- Déployer docs (gh-pages) : `npm run docs:deploy` (configuration `gh-pages` requise).
+
+---
+
+## 7) Import massif & maintenance
+
+- Endpoint utile : `POST /api/admin/import` (paramètres `dropIndexes`, `fastImport` — voir `docs/`).
+- Script de maintenance : `scripts/db-maintenance.mjs` (ANALYZE / VACUUM / snapshot JSON).
+
+Exemple PowerShell pour importer :
 
 ```powershell
-# installer les dépendances (sharp est nécessaire pour la génération)
-npm install
-
-# générer les PNG à partir de static/logo.svg
-npm run generate-favicons
+$json = Get-Content .\import.json -Raw
+Invoke-RestMethod -Method Post -Uri 'http://localhost:7921/api/admin/import?dropIndexes=true&fastImport=true' -Body $json -ContentType 'application/json'
 ```
 
-Les images générées sont écrites dans `static/` : `logo-48.png`, `logo-32.png`, `logo-16.png`, `apple-touch-icon.png`. Les pages viewer/builder incluent déjà les balises fallback vers ces fichiers.
+---
 
-Pattern d'import massif recommandé :
+## 8) Ressources GitHub (priorité)
 
-1. Sauvegarder la base actuelle.
-2. Appeler `/api/admin/import` avec `dropIndexes=true` et (optionnel) `fastImport=true`.
-3. Exécuter `scripts/db-maintenance.mjs` pour `ANALYZE`/`VACUUM` et vérifier le backup JSON.
+- Dépôt : https://github.com/maelmoreau21/family-tree
+- Issues : ouvrez une issue pour bugs / nouvelles fonctionnalités
+- Releases : utilisez les tags Git/GitHub pour publier des versions
+- Pages / Demos : la CI/docs peut déployer la documentation sur gh-pages
 
-## Sécurité
+---
 
-- Protégez les endpoints d'administration (authentification, réseau privé, reverse-proxy) avant exposition.
-- `fastImport` améliore les performances mais accroît le risque de perte en cas de crash : documentez-le clairement et n'autorisez son usage qu'à des administrateurs.
-- Définissez `TREE_ADMIN_TOKEN` pour exiger un jeton (en-tête `X-Admin-Token` ou `Authorization: Bearer`) sur toutes les opérations d'écriture (`PUT /api/tree`, `/api/admin/*`, uploads).
-- Optionnel : `TREE_ALLOWED_ORIGINS` accepte une liste d'origines séparées par des virgules pour restreindre le CORS (`https://app.exemple.com,https://admin.exemple.com`). Laisser vide autorise toutes les origines.
+## 9) Propositions d'amélioration du README
 
-## Développement & build
+Je peux continuer et ajouter selon vos besoins :
+- guide de contribution (`CONTRIBUTING.md`),
+- instructions de backup/restore détaillées,
+- ajout de badges GitHub Actions / npm / couverture,
+- guides de déploiement cloud (Kubernetes, DigitalOcean, etc.).
 
-- `npm run dev` — démarre Vite pour le développement (HMR pour l'UI statique)
-- `npm run build` — génère la librairie et les bundles viewer/builder
+Indiquez ce que vous voulez prioriser et je l'ajoute.
 
-## Licence
+---
 
-Distribué sous licence MIT — voir `LICENSE.txt`.
-
-## API rapide et exemples
-
-Voici un petit exemple d'utilisation côté application pour créer un chart et le peupler depuis un tableau de personnes :
-
-```javascript
-import * as f3 from 'family-tree';
-import 'family-tree/dist/styles/family-tree.css';
-
-const data = [
-  { id: '1', data: { 'first name': 'John', 'last name': 'Doe', birthday: '1980', gender: 'M' }, rels: { spouses: ['2'], children: ['3'] } },
-  { id: '2', data: { 'first name': 'Jane', 'last name': 'Doe', birthday: '1982', gender: 'F' }, rels: { spouses: ['1'], children: ['3'] } },
-  { id: '3', data: { 'first name': 'Bob', 'last name': 'Doe', birthday: '2005', gender: 'M' }, rels: { parents: ['1','2'] } }
-];
-
-const f3Chart = f3.createChart('#FamilyChart', data);
-f3Chart.setCardHtml().setCardDisplay([['first name','last name'],['birthday']]);
-f3Chart.updateTree({ initial: true });
-```
-
-Composants principaux :
-
-- `f3Chart` — classe principale pour créer et configurer l'arbre
-- `f3Card` — rendu HTML des cartes
-- `f3EditTree` — outils d'édition, formulaires et historique
-
-Ressources utiles :
-
-- Exemples live : [https://donatso.github.io/family-chart-doc/examples/](https://donatso.github.io/family-chart-doc/examples/)
-- Référentiel source (amont) : [https://github.com/donatso/family-chart](https://github.com/donatso/family-chart)
-
-## Format des données
-
-Chaque personne est un objet avec `id`, `data` et `rels`.
-
-Structure de base :
-
-- `id` (string) — identifiant unique de la personne
-- `data` (object) — attributs descriptifs (prénom, nom, date de naissance, etc.)
-- `rels` (object) — relations (`parents`, `spouses`, `children`)
-
-Exemple minimal :
-
-```json
-{
-  "id": "1",
-  "data": { "first name": "John", "last name": "Doe", "gender": "M", "birthday": "1980" },
-  "rels": { "spouses": ["2"], "children": ["3"] }
-}
-```
-
-Propriétés recommandées :
-
-- `first name`, `last name`, `birthday`, `death`, `gender` sont courantes et utilisées par le rendu.
-- Tout champ personnalisé peut être ajouté dans `data` (ex. `occupation`, `notes`, `location`).
-
-Relations :
-
-- `parents`: tableau d'IDs (0, 1 ou 2 éléments)
-- `spouses`: tableau d'IDs (permet plusieurs unions)
-- `children`: tableau d'IDs
-
-Le loader convertit automatiquement certains formats hérités (par ex. `father`/`mother`) en `rels.parents` pour conserver la rétrocompatibilité.
+Licence : MIT — voir `LICENSE.txt`
