@@ -207,18 +207,13 @@ function buildSmoothCurve(points: [number, number][], isHorizontal: boolean): st
 }
 
 function computeCornerRadius(prevLength: number, nextLength: number, isHorizontal: boolean): number {
-  const minAvailable = Math.min(prevLength, nextLength);
-  if (minAvailable <= 0.001) return 0;
+  const available = Math.min(prevLength, nextLength);
+  if (available <= 0.001) return 0;
 
-  const minRadius = isHorizontal ? 16 : 20;
-  const idealRadius = isHorizontal ? 32 : 40;
-  const growthScale = isHorizontal ? 48 : 64;
+  const FIXED_RADIUS = isHorizontal ? 28 : 36;
+  const maxByGeometry = Math.max(2, available / 2);
 
-  const maxGeometricRadius = Math.max(2, minAvailable / 2);
-  const easedTarget = idealRadius * (1 - Math.exp(-minAvailable / growthScale));
-  const clampedTarget = Math.max(minRadius, Math.min(easedTarget, idealRadius));
-
-  return Math.min(clampedTarget, maxGeometricRadius);
+  return Math.min(FIXED_RADIUS, maxByGeometry);
 }
 
 function dedupePoints(points: [number, number][]): [number, number][] {

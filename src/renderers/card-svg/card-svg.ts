@@ -12,7 +12,7 @@ interface CardSvgProps {
   store: Store
   svg: SVGElement
   card_dim: CardDim
-  card_display: (data: TreeDatum['data']) => string
+  card_display: Array<(data: TreeDatum['data']) => string>
   onCardClick: (e: MouseEvent, d: TreeDatum) => void
   img?: boolean
   mini_tree?: boolean
@@ -52,7 +52,7 @@ export default function CardSvg(props: CardSvgProps) {
       .html(plusIcon())
     } else {
       appendTemplate(CardBodyOutline({d,card_dim,is_new:d.data.to_add}).template, card.node()!, true)
-      appendTemplate(CardBody({d,card_dim,card_display: props.card_display}).template, this.querySelector('.card-inner')!, false)
+  appendTemplate(CardBody({d,card_dim,card_display: props.card_display}).template, this.querySelector('.card-inner')!, false)
 
       if (props.img) appendElement(cardElements.cardImage(d, props)!, this.querySelector('.card')!)
       if (props.mini_tree) appendElement(cardElements.miniTree(d, props)!, this.querySelector('.card')!, true)
