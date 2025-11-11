@@ -810,6 +810,11 @@ function setupChart(payload) {
 
   const initialEditableFields = [...currentEditableFields]
   const initialFieldDescriptors = buildFieldDescriptors(initialEditableFields)
+  try {
+    console.debug('builder: initialFieldDescriptors', initialFieldDescriptors)
+  } catch (e) {
+    /* ignore */
+  }
 
   const chart = f3.createChart(chartSelector, data)
   applyChartConfigToChart(chart)
@@ -1141,6 +1146,14 @@ function attachPanelControls({ chart, card }) {
     if (!form) {
       restoreImageUploaderToPanel()
       return
+    }
+
+    try {
+      // helpful debug output when a form is created by the chart
+      console.debug('builder: handleFormCreation form_creator.editable=', form_creator?.editable, 'datum_id=', form_creator?.datum_id)
+      console.debug('builder: form_creator.fields', form_creator?.fields)
+    } catch (e) {
+      /* ignore */
     }
 
     const isEditable = form_creator?.editable !== false && !form_creator?.no_edit
