@@ -15,7 +15,7 @@ High-level steps
 
 Example (ARM64 Raspberry Pi OS Lite, run as user `actions-runner`):
 
-1) Create a dedicated user and install prerequisites
+1. Create a dedicated user and install prerequisites
 
 ```bash
 sudo adduser --disabled-login --gecos "" actions-runner
@@ -23,14 +23,14 @@ sudo apt update && sudo apt install -y curl jq git libicu-dev libssl-dev apt-tra
 sudo usermod -aG docker actions-runner  # only if you need docker access
 ```
 
-2) Switch to the runner user and create a work directory
+2. Switch to the runner user and create a work directory
 
 ```bash
 sudo su - actions-runner
 mkdir actions-runner && cd actions-runner
 ```
 
-3) Download the runner
+3. Download the runner
 
 For ARM64 (aarch64) build; for 32-bit ARM use the corresponding URL.
 
@@ -40,7 +40,7 @@ curl -o actions-runner.tar.gz -L "https://github.com/actions/runner/releases/dow
 tar xzf actions-runner.tar.gz
 ```
 
-4) Create a registration token and configure the runner
+4. Create a registration token and configure the runner
 
 - In your GitHub repository, go to Settings → Actions → Runners → Add runner.
 - Choose the repository scope and copy the registration command shown (it contains a token), or create a token via the UI and run the configure command below.
@@ -52,14 +52,14 @@ Example configure command (run as the `actions-runner` user in the runner direct
 ./config.sh --url https://github.com/maelmoreau21/family-tree --token <TOKEN> --labels "raspberry-pi,linux,arm64" --work _work
 ```
 
-5) Install as a service (so runner starts on boot)
+5. Install as a service (so runner starts on boot)
 
 ```bash
 sudo ./svc.sh install
 sudo ./svc.sh start
 ```
 
-6) Verify runner online
+6. Verify runner online
 
 - In your GitHub repo: Settings → Actions → Runners. The runner should appear as online with the labels you set.
 
