@@ -96,8 +96,9 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
       const relId = unionField.rel_id
       if (!relId) return
       const bucket = unionFields.get(relId) || { relLabel: unionField.rel_label }
-      if (unionField.id.startsWith('union date__ref__')) bucket.dateField = unionField
-      else if (unionField.id.startsWith('union place__ref__')) bucket.placeField = unionField
+  const fieldPrefix = getUnionFieldPrefix(unionField.id)
+  if (fieldPrefix === 'union date') bucket.dateField = unionField
+  else if (fieldPrefix === 'union place') bucket.placeField = unionField
       else orderedFields.push(unionField)
       unionFields.set(relId, bucket)
       return
@@ -158,7 +159,9 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
     if (!field || typeof field !== 'object') return false
     const candidate = field as Partial<RelReferenceField>
     if (candidate.type !== 'rel_reference' || typeof candidate.id !== 'string') return false
-    return candidate.id.startsWith('union date__ref__') || candidate.id.startsWith('union place__ref__')
+    const prefix = getUnionFieldPrefix(candidate.id)
+    if (!prefix) return false
+    return prefix.startsWith('union')
   }
 
   function renderFormField(field: RelReferenceField | SelectField | Field) {
@@ -210,7 +213,7 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
     if (!collection || collection.size === 0) return ''
     let html = `
     <section class="f3-union-section">
-      <h4 class="f3-union-title">Unions et conjoints</h4>`
+      <h4 class="f3-union-title">${fr.union?.title ?? 'Unions et conjoints'}</h4>`
     let hasContent = false
     collection.forEach(bucket => {
       const heading = sanitizeRelLabel(bucket.relLabel || 'Conjoint')
@@ -222,7 +225,7 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
       hasContent = true
       html += `
       <div class="f3-union-entry">
-        <p class="f3-union-entry-heading">Union avec <strong>${heading}</strong></p>
+        <p class="f3-union-entry-heading">${fr.union?.unionWith ?? 'Union avec'} <strong>${heading}</strong></p>
         <div class="f3-union-fields">
           ${dateHtml}
           ${placeHtml}
@@ -260,6 +263,14 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
       .trim()
     return cleaned
   }
+}
+
+function getUnionFieldPrefix(fieldId: string) {
+  if (typeof fieldId !== 'string') return ''
+  const delimiterIndex = fieldId.indexOf('__ref__')
+  if (delimiterIndex === -1) return ''
+  const prefix = fieldId.slice(0, delimiterIndex).trim().toLowerCase()
+  return prefix.replace(/[-_]+/g, ' ')
 }
 
 function addLinkExistingRelative(form_creator: EditDatumFormCreator | NewRelFormCreator) {
