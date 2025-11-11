@@ -1,6 +1,6 @@
-import * as d3 from "../d3"
-import type { ZoomBehavior } from '../d3'
-import type { D3ZoomEvent } from 'd3-zoom'
+import d3 from "../d3"
+import type { ZoomBehavior, D3ZoomEvent } from 'd3-zoom'
+import type { TreeDimensions } from "../layout/calculate-tree"
 import { TreeDatum } from "../types/treeData"
 
 interface ZoomEl extends HTMLElement {
@@ -17,7 +17,7 @@ function positionTree({t, svg, transition_time=2000}: {t: {k: number, x: number,
 }
 
 type SvgDim = {width: number, height: number}
-type TreeDim = {width: number, height: number, x_off: number, y_off: number}
+type TreeDim = TreeDimensions
 
 interface TreeFitProps {
   svg: SVGElement
@@ -31,12 +31,33 @@ export function treeFit({svg, svg_dim, tree_dim, transition_time}: TreeFitProps)
 }
 
 export function calculateTreeFit(svg_dim: SvgDim, tree_dim: TreeDim) {
-  let k = Math.min(svg_dim.width / tree_dim.width, svg_dim.height / tree_dim.height)
-  if (k > 1) k = 1
-  const x = tree_dim.x_off + (svg_dim.width - tree_dim.width*k)/k/2
-  const y = tree_dim.y_off + (svg_dim.height - tree_dim.height*k)/k/2
+  const width_scale = tree_dim.width > 0 ? svg_dim.width / tree_dim.width : Infinity
+  const height_scale = tree_dim.height > 0 ? svg_dim.height / tree_dim.height : Infinity
+  let k = Math.min(width_scale, height_scale, 1)
+  if (!Number.isFinite(k) || k <= 0) k = 1
 
-  return {k,x,y}
+  const clamp = (value: number, min: number, max: number) => {
+    if (min > max) {
+      const mid = (min + max) / 2
+      return mid
+    }
+    return Math.min(Math.max(value, min), max)
+  }
+
+  const min_tx = -k * tree_dim.min_x
+  const max_tx = svg_dim.width - k * tree_dim.max_x
+  const desired_tx = svg_dim.width / 2 - k * tree_dim.center_x
+  const tx = clamp(desired_tx, min_tx, max_tx)
+
+  const min_ty = -k * tree_dim.min_y
+  const max_ty = svg_dim.height - k * tree_dim.max_y
+  const desired_ty = svg_dim.height / 2 - k * tree_dim.center_y
+  const ty = clamp(desired_ty, min_ty, max_ty)
+
+  const x = tx / k
+  const y = ty / k
+
+  return {k, x, y}
 }
 
 

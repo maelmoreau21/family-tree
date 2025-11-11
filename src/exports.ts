@@ -1,4 +1,5 @@
 export type * from './types/index'
+export type { TreeDimensions } from './layout/calculate-tree'
 
 export { default as createStore } from "./store/store"
 export { default as view } from "./renderers/view"
