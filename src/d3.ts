@@ -1,55 +1,5 @@
-import {
-  select,
-  selectAll,
-  create
-} from 'd3-selection'
-import { line, curveMonotoneY, curveBasis, curveMonotoneX, curveLinear } from 'd3-shape'
-import { hierarchy, tree } from 'd3-hierarchy'
-import { zoom, zoomIdentity, zoomTransform } from 'd3-zoom'
-import { extent } from 'd3-array'
-import { easeCubicInOut, easeSinInOut } from 'd3-ease'
-import 'd3-transition'
+import * as d3lib from 'd3'
 
-const d3 = {
-  select,
-  selectAll,
-  create,
-  line,
-  curveMonotoneY,
-  curveMonotoneX,
-  curveBasis,
-  curveLinear,
-  easeCubicInOut,
-  easeSinInOut,
-  hierarchy,
-  tree,
-  zoom,
-  zoomIdentity,
-  zoomTransform,
-  extent
-}
-
-export default d3
-
-export {
-  select,
-  selectAll,
-  create,
-  line,
-  curveMonotoneY,
-  curveMonotoneX,
-  curveBasis,
-  curveLinear,
-  easeCubicInOut,
-  easeSinInOut,
-  hierarchy,
-  tree,
-  zoom,
-  zoomIdentity,
-  zoomTransform,
-  extent
-}
-
-export type { Selection, BaseType } from 'd3-selection'
-export type { HierarchyNode } from 'd3-hierarchy'
-export type { ZoomBehavior } from 'd3-zoom'
+// Export the d3 bundle as the default. Consumers use `import * as d3 from '../d3'`
+// so they can call `d3.select`, `d3.line`, `d3.easeCubicInOut`, etc.
+export default d3lib

@@ -1,6 +1,6 @@
 import { TreeDatum } from "./treeData";
 import { Link } from "../layout/create-links";
-import { Selection, BaseType } from "../d3";
+import { Selection, BaseType } from "d3";
 
 export interface CardHtmlSelection extends Selection<HTMLDivElement, TreeDatum, BaseType, unknown> {}
 
