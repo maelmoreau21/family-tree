@@ -13,6 +13,7 @@ const chartSelector = '#FamilyChart'
 const ancestryDepthControl = document.getElementById('viewerAncestryDepth')
 const progenyDepthControl = document.getElementById('viewerProgenyDepth')
 const miniTreeToggle = document.getElementById('viewerMiniTree')
+const autoCenterToggle = document.getElementById('viewerAutoCenter')
 const datasetMeta = document.querySelector('[data-role="dataset-meta"]')
 const visibleCountEl = document.querySelector('[data-role="visible-count"]')
 const branchCountEl = document.querySelector('[data-role="branch-count"]')
@@ -296,6 +297,9 @@ const DEFAULT_CHART_CONFIG = Object.freeze({
   miniTree: true,
   cardDisplay: DEFAULT_CARD_DISPLAY.map(row => [...row]),
   mainId: null
+  ,
+  // When true, selecting a profile recenters the chart on the main person automatically
+  autoCenter: true
 })
 
 const PROGRESSIVE_DEPTH_STEP = 4
@@ -841,6 +845,7 @@ function updatePerformanceControlsUI(config) {
   if (ancestryDepthControl) ancestryDepthControl.value = depthToSelectValue(config.ancestryDepth, DEFAULT_CHART_CONFIG.ancestryDepth)
   if (progenyDepthControl) progenyDepthControl.value = depthToSelectValue(config.progenyDepth, DEFAULT_CHART_CONFIG.progenyDepth)
   if (miniTreeToggle) miniTreeToggle.checked = config.miniTree !== false
+  if (autoCenterToggle) autoCenterToggle.checked = config.autoCenter !== false
   
 }
 
@@ -850,7 +855,22 @@ function updateDatasetMeta() {
   pendingMetaFrame = schedule(() => {
     pendingMetaFrame = null
     const visible = chartInstance?.store?.getTree?.()?.data?.length ?? 0
-    const branchCount = Number.isFinite(latestMeta.returned) ? latestMeta.returned : visible
+    // Compute branchCount robustly: prefer server-provided meta.returned when available,
+    // otherwise compute from the chart store (deduplicated), and finally fall back to visible.
+    let branchCount = Number.isFinite(latestMeta.returned) ? latestMeta.returned : undefined
+    if (branchCount === undefined) {
+      try {
+        const storeData = chartInstance?.store?.getData?.()
+        if (Array.isArray(storeData)) {
+          const ids = new Set()
+          storeData.forEach(p => { if (p && p.id) ids.add(p.id) })
+          branchCount = ids.size
+        }
+      } catch (e) {
+        branchCount = undefined
+      }
+    }
+    if (!Number.isFinite(branchCount)) branchCount = visible
 
     if (lastMetaSnapshot.visible === visible && lastMetaSnapshot.branch === branchCount && lastMetaSnapshot.total === totalPersons) {
       return
@@ -860,8 +880,8 @@ function updateDatasetMeta() {
     lastMetaSnapshot.branch = branchCount
     lastMetaSnapshot.total = totalPersons
 
-    if (visibleCountEl) visibleCountEl.textContent = String(visible)
-    if (branchCountEl) branchCountEl.textContent = String(branchCount)
+  if (visibleCountEl) visibleCountEl.textContent = String(visible)
+  if (branchCountEl) branchCountEl.textContent = String(branchCount)
     if (totalCountEl) totalCountEl.textContent = String(totalPersons)
     if (datasetMeta) {
       datasetMeta.dataset.visible = String(visible)
@@ -941,6 +961,18 @@ function attachPerformanceHandlers() {
     if (enabled === previous) return
     viewerConfig = { ...viewerConfig, miniTree: enabled }
     applyViewerConfig({ treePosition: 'inherit' })
+  })
+
+  autoCenterToggle?.addEventListener('change', () => {
+    if (isApplyingViewerConfig) return
+    const enabled = autoCenterToggle.checked
+    const previous = viewerConfig.autoCenter !== false
+    if (enabled === previous) return
+    viewerConfig = { ...viewerConfig, autoCenter: enabled }
+    // If enabling auto-center, immediately recenter on the main person
+    if (enabled && chartInstance) {
+      chartInstance.updateTree({ tree_position: 'main_to_middle' })
+    }
   })
 
   
@@ -1605,6 +1637,7 @@ function handlePersonSelection(datum, source = 'card') {
 
   if (chartInstance) {
     chartInstance.updateMainId(datum.id)
+    // Preserve existing config, but if autoCenter is enabled we'll request a recenter when fetching subtree
     applyViewerConfig({ treePosition: 'inherit', initial: false })
   }
 
@@ -1619,10 +1652,11 @@ function handlePersonSelection(datum, source = 'card') {
     }
   }
 
+  const desiredTreePosition = viewerConfig && viewerConfig.autoCenter !== false ? 'main_to_middle' : (source === 'search' ? 'main_to_middle' : 'inherit')
   requestSubtree({ mainId: datum.id }, {
     source,
-    treePosition: source === 'search' ? 'main_to_middle' : 'inherit',
-    reposition: source === 'search',
+    treePosition: desiredTreePosition,
+    reposition: source === 'search' || (viewerConfig && viewerConfig.autoCenter !== false),
     preservePreferences: true,
     selectedLabel: name,
     loadingLabel: `${source === 'search' ? 'Recherche' : 'Selection'} : ${name}...`
@@ -1855,7 +1889,21 @@ function renderChart(payload, options = {}) {
 
   updateDatasetMeta()
 
-  const branchCount = Number.isFinite(latestMeta.returned) ? latestMeta.returned : dataArray.length
+  // Robust branch count: prefer server meta.returned; otherwise compute unique ids from the returned data array
+  let branchCount = Number.isFinite(latestMeta.returned) ? latestMeta.returned : undefined
+  if (!Number.isFinite(branchCount)) {
+    try {
+      if (Array.isArray(dataArray)) {
+        const ids = new Set()
+        dataArray.forEach(p => { if (p && p.id) ids.add(p.id) })
+        branchCount = ids.size
+      }
+    } catch (e) {
+      branchCount = undefined
+    }
+  }
+  if (!Number.isFinite(branchCount)) branchCount = dataArray.length
+
   const totalCount = Number.isFinite(latestMeta.total) ? latestMeta.total : dataArray.length
   const name = mainDatum
     ? (buildFullName(mainDatum.data || {}) || `Profil ${mainDatum.id}`)
