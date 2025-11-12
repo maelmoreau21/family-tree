@@ -30,6 +30,31 @@ function getViewerStorageSafe() {
   }
 }
 
+function getViewerPref(key, fallback) {
+  const storage = getViewerStorageSafe()
+  if (!storage) return fallback
+  try {
+    const raw = storage.getItem(`family-tree:viewer:${key}`)
+    if (raw === null) return fallback
+    if (raw === '1' || raw === 'true') return true
+    if (raw === '0' || raw === 'false') return false
+    return raw
+  } catch (e) {
+    return fallback
+  }
+}
+
+function setViewerPref(key, value) {
+  const storage = getViewerStorageSafe()
+  if (!storage) return
+  try {
+    if (value === true || value === false) storage.setItem(`family-tree:viewer:${key}`, value ? '1' : '0')
+    else storage.setItem(`family-tree:viewer:${key}`, String(value))
+  } catch (e) {
+    // ignore storage errors
+  }
+}
+
 function readPanelCollapsedState() {
   const storage = getViewerStorageSafe()
   if (!storage) return false
@@ -973,6 +998,8 @@ function attachPerformanceHandlers() {
     if (enabled && chartInstance) {
       chartInstance.updateTree({ tree_position: 'main_to_middle' })
     }
+    // persist preference
+    setViewerPref('autoCenter', enabled)
   })
 
   
@@ -1787,6 +1814,10 @@ function renderChart(payload, options = {}) {
 
   viewerConfig = { ...mergedConfig }
   viewerConfig.mainId = mergedConfig.mainId
+
+  // Apply persisted preferences (autoCenter) if present in storage
+  const persistedAutoCenter = getViewerPref('autoCenter', viewerConfig.autoCenter)
+  viewerConfig.autoCenter = persistedAutoCenter === undefined ? viewerConfig.autoCenter : persistedAutoCenter
 
   const cardDisplayConfig = viewerConfig.cardDisplay && viewerConfig.cardDisplay.length
     ? viewerConfig.cardDisplay.map(row => [...row])
