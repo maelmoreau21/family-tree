@@ -1643,7 +1643,15 @@ function attachPanelControls({ chart, card }) {
     }
 
     updateMainProfileDisplay(id)
-
+    // Ensure the chart recenters on the selected person (match viewer behaviour).
+    // If the main id was already set, callers may still expect a recenter.
+    try {
+      if (chart && typeof chart.updateTree === 'function') {
+        chart.updateTree({ initial: false, tree_position: 'main_to_middle' })
+      }
+    } catch (error) {
+      console.error('Impossible de recentrer le graphique après sélection du profil', error)
+    }
     if (openEditor && editTreeInstance) {
       const datum = editTreeInstance.store?.getDatum?.(id)
       if (datum) editTreeInstance.open(datum)
