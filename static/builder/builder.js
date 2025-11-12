@@ -409,10 +409,14 @@ function initBuilderSearch(chart) {
       cont: searchTarget,
   placeholder: 'Rechercher (nom, date, lieu, etc.)',
       onSelect: (id) => {
-        if (!id || !editTreeInstance) return
-        const datum = editTreeInstance.store?.getDatum?.(id)
-        if (datum) {
-          editTreeInstance.open(datum)
+        if (!id) return
+        // Mirror viewer behaviour: set the selected person as main and open editor
+        try {
+          setMainProfile(id, { openEditor: true })
+        } catch (e) {
+          // Fallback: try to open editor directly if available
+          const datum = editTreeInstance?.store?.getDatum?.(id)
+          if (datum && editTreeInstance) editTreeInstance.open(datum)
         }
       }
     }
