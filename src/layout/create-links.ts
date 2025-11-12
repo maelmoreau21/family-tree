@@ -86,23 +86,18 @@ export function createLinks(d: TreeDatum, is_horizontal: boolean = false) {
     }
 
     function createSpouseLink(d: TreeDatum, spouse: TreeDatum): Link {
-      // Build raw points then normalize/round them so identical logical links
-      // produce exactly identical coordinate sequences (allowing perfect overlap).
-      const p1: [number, number] = [d.x, d.y]
-      const p2: [number, number] = [spouse.x, spouse.y]
-
-      const _p1: [number, number] = [ _or(d, 'x'), _or(d, 'y') ]
-      const _p2: [number, number] = [ _or(spouse, 'x'), _or(spouse, 'y') ]
-
       return {
-        d: normalizePoints([p1, p2]),
-        _d: () => normalizePoints([_p1, _p2]),
-        curve: false,
-        id: linkId(d, spouse),
-        depth: d.depth,
-        spouse: true,
-        is_ancestry: spouse.is_ancestry,
-        source: d,
+        d: [[d.x, d.y], [spouse.x, spouse.y]],
+        _d: () => [
+          d.is_ancestry ? [_or(d, 'x')-.0001, _or(d, 'y')] : [d.x, d.y], // add -.0001 to line to have some length if d.x === spouse.x
+          d.is_ancestry ? [_or(spouse, 'x'), _or(spouse, 'y')] : [d.x-.0001, d.y]
+        ],
+        curve: false, 
+        id: linkId(d, spouse), 
+        depth: d.depth, 
+        spouse: true, 
+        is_ancestry: spouse.is_ancestry, 
+        source: d, 
         target: spouse
       }
     }
@@ -125,39 +120,26 @@ export function createLinks(d: TreeDatum, is_horizontal: boolean = false) {
 
   function LinkVertical(d: LinkPoint, p: LinkPoint): [number, number][] {
     const hy = (d.y + (p.y - d.y) / 2)
-    return normalizePoints([
+    return [
       [d.x, d.y],
       [d.x, hy],
       [d.x, hy],
       [p.x, hy],
       [p.x, hy],
       [p.x, p.y],
-    ])
+    ]
   }
 
   function LinkHorizontal(d: LinkPoint, p: LinkPoint): [number, number][] {
     const hx = (d.x + (p.x - d.x) / 2)
-    return normalizePoints([
+    return [
       [d.x, d.y],
       [hx, d.y],
       [hx, d.y],
       [hx, p.y],
       [hx, p.y],
       [p.x, p.y],
-    ])
-  }
-
-  // Normalize and round coordinates to a fixed precision so identical logical
-  // links result in identical numeric sequences and therefore identical SVG
-  // path strings (allowing perfect overlap when desired).
-  function normalizePoints(points: [number, number][], precision = 3): [number, number][] {
-    return points.map(([x, y]) => [roundNum(x, precision), roundNum(y, precision)])
-  }
-
-  function roundNum(n: number, precision = 3) {
-    if (!Number.isFinite(n)) return 0
-    const factor = Math.pow(10, precision)
-    return Math.round(n * factor) / factor
+    ]
   }
 
   function linkId(...args: TreeDatum[]) {

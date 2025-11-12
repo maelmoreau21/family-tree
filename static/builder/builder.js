@@ -1167,6 +1167,36 @@ function attachPanelControls({ chart, card }) {
     injectImageUploaderIntoForm(form)
     imageUploaderCurrentDatumId = form_creator?.datum_id || null
     populateUploaderFromDatum()
+
+    // Set example placeholder for date-like inputs in builder forms
+    try {
+      const datePlaceholder = 'ex : 30.12.2000'
+      const inputs = [...form.querySelectorAll('input[name], textarea[name]')]
+      inputs.forEach(el => {
+        const name = (el.getAttribute('name') || '').toLowerCase()
+        // try to find a nearby label text
+        let labelText = ''
+        try {
+          const id = el.getAttribute('id')
+          if (id) {
+            const lbl = form.querySelector(`label[for="${escapeSelector(id)}"]`)
+            if (lbl && lbl.textContent) labelText = lbl.textContent.trim().toLowerCase()
+          }
+        } catch (e) {
+          /* ignore */
+        }
+
+        const combined = `${name} ${labelText}`
+        // match common date-like keys/labels
+        if (/\b(birth|birthday|death|union|marri|wedding|anniv|date)\b/.test(combined)) {
+          if (!el.getAttribute('placeholder') || el.getAttribute('placeholder').trim() === '') {
+            el.setAttribute('placeholder', datePlaceholder)
+          }
+        }
+      })
+    } catch (e) {
+      /* ignore placeholder errors */
+    }
   }
 
   function teardownImageUploader() {

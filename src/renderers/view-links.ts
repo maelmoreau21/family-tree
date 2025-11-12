@@ -170,10 +170,19 @@ function applySiblingOffset(points: [number, number][], meta: AnimationMeta | un
   return adjusted
 }
 
-function computeSiblingOffsetVector(_index: number, _count: number, _isHorizontal: boolean): { dx: number; dy: number } | undefined {
-  return undefined
+function computeSiblingOffsetVector(index: number, count: number, isHorizontal: boolean): { dx: number; dy: number } | undefined {
+  if (count <= 1) return undefined
+  const center = (count - 1) / 2
+  const offsetIndex = index - center
+  if (Math.abs(offsetIndex) < 0.05) return undefined
+
+  const baseSpread = isHorizontal ? 12 : 14
+  const scale = Math.min(28, baseSpread + count * 2)
+  const displacement = offsetIndex * scale
+
+  return isHorizontal ? { dx: 0, dy: displacement } : { dx: displacement, dy: 0 }
 }
- 
+
 
 function buildPolylinePath(points: [number, number][]): string {
   const deduped = dedupePoints(points);
