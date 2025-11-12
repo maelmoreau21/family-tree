@@ -195,52 +195,43 @@ function buildPolylinePath(points: [number, number][]): string {
 function buildSmoothCurve(points: [number, number][], isHorizontal: boolean): string {
   const deduped = dedupePoints(points);
   if (deduped.length < 2) return buildPolylinePath(deduped);
+  if (deduped.length === 2) return buildPolylinePath(deduped);
 
+  // Use Catmull-Rom to generate smooth cubic Bezier segments that pass through
+  // the given points. This produces visually harmonious curves while keeping
+  // the path anchored at the original points.
   const pathParts: string[] = [];
   const start = deduped[0];
   pathParts.push(`M${formatNumber(start[0])},${formatNumber(start[1])}`);
 
-  for (let i = 1; i < deduped.length; i++) {
-    const current = deduped[i];
-    const prev = deduped[i - 1];
-
-    if (i === deduped.length - 1) {
-      pathParts.push(`L${formatNumber(current[0])},${formatNumber(current[1])}`);
-      continue;
-    }
-
-    const next = deduped[i + 1];
-    const prevVec: [number, number] = [current[0] - prev[0], current[1] - prev[1]];
-    const nextVec: [number, number] = [next[0] - current[0], next[1] - current[1]];
-    const prevLength = Math.hypot(prevVec[0], prevVec[1]);
-    const nextLength = Math.hypot(nextVec[0], nextVec[1]);
-
-    if (prevLength === 0 || nextLength === 0) {
-      pathParts.push(`L${formatNumber(current[0])},${formatNumber(current[1])}`);
-      continue;
-    }
-
-    const cornerRadius = computeCornerRadius(prevLength, nextLength, isHorizontal);
-    if (cornerRadius <= 0.5) {
-      pathParts.push(`L${formatNumber(current[0])},${formatNumber(current[1])}`);
-      continue;
-    }
-
-    const startCorner: [number, number] = [
-      current[0] - (prevVec[0] / prevLength) * cornerRadius,
-      current[1] - (prevVec[1] / prevLength) * cornerRadius
-    ];
-
-    const endCorner: [number, number] = [
-      current[0] + (nextVec[0] / nextLength) * cornerRadius,
-      current[1] + (nextVec[1] / nextLength) * cornerRadius
-    ];
-
-    pathParts.push(`L${formatNumber(startCorner[0])},${formatNumber(startCorner[1])}`);
-    pathParts.push(`Q${formatNumber(current[0])},${formatNumber(current[1])} ${formatNumber(endCorner[0])},${formatNumber(endCorner[1])}`);
+  const beziers = catmullRomToBeziers(deduped);
+  for (const b of beziers) {
+    // b: [cp1x, cp1y, cp2x, cp2y, x, y]
+    pathParts.push(
+      `C${formatNumber(b[0])},${formatNumber(b[1])} ${formatNumber(b[2])},${formatNumber(b[3])} ${formatNumber(b[4])},${formatNumber(b[5])}`
+    );
   }
 
   return pathParts.join(" ");
+}
+
+function catmullRomToBeziers(points: [number, number][]): number[][] {
+  const beziers: number[][] = [];
+  const n = points.length;
+  for (let i = 0; i < n - 1; i++) {
+    const p0 = i === 0 ? points[0] : points[i - 1];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = i + 2 < n ? points[i + 2] : points[n - 1];
+
+    const cp1x = p1[0] + (p2[0] - p0[0]) / 6;
+    const cp1y = p1[1] + (p2[1] - p0[1]) / 6;
+    const cp2x = p2[0] - (p3[0] - p1[0]) / 6;
+    const cp2y = p2[1] - (p3[1] - p1[1]) / 6;
+
+    beziers.push([cp1x, cp1y, cp2x, cp2y, p2[0], p2[1]]);
+  }
+  return beziers;
 }
 
 function computeCornerRadius(prevLength: number, nextLength: number, isHorizontal: boolean): number {
