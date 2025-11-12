@@ -5,6 +5,7 @@ import { Store } from "../types/store";
 import { TreeDatum } from "../types/treeData";
 import { CardDim } from "../types/card";
 import { Datum } from "../types/data";
+import { escapeHtml, isSafeImageSrc } from "../utils/escape"
 
 export default function CardHtml(props: {
   style: 'default' | 'imageCircleRect' | 'imageCircle' | 'imageRect' | 'rect';
@@ -36,7 +37,7 @@ export default function CardHtml(props: {
     this.innerHTML = (`
     <div class="card ${getClassList(d).join(' ')}" data-id="${d.tid}" style="transform: translate(-50%, -50%); pointer-events: auto;">
       ${props.mini_tree ? getMiniTree(d) : ''}
-      ${(props.cardInnerHtmlCreator && !d.data._new_rel_data) ? props.cardInnerHtmlCreator(d) : cardInner(d)}
+      ${(props.cardInnerHtmlCreator && !d.data._new_rel_data) ? escapeHtml(props.cardInnerHtmlCreator(d)) : cardInner(d)}
     </div>
     `)
     const hostSelection = d3.select<HTMLElement, TreeDatum>(this)
@@ -128,9 +129,9 @@ export default function CardHtml(props: {
 
   function textDisplay(d: TreeDatum) {
   if (d.data._new_rel_data) return newRelDataDisplay(d)
-  if (d.data.to_add) return `<div>${props.empty_card_label || 'À AJOUTER'}</div>`
-  if (d.data.unknown) return `<div>${props.unknown_card_label || 'INCONNU'}</div>`
-  const baseRows = props.card_display.map(display => `<div>${display(d.data)}</div>`).join('')
+  if (d.data.to_add) return `<div>${escapeHtml(props.empty_card_label || 'À AJOUTER')}</div>`
+  if (d.data.unknown) return `<div>${escapeHtml(props.unknown_card_label || 'INCONNU')}</div>`
+  const baseRows = props.card_display.map(display => `<div>${escapeHtml(display(d.data))}</div>`).join('')
   // Ne pas afficher les unions sur la carte elle-même — elles restent visibles
   // uniquement dans le panneau "Informations complémentaires".
     return baseRows
@@ -142,9 +143,9 @@ export default function CardHtml(props: {
   const attr_list: string[] = []
   attr_list.push(`data-rel-type="${relData.rel_type}"`)
   if (['son', 'daughter'].includes(relData.rel_type) && relData.other_parent_id) attr_list.push(`data-other-parent-id="${relData.other_parent_id}"`)
-  const rawLabel = relData.label || ''
+    const rawLabel = relData.label || ''
     const sanitized = sanitizeLabel(rawLabel)
-    return `<div ${attr_list.join(' ')}>${sanitized}</div>`
+    return `<div ${attr_list.join(' ')}>${escapeHtml(sanitized)}</div>`
   }
 
   function getMiniTree(d: TreeDatum) {
@@ -250,6 +251,9 @@ export default function CardHtml(props: {
   function getCardImageMarkup(d: TreeDatum) {
     const imageValue = d.data.data[props.cardImageField]
     const imageSrc = typeof imageValue === 'string' ? imageValue : undefined
-    return imageSrc ? `<img loading="lazy" decoding="async" src="${imageSrc}" ${getCardImageStyle()}>` : noImageIcon(d)
+    if (imageSrc && isSafeImageSrc(imageSrc)) {
+      return `<img loading="lazy" decoding="async" src="${escapeHtml(imageSrc)}" ${getCardImageStyle()}>`
+    }
+    return noImageIcon(d)
   }
 }

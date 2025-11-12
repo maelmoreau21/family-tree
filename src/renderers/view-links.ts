@@ -247,8 +247,14 @@ function computeCornerRadius(prevLength: number, nextLength: number, isHorizonta
   const available = Math.min(prevLength, nextLength);
   if (available <= 0.001) return 0;
 
+  // Minimum corner radius to ensure a visible/default angle even for short
+  // segments. This makes curves have a consistent visual angle when the
+  // geometry would otherwise produce a very small/flat corner.
+  const MIN_CORNER_RADIUS = 8
   const FIXED_RADIUS = isHorizontal ? 28 : 36;
-  const maxByGeometry = Math.max(2, available / 2);
+  // Geometry-limited radius: can't be larger than half the shortest segment,
+  // but at least MIN_CORNER_RADIUS so we have a visible angle.
+  const maxByGeometry = Math.max(MIN_CORNER_RADIUS, available / 2, 2);
 
   return Math.min(FIXED_RADIUS, maxByGeometry);
 }

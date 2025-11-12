@@ -46,7 +46,8 @@ export class Modal {
   
     const modal_content_inner = d3.select(this.modal_cont).select('.f3-modal-content-inner').node()! as HTMLElement
     if (typeof content === 'string') {
-      modal_content_inner.innerHTML = content
+      // prefer textContent for string content to avoid injecting unescaped HTML
+      modal_content_inner.textContent = content
     }
     else {
       modal_content_inner.appendChild(content)

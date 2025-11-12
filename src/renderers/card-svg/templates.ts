@@ -1,4 +1,5 @@
 import { TreeDatum } from "../../types/treeData"
+import { escapeHtml, isSafeImageSrc } from "../../utils/escape"
 
 export type CardDisplayRenderer = ((data: TreeDatum['data']) => string) | Array<(data: TreeDatum['data']) => string>
 
@@ -29,7 +30,7 @@ export function CardBodyAddNewRel({card_dim,label}: {d: TreeDatum, card_dim: Car
     <g class="card-body">
       <rect class="card-body-rect" width="${card_dim.w}" height="${card_dim.h}" />
       <text transform="translate(${card_dim.img_w+5}, ${card_dim.h/2})">
-        <tspan font-size="18" dy="${8}" pointer-events="none">${label}</tspan>
+        <tspan font-size="18" dy="${8}" pointer-events="none">${escapeHtml(label)}</tspan>
       </text>
     </g>
   `)
@@ -42,7 +43,7 @@ export function CardText({d,card_dim,card_display}: {d: TreeDatum, card_dim: Car
       <g class="card-text" clip-path="url(#card_text_clip)">
         <g transform="translate(${card_dim.text_x}, ${card_dim.text_y})">
           <text>
-            ${Array.isArray(card_display) ? card_display.map(cd => `<tspan x="${0}" dy="${14}">${cd(d.data)}</tspan>`).join('\n') : card_display(d.data)}
+            ${Array.isArray(card_display) ? card_display.map(cd => `<tspan x="${0}" dy="${14}">${escapeHtml(cd(d.data))}</tspan>`).join('\n') : escapeHtml((card_display as Function)(d.data))}
           </text>
         </g>
       </g>
@@ -124,8 +125,8 @@ export function LinkBreakIconWrapper({d,card_dim}: {d: TreeDatum, card_dim: Card
 export function CardImage({d, image, card_dim, maleIcon, femaleIcon}: {d: TreeDatum, image: string, card_dim: CardDim, maleIcon?: ({card_dim}: {card_dim: CardDim}) => string, femaleIcon?: ({card_dim}: {card_dim: CardDim}) => string}) {
   return ({template: (`
     <g style="transform: translate(${card_dim.img_x}px,${card_dim.img_y}px);" class="card_image" clip-path="url(#card_image_clip)">
-      ${image 
-        ? `<image href="${image}" height="${card_dim.img_h}" width="${card_dim.img_w}" preserveAspectRatio="xMidYMin slice" />`
+      ${image && isSafeImageSrc(image)
+        ? `<image href="${escapeHtml(image)}" height="${card_dim.img_h}" width="${card_dim.img_w}" preserveAspectRatio="xMidYMin slice" />`
         : (d.data.data.gender === "F" && !!femaleIcon) ? femaleIcon({card_dim}) 
         : (d.data.data.gender === "M" && !!maleIcon) ? maleIcon({card_dim}) 
         : GenderlessIcon()

@@ -1,19 +1,20 @@
 import { EditDatumFormCreator, NewRelFormCreator, SelectField, RelReferenceField, Field } from '../types/form'
 import * as icons from './icons'
 import fr from '../i18n/fr'
+import { escapeHtml } from '../utils/escape'
 
 
 export function getHtmlNew(form_creator: NewRelFormCreator) {
   return (` 
     <form id="familyForm" class="f3-form">
       ${closeBtn()}
-      <h3 class="f3-form-title">${form_creator.title}</h3>
+      <h3 class="f3-form-title">${escapeHtml(form_creator.title)}</h3>
 
       ${fields(form_creator)}
       
       <div class="f3-form-buttons">
-        <button type="button" class="f3-cancel-btn">${fr.form.cancel}</button>
-        <button type="submit">${fr.form.save}</button>
+        <button type="button" class="f3-cancel-btn">${escapeHtml(fr.form.cancel)}</button>
+        <button type="submit">${escapeHtml(fr.form.save)}</button>
       </div>
 
       ${form_creator.linkExistingRelative ? addLinkExistingRelative(form_creator) : ''}
@@ -33,8 +34,8 @@ export function getHtmlEdit(form_creator: EditDatumFormCreator) {
       ${fields(form_creator)}
       
       <div class="f3-form-buttons">
-        <button type="button" class="f3-cancel-btn">${fr.form.cancel}</button>
-        <button type="submit">${fr.form.save}</button>
+        <button type="button" class="f3-cancel-btn">${escapeHtml(fr.form.cancel)}</button>
+        <button type="submit">${escapeHtml(fr.form.save)}</button>
       </div>
 
       ${form_creator.linkExistingRelative ? addLinkExistingRelative(form_creator) : ''}
@@ -169,8 +170,8 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
         <label>${field.label}</label>
         <input type="${field.type}" 
           name="${field.id}" 
-          value="${field.initial_value || ''}"
-          placeholder="${field.label}">
+          value="${escapeHtml(field.initial_value || '')}"
+          placeholder="${escapeHtml(field.label)}">
       </div>`
     }
     if (field.type === 'textarea') {
@@ -178,7 +179,7 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
       <div class="f3-form-field">
         <label>${field.label}</label>
         <textarea name="${field.id}" 
-          placeholder="${field.label}">${field.initial_value || ''}</textarea>
+          placeholder="${escapeHtml(field.label)}">${escapeHtml(field.initial_value || '')}</textarea>
       </div>`
     }
     if (field.type === 'select') {
@@ -187,8 +188,8 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
       <div class="f3-form-field">
         <label>${select_field.label}</label>
         <select name="${select_field.id}" value="${select_field.initial_value || ''}">
-          <option value="">${select_field.placeholder || `Sélectionnez ${select_field.label}`}</option>
-          ${select_field.options.map((option) => `<option ${option.value === select_field.initial_value ? 'selected' : ''} value="${option.value}">${option.label}</option>`).join('')}
+          <option value="">${escapeHtml(select_field.placeholder || `Sélectionnez ${select_field.label}`)}</option>
+          ${select_field.options.map((option) => `<option ${option.value === select_field.initial_value ? 'selected' : ''} value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join('')}
         </select>
       </div>`
     }
@@ -200,8 +201,8 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
         <label>${rf.label} - <i>${relLabel}</i></label>
         <input type="text" 
           name="${rf.id}" 
-          value="${rf.initial_value || ''}"
-          placeholder="${rf.label}">
+          value="${escapeHtml(rf.initial_value || '')}"
+          placeholder="${escapeHtml(rf.label)}">
       </div>`
     }
     return ''
