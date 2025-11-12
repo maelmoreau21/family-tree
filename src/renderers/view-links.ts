@@ -52,7 +52,7 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
       .attr("stroke", "#fff")
       .attr("stroke-width", 1)
       .style("opacity", 0)
-      .attr("d", createPath(d, true, tree.is_horizontal));
+      .attr("d", createPath(d, true));
 
     const meta = (d as AnimatedLink).__animation
     const extraDelay = meta ? meta.index * siblingDelayStep : 0
@@ -66,7 +66,7 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
 
     // Animate to the final path and fade in in a single transition to avoid conflicts
     path.transition().duration(baseDuration).delay(delay).ease(d3.easeCubicInOut)
-      .attr("d", createPath(d, false, tree.is_horizontal))
+      .attr("d", createPath(d, false))
       .style("opacity", 1)
       .attr("transform", "translate(0,0)")
   }
@@ -82,7 +82,7 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
 
     // Use a single transition for both shape and opacity to keep animation smooth
     path.transition().duration(updateDuration).delay(delay).ease(d3.easeCubicInOut)
-      .attr("d", createPath(d, false, tree.is_horizontal))
+      .attr("d", createPath(d, false))
       .style("opacity", 1)
   }
 
@@ -92,7 +92,7 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
     const extraDelay = meta ? (meta.count - meta.index - 1) * Math.max(30, Math.round(siblingDelayStep * 0.35)) : 0
     // Transition shape back to collapsed (_d) and fade out in one transition, then remove
     path.transition().duration(exitDuration).delay(extraDelay).ease(d3.easeSinInOut)
-      .attr("d", createPath(d as Link, true, tree.is_horizontal))
+      .attr("d", createPath(d as Link, true))
       .style("opacity", 0)
       .attr("transform", "translate(0,0)")
       .on("end", () => path.remove());
@@ -142,13 +142,13 @@ function computeEntryOffset(meta: AnimationMeta | undefined, isHorizontal: boole
   return [dx, dy]
 }
 
-function createPath(link: Link, collapsed: boolean = false, isHorizontal: boolean = false) {
+function createPath(link: Link, collapsed: boolean = false) {
   const animated = link as AnimatedLink
   const sourcePoints = (collapsed ? link._d() : link.d).map(([x, y]) => [x, y] as [number, number])
   const adjusted = applySiblingOffset(sourcePoints, animated.__animation)
 
   if (!link.curve) return buildPolylinePath(adjusted)
-  return buildSmoothCurve(adjusted, isHorizontal)
+  return buildSmoothCurve(adjusted)
 }
 
 function applySiblingOffset(points: [number, number][], meta: AnimationMeta | undefined): [number, number][] {
@@ -192,7 +192,7 @@ function buildPolylinePath(points: [number, number][]): string {
     .join(" ");
 }
 
-function buildSmoothCurve(points: [number, number][], isHorizontal: boolean): string {
+function buildSmoothCurve(points: [number, number][]): string {
   const deduped = dedupePoints(points);
   if (deduped.length < 2) return buildPolylinePath(deduped);
   if (deduped.length === 2) return buildPolylinePath(deduped);
@@ -234,21 +234,7 @@ function catmullRomToBeziers(points: [number, number][]): number[][] {
   return beziers;
 }
 
-function computeCornerRadius(prevLength: number, nextLength: number, isHorizontal: boolean): number {
-  const available = Math.min(prevLength, nextLength);
-  if (available <= 0.001) return 0;
-
-  // Minimum corner radius to ensure a visible/default angle even for short
-  // segments. This makes curves have a consistent visual angle when the
-  // geometry would otherwise produce a very small/flat corner.
-  const MIN_CORNER_RADIUS = 8
-  const FIXED_RADIUS = isHorizontal ? 28 : 36;
-  // Geometry-limited radius: can't be larger than half the shortest segment,
-  // but at least MIN_CORNER_RADIUS so we have a visible angle.
-  const maxByGeometry = Math.max(MIN_CORNER_RADIUS, available / 2, 2);
-
-  return Math.min(FIXED_RADIUS, maxByGeometry);
-}
+// computeCornerRadius removed — replaced by Catmull-Rom based smoothing above.
 
 function dedupePoints(points: [number, number][]): [number, number][] {
   if (points.length < 2) return points.slice();

@@ -1,4 +1,4 @@
-import type { BaseType, Selection } from "d3-selection"
+import type { Selection } from "d3-selection"
 
 type SanitisableElement = Element & { replaceChildren: (...nodes: Node[]) => void }
 
@@ -115,7 +115,10 @@ export function clearElement(target: Element | null): void {
   target.replaceChildren()
 }
 
-export function updateSelectionHtml<T extends BaseType, D>(selection: Selection<T, D, any, any>, html: string, context?: string): void {
+// Accept any D3 Selection shape here — callers may use different parent types
+// and the helper performs runtime DOM-safe operations only.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function updateSelectionHtml(selection: Selection<any, any, any, any>, html: string, context?: string): void {
   if (!selection) return
   selection.each(function updateSafeHtml() {
     applySanitisedHtml(this as SanitisableElement, html, context)

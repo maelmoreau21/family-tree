@@ -2,20 +2,77 @@ import { CardDim } from "./templates"
 
 export default function setupCardSvgDefs(svg: SVGElement, card_dim: CardDim) {
   if (svg.querySelector("defs#f3CardDef")) return
-  svg.insertAdjacentHTML('afterbegin', (`
-      <defs id="f3CardDef">
-        <linearGradient id="fadeGrad">
-          <stop offset="0.9" stop-color="white" stop-opacity="0"/>
-          <stop offset=".91" stop-color="white" stop-opacity=".5"/>
-          <stop offset="1" stop-color="white" stop-opacity="1"/>
-        </linearGradient>
-        <mask id="fade" maskContentUnits="objectBoundingBox"><rect width="1" height="1" fill="url(#fadeGrad)"/></mask>
-        <clipPath id="card_clip"><path d="${curvedRectPath({w:card_dim.w, h:card_dim.h}, 5)}"></clipPath>
-        <clipPath id="card_text_clip"><rect width="${card_dim.w-10}" height="${card_dim.h}"></rect></clipPath>
-        <clipPath id="card_image_clip"><path d="M0,0 Q 0,0 0,0 H${card_dim.img_w} V${card_dim.img_h} H0 Q 0,${card_dim.img_h} 0,${card_dim.img_h} z"></clipPath>
-        <clipPath id="card_image_clip_curved"><path d="${curvedRectPath({w: card_dim.img_w, h:card_dim.img_h}, 5, ['rx', 'ry'])}"></clipPath>
-      </defs>
-    `))
+  // Coerce numeric values to safe integers to avoid accidental injection
+  const safeW = Number.isFinite(Number(card_dim.w)) ? Math.max(0, Math.floor(Number(card_dim.w))) : 0
+  const safeH = Number.isFinite(Number(card_dim.h)) ? Math.max(0, Math.floor(Number(card_dim.h))) : 0
+  const safeImgW = Number.isFinite(Number(card_dim.img_w)) ? Math.max(0, Math.floor(Number(card_dim.img_w))) : 0
+  const safeImgH = Number.isFinite(Number(card_dim.img_h)) ? Math.max(0, Math.floor(Number(card_dim.img_h))) : 0
+
+  // Build SVG defs using DOM APIs to avoid string injection
+  const svgns = 'http://www.w3.org/2000/svg'
+  const defs = document.createElementNS(svgns, 'defs')
+  defs.setAttribute('id', 'f3CardDef')
+
+  const linear = document.createElementNS(svgns, 'linearGradient')
+  linear.setAttribute('id', 'fadeGrad')
+  const stop1 = document.createElementNS(svgns, 'stop')
+  stop1.setAttribute('offset', '0.9')
+  stop1.setAttribute('stop-color', 'white')
+  stop1.setAttribute('stop-opacity', '0')
+  const stop2 = document.createElementNS(svgns, 'stop')
+  stop2.setAttribute('offset', '.91')
+  stop2.setAttribute('stop-color', 'white')
+  stop2.setAttribute('stop-opacity', '0.5')
+  const stop3 = document.createElementNS(svgns, 'stop')
+  stop3.setAttribute('offset', '1')
+  stop3.setAttribute('stop-color', 'white')
+  stop3.setAttribute('stop-opacity', '1')
+  linear.appendChild(stop1)
+  linear.appendChild(stop2)
+  linear.appendChild(stop3)
+
+  const mask = document.createElementNS(svgns, 'mask')
+  mask.setAttribute('id', 'fade')
+  mask.setAttribute('maskContentUnits', 'objectBoundingBox')
+  const maskRect = document.createElementNS(svgns, 'rect')
+  maskRect.setAttribute('width', '1')
+  maskRect.setAttribute('height', '1')
+  maskRect.setAttribute('fill', 'url(#fadeGrad)')
+  mask.appendChild(maskRect)
+
+  const clipCard = document.createElementNS(svgns, 'clipPath')
+  clipCard.setAttribute('id', 'card_clip')
+  const clipCardPath = document.createElementNS(svgns, 'path')
+  clipCardPath.setAttribute('d', curvedRectPath({ w: safeW, h: safeH }, 5))
+  clipCard.appendChild(clipCardPath)
+
+  const clipText = document.createElementNS(svgns, 'clipPath')
+  clipText.setAttribute('id', 'card_text_clip')
+  const clipTextRect = document.createElementNS(svgns, 'rect')
+  clipTextRect.setAttribute('width', String(Math.max(0, safeW - 10)))
+  clipTextRect.setAttribute('height', String(safeH))
+  clipText.appendChild(clipTextRect)
+
+  const clipImage = document.createElementNS(svgns, 'clipPath')
+  clipImage.setAttribute('id', 'card_image_clip')
+  const clipImagePath = document.createElementNS(svgns, 'path')
+  clipImagePath.setAttribute('d', `M0,0 Q 0,0 0,0 H${safeImgW} V${safeImgH} H0 Q 0,${safeImgH} 0,${safeImgH} z`)
+  clipImage.appendChild(clipImagePath)
+
+  const clipImageCurved = document.createElementNS(svgns, 'clipPath')
+  clipImageCurved.setAttribute('id', 'card_image_clip_curved')
+  const clipImageCurvedPath = document.createElementNS(svgns, 'path')
+  clipImageCurvedPath.setAttribute('d', curvedRectPath({ w: safeImgW, h: safeImgH }, 5, ['rx', 'ry']))
+  clipImageCurved.appendChild(clipImageCurvedPath)
+
+  defs.appendChild(linear)
+  defs.appendChild(mask)
+  defs.appendChild(clipCard)
+  defs.appendChild(clipText)
+  defs.appendChild(clipImage)
+  defs.appendChild(clipImageCurved)
+
+  svg.insertBefore(defs, svg.firstChild)
 
   function curvedRectPath(dim: {w: number, h: number}, curve: number, no_curve_corners?: string[]) {
     const {w,h} = dim,

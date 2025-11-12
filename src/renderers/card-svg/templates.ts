@@ -44,7 +44,7 @@ export function CardText({d,card_dim,card_display}: {d: TreeDatum, card_dim: Car
       <g class="card-text" clip-path="url(#card_text_clip)">
         <g transform="translate(${card_dim.text_x}, ${card_dim.text_y})">
           <text>
-            ${Array.isArray(card_display) ? card_display.map(cd => `<tspan x="${0}" dy="${14}">${escapeHtml(cd(d.data))}</tspan>`).join('\n') : escapeHtml((card_display as Function)(d.data))}
+            ${Array.isArray(card_display) ? card_display.map(cd => `<tspan x="${0}" dy="${14}">${escapeHtml(cd(d.data))}</tspan>`).join('\n') : escapeHtml((card_display as (data: unknown) => string)(d.data as unknown))}
           </text>
         </g>
       </g>

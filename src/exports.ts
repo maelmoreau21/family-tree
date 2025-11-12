@@ -30,5 +30,6 @@ export { CardSvg as CardSvgClass } from './core/cards/card-svg'
 
 import * as htmlHandlers from './renderers/html'
 import { setupHtmlSvg, setupReactiveTreeData, getUniqueId } from './features/card-component/handlers'
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const htmlHandlersWithDeprecated = Object.assign({}, htmlHandlers, {setupHtmlSvg, setupReactiveTreeData, getUniqueId}) as any
 export { htmlHandlersWithDeprecated as htmlHandlers }

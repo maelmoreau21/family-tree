@@ -1053,9 +1053,43 @@ function attachPanelControls({ chart, card }) {
     }
   }
 
+  function isSafeAbsoluteUrl(rawUrl) {
+    if (!rawUrl) return false
+    try {
+      const u = new URL(rawUrl, window.location.origin)
+      const proto = (u.protocol || '').toLowerCase()
+      if (proto === 'http:' || proto === 'https:') return true
+      if (proto === 'data:') return String(rawUrl).startsWith('data:image/')
+      return false
+    } catch (e) {
+      return false
+    }
+  }
+
+  function isSafeImageUrl(rawUrl) {
+    if (!rawUrl) return false
+    try {
+      const u = new URL(rawUrl, window.location.origin)
+      const proto = (u.protocol || '').toLowerCase()
+      if (proto === 'http:' || proto === 'https:') {
+        return /\.(jpe?g|png|webp|gif|bmp|svg)$/i.test(u.pathname)
+      }
+      if (proto === 'data:') return String(rawUrl).startsWith('data:image/')
+      return false
+    } catch (e) {
+      return false
+    }
+  }
+
   function applyImageToActiveProfile(rawUrl, { origin = 'manual', sizeBytes } = {}) {
     const absoluteUrl = normaliseUrl(rawUrl)
     if (!absoluteUrl) return
+
+    if (!isSafeImageUrl(absoluteUrl)) {
+      setUploadFeedback('URL d’image non sûre ou format non supporté.', 'error')
+      setStatus('URL d’image non sûre', 'error')
+      return
+    }
 
     const targetFieldId = getActiveImageFieldId()
     const escapedFieldId = targetFieldId.replace(/"/g, '\\"')
@@ -1268,8 +1302,13 @@ function attachPanelControls({ chart, card }) {
     assetUploadResult.dataset.url = absoluteUrl
     if (assetUploadUrlOutput) assetUploadUrlOutput.textContent = absoluteUrl
     if (assetUploadOpenLink) {
-      assetUploadOpenLink.href = absoluteUrl
-      assetUploadOpenLink.classList.remove('hidden')
+      if (isSafeAbsoluteUrl(absoluteUrl)) {
+        assetUploadOpenLink.href = absoluteUrl
+        assetUploadOpenLink.classList.remove('hidden')
+      } else {
+        assetUploadOpenLink.href = '#'
+        assetUploadOpenLink.classList.add('hidden')
+      }
     }
     assetUploadResult.classList.remove('hidden')
     if (manualUrlInput) manualUrlInput.value = absoluteUrl

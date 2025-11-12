@@ -49,6 +49,8 @@
     "prepublishOnly": "node prePublish.js",
     "test": "vitest run",
     "lint": "eslint \"src/**/*.{ts,tsx,js,jsx}\" --max-warnings=0"
+    ,
+    "security-check": "node scripts/security-checks.mjs"
   },
   "sideEffects": false,
   "dependencies": {

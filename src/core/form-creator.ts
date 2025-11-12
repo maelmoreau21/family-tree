@@ -102,7 +102,9 @@ export function formCreatorSetup({
     if (type === 'rel_reference') {
       // Provide a safe fallback for getRelLabel so callers (including external
       // builder scripts) that forget to supply it don't break form creation.
+      // allow previous code to accept external callables without enforcing strict typing
       const providedGetRelLabel = 'getRelLabel' in field && typeof field.getRelLabel === 'function'
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ? (field as any).getRelLabel as (d: Datum) => string
         : undefined
 
@@ -119,6 +121,7 @@ export function formCreatorSetup({
         id: field.id,
         type: 'rel_reference',
         label,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         rel_type: 'rel_type' in field ? (field as any).rel_type : 'spouse',
         getRelLabel: providedGetRelLabel || defaultGetRelLabel,
       }
