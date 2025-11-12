@@ -170,7 +170,7 @@ function applySiblingOffset(points: [number, number][], meta: AnimationMeta | un
   return adjusted
 }
 
-function computeSiblingOffsetVector(index: number, count: number, isHorizontal: boolean): { dx: number; dy: number } | undefined {
+function computeSiblingOffsetVector(_index: number, _count: number, _isHorizontal: boolean): { dx: number; dy: number } | undefined {
   return undefined
 }
  

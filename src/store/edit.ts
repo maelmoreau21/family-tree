@@ -1,8 +1,15 @@
 import { Data, Datum } from "../types/data"
 import {createNewPerson} from "./new-person"
+import { normalizeDateValue, shouldNormalizeDateField } from "../utils/date"
 
 export function submitFormData(datum: Datum, data_stash: Data, form_data: FormData) {
-  form_data.forEach((v, k) => datum.data[k] = v)
+  form_data.forEach((value, key) => {
+    if (typeof value === "string" && shouldNormalizeDateField(key)) {
+      datum.data[key] = normalizeDateValue(value)
+    } else {
+      datum.data[key] = value
+    }
+  })
   syncRelReference(datum, data_stash)
   if (datum.to_add) delete datum.to_add
   if (datum.unknown) delete datum.unknown
