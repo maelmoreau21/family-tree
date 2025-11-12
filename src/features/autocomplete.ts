@@ -2,6 +2,7 @@ import * as d3 from "d3"
 import {personSvgIcon, chevronDownSvgIcon, linkOffSvgIcon} from "../renderers/icons"
 import { checkIfConnectedToFirstPerson } from "../handlers/check-person-connection"
 import { Datum } from "../types/data"
+import { escapeHtml } from "../utils/escape"
 
 export default function(cont: Autocomplete['cont'], onSelect: Autocomplete['onSelect'], config: Autocomplete['config'] = {}) { return new Autocomplete(cont, onSelect, config) }
 
@@ -36,20 +37,22 @@ class Autocomplete {
   }
 
   create() {
-  const containerSelection = d3.select<HTMLElement, undefined>(this.autocomplete_cont)
-  containerSelection.html(`
-      <div class="f3-autocomplete">
-        <div class="f3-autocomplete-input-cont">
-          <input type="text" placeholder="${this.config?.placeholder || 'Rechercher'}">
-          <span class="f3-autocomplete-toggle">${chevronDownSvgIcon()}</span>
-        </div>
-        <div class="f3-autocomplete-items" tabindex="0"></div>
-      </div>
-    `)
+    const containerSelection = d3.select<HTMLElement, undefined>(this.autocomplete_cont)
+    containerSelection.selectAll('*').remove()
 
-  const search_cont = containerSelection.select<HTMLElement>(".f3-autocomplete")
-  const search_input = search_cont.select<HTMLInputElement>("input")
-  const dropdown = search_cont.select<HTMLDivElement>(".f3-autocomplete-items")
+    const search_cont = containerSelection.append('div').attr('class', 'f3-autocomplete')
+    const search_input_cont = search_cont.append('div').attr('class', 'f3-autocomplete-input-cont')
+    const search_input = search_input_cont.append('input')
+      .attr('type', 'text')
+      .attr('placeholder', this.config?.placeholder || 'Rechercher')
+
+    search_input_cont.append('span')
+      .attr('class', 'f3-autocomplete-toggle')
+      .html(chevronDownSvgIcon())
+
+    const dropdown = search_cont.append('div')
+      .attr('class', 'f3-autocomplete-items')
+      .attr('tabindex', 0)
 
     const selectItem = (items: HTMLElement[], index: number) => {
       items.forEach(item => d3.select(item).classed("f3-selected", false))
@@ -61,18 +64,29 @@ class Autocomplete {
 
     const updateDropdown = (filteredOptions: Autocomplete['options']) => {
       const items = dropdown
-        .selectAll<HTMLDivElement, AutocompleteOption>("div.f3-autocomplete-item")
+        .selectAll<HTMLDivElement, AutocompleteOption>('div.f3-autocomplete-item')
         .data(filteredOptions, option => option.value)
 
       const merged = items
-        .join("div")
-        .attr("class", "f3-autocomplete-item")
+        .join('div')
+        .attr('class', 'f3-autocomplete-item')
 
       merged
-        .on("click", (_event: MouseEvent, option: AutocompleteOption) => {
+        .on('click', (_event: MouseEvent, option: AutocompleteOption) => {
           this.onSelect(option.value)
         })
-        .html(option => option.optionHtml ? option.optionHtml(option) : `<div class="${option.class || ''}">${option.label_html}</div>`)
+        .each(function(option: AutocompleteOption) {
+          const node = this as HTMLElement
+          node.innerHTML = ''
+          if (option.optionHtml) {
+            node.innerHTML = option.optionHtml(option)
+          } else {
+            const wrapper = document.createElement('div')
+            if (option.class) wrapper.className = option.class
+            wrapper.innerHTML = option.label_html || escapeHtml(option.label)
+            node.appendChild(wrapper)
+          }
+        })
     }
 
     const closeDropdown = () => {
@@ -95,16 +109,7 @@ class Autocomplete {
       })
 
       filteredOptions.forEach(option => {
-        if (!normalizedQuery) {
-          option.label_html = option.label
-          return
-        }
-        const index = option.label.toLowerCase().indexOf(normalizedQuery)
-        if (index === -1) {
-          option.label_html = option.label
-        } else {
-          option.label_html = `${option.label.substring(0, index)}<strong>${option.label.substring(index, index + normalizedQuery.length)}</strong>${option.label.substring(index + normalizedQuery.length)}`
-        }
+        option.label_html = buildHighlightedLabel(option.label, normalizedQuery)
       })
 
       filteredOptions.sort((a, b) => a.label.localeCompare(b.label))
@@ -191,7 +196,7 @@ class Autocomplete {
       return (option: AutocompleteOption) => (`
         <div>
           <span style="float: left; width: 10px; height: 10px; margin-right: 10px;" class="f3-${getPersonGender(d)}-color">${personSvgIcon()}</span>
-          <span>${option.label_html}</span>
+          <span>${option.label_html || escapeHtml(option.label)}</span>
           ${link_off ? `<span style="float: right; width: 10px; height: 10px; margin-left: 5px;" title="Ce profil n'est pas relié au profil principal">${linkOffSvgIcon()}</span>` : ''}
         </div>
       `)
@@ -208,4 +213,17 @@ class Autocomplete {
     this.autocomplete_cont.remove()
   }
 
+}
+
+function buildHighlightedLabel(label: string, normalizedQuery: string): string {
+  const safeLabel = escapeHtml(label)
+  const trimmedQuery = normalizedQuery || ''
+  if (!trimmedQuery) return safeLabel
+  const lowerLabel = label.toLowerCase()
+  const index = lowerLabel.indexOf(trimmedQuery)
+  if (index === -1) return safeLabel
+  const before = escapeHtml(label.slice(0, index))
+  const match = escapeHtml(label.slice(index, index + trimmedQuery.length))
+  const after = escapeHtml(label.slice(index + trimmedQuery.length))
+  return `${before}<strong>${match}</strong>${after}`
 }

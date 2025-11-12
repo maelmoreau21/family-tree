@@ -21,6 +21,10 @@ const totalCountEl = document.querySelector('[data-role="total-count"]')
 const panelToggleBtn = document.querySelector('[data-action="toggle-panel"]')
 
 const VIEWER_PANEL_STATE_KEY = 'family-tree:viewer:panelCollapsed'
+const SUBTREE_CACHE_TTL = 120000
+const SUBTREE_CACHE_MAX_ENTRIES = 32
+const subtreeCache = new Map()
+let currentDatasetSignature = null
 
 function getViewerStorageSafe() {
   try {
@@ -139,6 +143,94 @@ function sanitizeFieldValues(values) {
 
 function safeTrim(value) {
   return typeof value === 'string' ? value.trim() : ''
+}
+
+function clearSubtreeCache() {
+  subtreeCache.clear()
+}
+
+function deriveDatasetSignature(metaInfo) {
+  if (!metaInfo || typeof metaInfo !== 'object') return null
+  const candidates = [
+    metaInfo.datasetId,
+    metaInfo.version,
+    metaInfo.generatedAt,
+    metaInfo.hash,
+    metaInfo.total
+  ]
+  for (const candidate of candidates) {
+    if (candidate !== undefined && candidate !== null) {
+      return String(candidate)
+    }
+  }
+  return null
+}
+
+function updateCacheSignature(metaInfo) {
+  const nextSignature = deriveDatasetSignature(metaInfo)
+  if (!nextSignature) return
+  if (currentDatasetSignature && currentDatasetSignature !== nextSignature) {
+    currentDatasetSignature = nextSignature
+    clearSubtreeCache()
+    return
+  }
+  if (!currentDatasetSignature) {
+    currentDatasetSignature = nextSignature
+  }
+}
+
+function cloneForCache(value) {
+  if (value === undefined || value === null) return value
+  try {
+    if (typeof structuredClone === 'function') {
+      return structuredClone(value)
+    }
+  } catch (error) {
+    // structuredClone may throw on unsupported data types; fall back to JSON
+  }
+  try {
+    return JSON.parse(JSON.stringify(value))
+  } catch (error) {
+    return value
+  }
+}
+
+function setSubtreeCache(key, payload, metaInfo) {
+  if (!key) return
+  const entry = {
+    payload: cloneForCache(payload),
+    meta: cloneForCache(metaInfo),
+    timestamp: Date.now(),
+    signature: currentDatasetSignature
+  }
+  subtreeCache.set(key, entry)
+  if (subtreeCache.size > SUBTREE_CACHE_MAX_ENTRIES) {
+    const oldestKey = subtreeCache.keys().next().value
+    if (oldestKey !== undefined) {
+      subtreeCache.delete(oldestKey)
+    }
+  }
+}
+
+function getCachedSubtree(key) {
+  if (!key) return null
+  const entry = subtreeCache.get(key)
+  if (!entry) return null
+  if (entry.signature && currentDatasetSignature && entry.signature !== currentDatasetSignature) {
+    subtreeCache.delete(key)
+    return null
+  }
+  if (Date.now() - entry.timestamp > SUBTREE_CACHE_TTL) {
+    subtreeCache.delete(key)
+    return null
+  }
+  subtreeCache.delete(key)
+  entry.timestamp = Date.now()
+  subtreeCache.set(key, entry)
+  return {
+    payload: cloneForCache(entry.payload),
+    meta: cloneForCache(entry.meta)
+  }
 }
 
 function buildDatasetLabel(datum = {}) {
@@ -1200,10 +1292,31 @@ async function fetchSubtreeOnce(params, context = {}) {
   const controller = context.controller || new AbortController()
   if (!context.controller) {
     abortActiveFetch()
-    activeFetchController = controller
   }
 
   const queryString = buildSubtreeQuery(params)
+  const cacheKey = queryString
+
+  if (!context.bypassCache && !context.disableCache) {
+    const cached = getCachedSubtree(cacheKey)
+    if (cached) {
+      if (!context.controller) {
+        activeFetchController = controller
+      }
+      lastSuccessfulQuery = { ...params }
+      updateCacheSignature(cached.meta)
+      applySubtreePayload(cached.payload, {
+        ...context,
+        params,
+        fromCache: true
+      })
+      return { aborted: false, meta: cached.meta, fromCache: true }
+    }
+  }
+
+  if (!context.controller) {
+    activeFetchController = controller
+  }
 
   try {
     const response = await fetch(`/api/tree?${queryString}`, { cache: 'no-store', signal: controller.signal })
@@ -1219,6 +1332,11 @@ async function fetchSubtreeOnce(params, context = {}) {
     const normalised = normaliseTreePayload(payload)
     const persons = Array.isArray(normalised.data) ? normalised.data : []
     const metaInfo = normaliseMeta(normalised.meta, persons.length)
+    const cachePayload = {
+      data: persons,
+      config: normalised.config,
+      meta: metaInfo
+    }
 
     if (!persons.length && context.reason === 'initial' && !context.allowEmpty) {
       await fetchFullTree({
@@ -1231,11 +1349,11 @@ async function fetchSubtreeOnce(params, context = {}) {
     }
 
     lastSuccessfulQuery = { ...params }
-    applySubtreePayload({
-      data: persons,
-      config: normalised.config,
-      meta: metaInfo
-    }, {
+    updateCacheSignature(metaInfo)
+    if (!context.disableCache) {
+      setSubtreeCache(cacheKey, cachePayload, metaInfo)
+    }
+    applySubtreePayload(cachePayload, {
       ...context,
       params
     })
@@ -1255,6 +1373,7 @@ function fetchFullTree(context = {}) {
   const loadingLabel = context.loadingLabel || 'Chargement complet de l\'arbre...'
   setStatus(loadingLabel, 'loading')
   setInterfaceLoading(true)
+  clearSubtreeCache()
 
   return fetch('/api/tree', { cache: 'no-store' })
     .then(response => {
@@ -1269,6 +1388,7 @@ function fetchFullTree(context = {}) {
       const metaInfo = normaliseMeta(normalised.meta, persons.length)
       latestMeta = metaInfo
       totalPersons = metaInfo.total
+      updateCacheSignature(metaInfo)
 
       const resolvedMainId = context.mainId
         || (typeof normalised.config?.mainId === 'string' ? normalised.config.mainId : null)
@@ -1307,6 +1427,7 @@ function applySubtreePayload(payload, context = {}) {
   const metaInfo = normaliseMeta(meta, persons.length)
   latestMeta = metaInfo
   totalPersons = metaInfo.total
+  updateCacheSignature(metaInfo)
 
   const requestedParams = context.params || {}
   const resolvedMainId = requestedParams.mainId

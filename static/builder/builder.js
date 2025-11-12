@@ -46,6 +46,21 @@ function sanitizeFieldValues(values) {
   return result
 }
 
+function escapeHtml(input) {
+  if (input === null || input === undefined) return ''
+  return String(input).replace(/[&<>"'`]/g, (char) => {
+    switch (char) {
+      case '&': return '&amp;'
+      case '<': return '&lt;'
+      case '>': return '&gt;'
+      case '"': return '&quot;'
+      case "'": return '&#39;'
+      case '`': return '&#96;'
+      default: return char
+    }
+  })
+}
+
 function getStorageSafe() {
   try {
     return window.localStorage
@@ -348,8 +363,10 @@ function createSearchOptionFromDatum(datum) {
     value: datum.id,
     searchText,
     optionHtml: (option) => {
-      const meta = metaParts.length ? `<small>${metaParts.join(' · ')}</small>` : ''
-      return `<div>${option.label_html || option.label}${meta ? `<div class="f3-autocomplete-meta">${meta}</div>` : ''}</div>`
+      const safeMetaParts = metaParts.map(part => escapeHtml(part))
+      const meta = safeMetaParts.length ? `<small>${safeMetaParts.join(' · ')}</small>` : ''
+      const safeLabel = option.label_html || escapeHtml(option.label)
+      return `<div>${safeLabel}${meta ? `<div class="f3-autocomplete-meta">${meta}</div>` : ''}</div>`
     }
   }
 }

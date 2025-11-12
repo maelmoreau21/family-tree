@@ -9,6 +9,7 @@ import { KinshipInfoConfig, Kinships } from './calculate-kinships'
 import { Datum, Data } from '../../types/data'
 import { DatumKinship } from './kinships-data'
 import { TreeDatum } from "../../types/treeData"
+import { escapeHtml } from "../../utils/escape"
 
 export function kinshipInfo(kinship_info_config: KinshipInfoConfig, rel_id: Datum['id'], data_stash: Data) {
   const {self_id, getLabel, title} = kinship_info_config
@@ -18,12 +19,14 @@ export function kinshipInfo(kinship_info_config: KinshipInfoConfig, rel_id: Datu
   let label = relationship
   if (relationship === 'self') label = 'You'
   else label = capitalizeLabel(label)
+  const safeTitle = escapeHtml(title)
+  const safeLabel = escapeHtml(label)
   const html = (`
     <div class="f3-kinship-info">
       <div class="f3-info-field">
-        <span class="f3-info-field-label">${title}</span>
+        <span class="f3-info-field-label">${safeTitle}</span>
         <span class="f3-info-field-value">
-          <span>${label}</span>
+          <span>${safeLabel}</span>
           <span class="f3-kinship-info-icon">${infoSvgIcon()}</span>
         </span>
       </div>
@@ -115,10 +118,11 @@ function createSmallTree(
       let label = d.data.kinship === 'self' ? 'You' : d.data.kinship!
       label = capitalizeLabel(label)
       if (!kinship_label_toggle) label = getLabel(d.data)
-      
+      const safeLabel = escapeHtml(label)
+
       return (`
         <div class="card-inner card-rect ${getCardClass()}">
-          <div class="card-label">${label}</div>
+          <div class="card-label">${safeLabel}</div>
         </div>
       `)
 
