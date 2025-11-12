@@ -57,7 +57,7 @@ export function handleLinkRel(updated_datum: Datum, link_rel_id: Datum['id'], st
 }
 
 export function getLinkRelOptions(datum: Datum, data: Data) {
-  const rel_datum = datum._new_rel_data ? data.find(d => d.id === datum._new_rel_data.rel_id) : null
+  const rel_datum = data.find(d => d.id === datum._new_rel_data?.rel_id) ?? null
   const ancestry_ids = getAncestry(datum, data)
   const progeny_ids = getProgeny(datum, data)
   if (datum._new_rel_data && ['son', 'daughter'].includes(datum._new_rel_data.rel_type)) {

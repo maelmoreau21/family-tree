@@ -1,4 +1,4 @@
-export type * from './types/index'
+export * from './types/index'
 export type { TreeDimensions } from './layout/calculate-tree'
 
 export { default as createStore } from "./store/store"
@@ -30,5 +30,5 @@ export { CardSvg as CardSvgClass } from './core/cards/card-svg'
 
 import * as htmlHandlers from './renderers/html'
 import { setupHtmlSvg, setupReactiveTreeData, getUniqueId } from './features/card-component/handlers'
-const htmlHandlersWithDeprecated = Object.assign({}, htmlHandlers, {setupHtmlSvg, setupReactiveTreeData, getUniqueId})
+const htmlHandlersWithDeprecated = Object.assign({}, htmlHandlers, {setupHtmlSvg, setupReactiveTreeData, getUniqueId}) as any
 export { htmlHandlersWithDeprecated as htmlHandlers }
