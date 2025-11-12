@@ -6,6 +6,7 @@ import {plusIcon} from "../icons"
 import { TreeDatum } from "../../types/treeData"
 import { CardDim } from "./templates"
 import { Store } from "../../types/store"
+import { clearElement, updateSelectionHtml } from "../../utils/safe-html"
 
 // todo: remove store from props
 interface CardSvgProps {
@@ -33,7 +34,7 @@ export default function CardSvg(props: CardSvgProps) {
     const card = d3.create('svg:g').attr('class', `card ${gender_class}`).attr('transform', `translate(${[-card_dim.w / 2, -card_dim.h / 2]})`)
     card.append('g').attr('class', 'card-inner').attr('clip-path', 'url(#card_clip)')
 
-    this.innerHTML = ''
+    clearElement(this)
     this.appendChild(card.node()!)
 
     card.on("click", function (e) {
@@ -45,12 +46,12 @@ export default function CardSvg(props: CardSvgProps) {
       appendTemplate(CardBodyOutline({d,card_dim,is_new:Boolean(d.data.to_add)}).template, card.node()!, true)
       const newRelLabel = d.data._new_rel_data?.label ?? ''
       appendTemplate(CardBodyAddNewRel({d,card_dim,label: newRelLabel}).template, this.querySelector('.card-inner')!, true)
-      d3.select(this.querySelector('.card-inner'))
-      .append('g')
-      .attr('class', 'card-edit-icon')
-      .attr('fill', 'currentColor')
-      .attr('transform', `translate(-1,2)scale(${card_dim.img_h/22})`)
-      .html(plusIcon())
+      const editIcon = d3.select(this.querySelector('.card-inner'))
+        .append('g')
+        .attr('class', 'card-edit-icon')
+        .attr('fill', 'currentColor')
+        .attr('transform', `translate(-1,2)scale(${card_dim.img_h/22})`)
+      updateSelectionHtml(editIcon, plusIcon(), 'CardSvg add relative icon')
     } else {
       appendTemplate(CardBodyOutline({d,card_dim,is_new:Boolean(d.data.to_add)}).template, card.node()!, true)
   appendTemplate(CardBody({d,card_dim,card_display: props.card_display}).template, this.querySelector('.card-inner')!, false)

@@ -1,5 +1,6 @@
 import { TreeDatum } from "../../types/treeData"
 import { escapeHtml, isSafeImageSrc } from "../../utils/escape"
+import { setElementHtml } from "../../utils/safe-html"
 
 export type CardDisplayRenderer = ((data: TreeDatum['data']) => string) | Array<(data: TreeDatum['data']) => string>
 
@@ -150,7 +151,7 @@ export function CardImage({d, image, card_dim, maleIcon, femaleIcon}: {d: TreeDa
 
 export function appendTemplate(template: string, parent: Element, is_first: boolean) {
   const g = document.createElementNS("http://www.w3.org/2000/svg", 'g')
-  g.innerHTML = template
+  setElementHtml(g, template, 'CardSvg template fragment')
 
   if (is_first) parent.insertBefore(g, parent.firstChild)
   else parent.appendChild(g)

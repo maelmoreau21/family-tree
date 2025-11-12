@@ -10,6 +10,7 @@ import { Datum, Data } from '../../types/data'
 import { DatumKinship } from './kinships-data'
 import { TreeDatum } from "../../types/treeData"
 import { escapeHtml } from "../../utils/escape"
+import { updateSelectionHtml } from "../../utils/safe-html"
 
 export function kinshipInfo(kinship_info_config: KinshipInfoConfig, rel_id: Datum['id'], data_stash: Data) {
   const {self_id, getLabel, title} = kinship_info_config
@@ -32,7 +33,9 @@ export function kinshipInfo(kinship_info_config: KinshipInfoConfig, rel_id: Datu
       </div>
     </div>
   `)
-  const kinship_info_node = d3.create('div').html(html).select('div').node() as HTMLElement
+  const container = d3.create('div')
+  updateSelectionHtml(container, html, 'Kinship info summary')
+  const kinship_info_node = container.select('div').node() as HTMLElement
   let popup: InfoPopup | null = null;
   d3.select(kinship_info_node).select('.f3-kinship-info-icon').on('click', (e) => createPopup(e, kinship_info_node))
   return kinship_info_node

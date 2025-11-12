@@ -2,6 +2,7 @@ import * as d3 from "d3"
 import * as icons from "../renderers/icons"
 import { Store } from "../types/store"
 import { Data } from "../types/data"
+import { updateSelectionHtml } from "../utils/safe-html"
 
 interface HistoryData extends Data {
   main_id: string
@@ -87,8 +88,8 @@ export function createHistoryControls(cont: HTMLElement, history: History): Hist
     updateButtons()
   })
 
-  back_btn.html(icons.historyBackSvgIcon())
-  forward_btn.html(icons.historyForwardSvgIcon())
+  updateSelectionHtml(back_btn, icons.historyBackSvgIcon(), 'History back icon')
+  updateSelectionHtml(forward_btn, icons.historyForwardSvgIcon(), 'History forward icon')
 
   return {
     back_btn: back_btn.node()!,

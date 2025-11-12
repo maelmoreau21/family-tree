@@ -1,4 +1,5 @@
 import * as d3 from "d3"
+import { clearElement, updateSelectionHtml } from "../utils/safe-html"
 
 export default function(cont: HTMLElement) { return new Modal(cont) }
 
@@ -21,13 +22,13 @@ export class Modal {
 
   create() {
     const modal = d3.select(this.modal_cont)
-    modal.html(`
+    updateSelectionHtml(modal, `
       <div class="f3-modal-content">
         <span class="f3-modal-close">&times;</span>
         <div class="f3-modal-content-inner"></div>
         <div class="f3-modal-content-bottom"></div>
       </div>
-    `)
+    `, 'Modal structure')
   
     
     modal.select('.f3-modal-close').on('click', () => {
@@ -56,10 +57,11 @@ export class Modal {
     if (boolean) {
       if (!onAccept) throw new Error('onAccept is required')
       if (!onCancel) throw new Error('onCancel is required')
-      d3.select(this.modal_cont).select('.f3-modal-content-bottom').html(`
+      const actions = d3.select(this.modal_cont).select('.f3-modal-content-bottom')
+      updateSelectionHtml(actions, `
         <button class="f3-modal-accept f3-btn">Valider</button>
         <button class="f3-modal-cancel f3-btn">Annuler</button>
-      `)
+      `, 'Modal confirmation actions')
       d3.select(this.modal_cont).select('.f3-modal-accept').on('click', () => {onAccept(); this.reset(); this.close()})
       d3.select(this.modal_cont).select('.f3-modal-cancel').on('click', () => {this.close()})
       this.onClose = onCancel
@@ -70,8 +72,8 @@ export class Modal {
   
   reset() {
     this.onClose = null
-    d3.select(this.modal_cont).select('.f3-modal-content-inner').html('')
-    d3.select(this.modal_cont).select('.f3-modal-content-bottom').html('')
+    clearElement(this.modal_cont.querySelector('.f3-modal-content-inner'))
+    clearElement(this.modal_cont.querySelector('.f3-modal-content-bottom'))
   }
   
   open() {

@@ -1,4 +1,5 @@
 import * as d3 from "d3"
+import { updateSelectionHtml } from "../utils/safe-html"
 
 export default function(cont: HTMLElement, onClose?: () => void) { return new InfoPopup(cont, onClose) }
 
@@ -19,12 +20,12 @@ export class InfoPopup {
 
   create() {
     const popup = d3.select(this.popup_cont)
-    popup.html(`
+    updateSelectionHtml(popup, `
       <div class="f3-popup-content">
         <span class="f3-popup-close">&times;</span>
         <div class="f3-popup-content-inner"></div>
       </div>
-    `)
+    `, 'Info popup structure')
 
     
     popup.select('.f3-popup-close').on('click', () => {

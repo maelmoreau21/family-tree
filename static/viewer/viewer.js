@@ -26,6 +26,13 @@ const SUBTREE_CACHE_MAX_ENTRIES = 32
 const subtreeCache = new Map()
 let currentDatasetSignature = null
 
+function clearElement(target) {
+  if (!target) return
+  while (target.firstChild) {
+    target.removeChild(target.firstChild)
+  }
+}
+
 function getViewerStorageSafe() {
   try {
     return window.localStorage
@@ -1466,7 +1473,7 @@ function resetDetails() {
   }
   emptyState.textContent = 'Sélectionnez une personne pour afficher les informations.'
   emptyState.classList.remove('hidden')
-  detailsList.innerHTML = ''
+  clearElement(detailsList)
   updateDatasetMeta()
 }
 
@@ -1737,7 +1744,7 @@ function showDetailsForDatum(datum) {
   if (!detailsPanel || !detailsList || !emptyState) return
   const person = datum?.data || {}
 
-  detailsList.innerHTML = ''
+  clearElement(detailsList)
 
   const fullName = buildFullName(person)
   const highlight = []
@@ -1814,7 +1821,7 @@ function handlePersonSelection(datum, source = 'card') {
 function setupSearch(chart) {
   if (!searchContainer) return
 
-  searchContainer.innerHTML = ''
+  clearElement(searchContainer)
   const initialState = searchOptions && searchOptions.length
     ? 'ready'
     : (peopleSummary && peopleSummary.length === 0 ? 'empty' : 'loading')
@@ -1895,7 +1902,7 @@ function renderChart(payload, options = {}) {
   const isInitialRender = !chartInstance
 
   if (isInitialRender) {
-    container.innerHTML = ''
+    clearElement(container)
   }
 
   resetDetails()

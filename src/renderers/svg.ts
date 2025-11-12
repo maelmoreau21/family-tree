@@ -1,5 +1,6 @@
 import * as d3 from "d3"
 import { setupZoom, ZoomProps } from "../handlers/view-handlers"
+import { setElementHtml } from "../utils/safe-html"
 
 export default function createSvg(cont: HTMLElement, props: ZoomProps = {}) {
   const svg_dim = cont.getBoundingClientRect();
@@ -23,7 +24,7 @@ export default function createSvg(cont: HTMLElement, props: ZoomProps = {}) {
   const f3Canvas = getOrCreateF3Canvas(cont)!
 
   const temp_div = d3.create('div').node()!
-  temp_div.innerHTML = svg_html
+  setElementHtml(temp_div, svg_html, 'SVG renderer template')
   const svg = temp_div.querySelector('svg')!
   f3Canvas.appendChild(svg)
 

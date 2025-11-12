@@ -3,6 +3,7 @@ import { TreeDatum } from "../types/treeData"
 import { Store } from "../types/store"
 import { Datum } from "../types/data"
 import { Modal } from "../features/modal"
+import { updateSelectionHtml } from "../utils/safe-html"
 
 export default (
   store: RemoveRelative['store'],
@@ -95,13 +96,14 @@ export class RemoveRelative {
           const current_gender_class = datum.data.gender === 'M' ? 'f3-male-bg' : datum.data.gender === 'F' ? 'f3-female-bg' : null
           const spouse_gender_class = spouse.data.gender === 'M' ? 'f3-male-bg' : spouse.data.gender === 'F' ? 'f3-female-bg' : null
     
-          const div = d3.create('div').html(`
+          const div = d3.create('div')
+          updateSelectionHtml(div, `
             <p>Vous supprimez un lien de conjoint. Comme des enfants sont partagés, choisissez quel parent doit les conserver dans l'arbre.</p>
             <div class="f3-modal-options">
               <button data-option="assign-to-current" class="f3-btn ${current_gender_class}">Garder les enfants avec la personne actuelle</button>
               <button data-option="assign-to-spouse" class="f3-btn ${spouse_gender_class}">Garder les enfants avec le conjoint</button>
             </div>
-          `)
+          `, 'Remove relative confirmation')
     
           div.selectAll('[data-option="assign-to-current"]').on('click', () => {
             remove(true)

@@ -3,6 +3,7 @@ import {personSvgIcon, chevronDownSvgIcon, linkOffSvgIcon} from "../renderers/ic
 import { checkIfConnectedToFirstPerson } from "../handlers/check-person-connection"
 import { Datum } from "../types/data"
 import { escapeHtml } from "../utils/escape"
+import { clearElement, setElementHtml, updateSelectionHtml } from "../utils/safe-html"
 
 export default function(cont: Autocomplete['cont'], onSelect: Autocomplete['onSelect'], config: Autocomplete['config'] = {}) { return new Autocomplete(cont, onSelect, config) }
 
@@ -46,9 +47,9 @@ class Autocomplete {
       .attr('type', 'text')
       .attr('placeholder', this.config?.placeholder || 'Rechercher')
 
-    search_input_cont.append('span')
+    const toggle = search_input_cont.append('span')
       .attr('class', 'f3-autocomplete-toggle')
-      .html(chevronDownSvgIcon())
+    updateSelectionHtml(toggle, chevronDownSvgIcon(), 'Autocomplete toggle icon')
 
     const dropdown = search_cont.append('div')
       .attr('class', 'f3-autocomplete-items')
@@ -77,13 +78,13 @@ class Autocomplete {
         })
         .each(function(option: AutocompleteOption) {
           const node = this as HTMLElement
-          node.innerHTML = ''
+          clearElement(node)
           if (option.optionHtml) {
-            node.innerHTML = option.optionHtml(option)
+            setElementHtml(node, option.optionHtml(option), 'Autocomplete option')
           } else {
             const wrapper = document.createElement('div')
             if (option.class) wrapper.className = option.class
-            wrapper.innerHTML = option.label_html || escapeHtml(option.label)
+            setElementHtml(wrapper, option.label_html || escapeHtml(option.label), 'Autocomplete option label')
             node.appendChild(wrapper)
           }
         })

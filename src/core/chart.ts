@@ -17,6 +17,7 @@ import cardHtml, { CardHtml } from "../core/cards/card-html"
 import cardSvg, { CardSvg } from "../core/cards/card-svg"
 import { TreeDatum } from "../types/treeData"
 import { ViewProps } from "../renderers/view"
+import { clearElement } from "../utils/safe-html"
 
 import { KinshipInfoConfig } from "../features/kinships/calculate-kinships"
 type LinkSpouseText = ((sp1: TreeDatum, sp2: TreeDatum) => string) | null
@@ -258,7 +259,7 @@ export class Chart {
     const htmlSvg = this.cont!.querySelector('#htmlSvg') as HTMLElement
     if (!htmlSvg) throw new Error('htmlSvg not found')
     this.is_card_html = true
-    this.svg.querySelector('.cards_view')!.innerHTML = ''
+    clearElement(this.svg.querySelector('.cards_view'))
     htmlSvg.style.display = 'block'
   
     const card = cardHtml(this.cont, this.store)
@@ -276,7 +277,7 @@ export class Chart {
     const htmlSvg = this.cont!.querySelector('#htmlSvg') as HTMLElement
     if (!htmlSvg) throw new Error('htmlSvg not found')
     this.is_card_html = false
-    this.svg.querySelector('.cards_view')!.innerHTML = ''
+    clearElement(this.svg.querySelector('.cards_view'))
     htmlSvg.style.display = 'none'
 
     const card = cardSvg(this.cont, this.store)

@@ -6,6 +6,7 @@ import { TreeDatum } from "../types/treeData";
 import { CardDim } from "../types/card";
 import { Datum } from "../types/data";
 import { escapeHtml, isSafeImageSrc } from "../utils/escape"
+import { setElementHtml } from "../utils/safe-html"
 
 export default function CardHtml(props: {
   style: 'default' | 'imageCircleRect' | 'imageCircle' | 'imageRect' | 'rect';
@@ -34,12 +35,12 @@ export default function CardHtml(props: {
   
 
   return function (this: HTMLElement, d: TreeDatum) {
-    this.innerHTML = (`
+    setElementHtml(this, (`
     <div class="card ${getClassList(d).join(' ')}" data-id="${d.tid}" style="transform: translate(-50%, -50%); pointer-events: auto;">
       ${props.mini_tree ? getMiniTree(d) : ''}
       ${(props.cardInnerHtmlCreator && !d.data._new_rel_data) ? escapeHtml(props.cardInnerHtmlCreator(d)) : cardInner(d)}
     </div>
-    `)
+    `), 'CardHtml template')
     const hostSelection = d3.select<HTMLElement, TreeDatum>(this)
     const cardSelection = hostSelection.select<HTMLElement>('.card')
     const cardNode = cardSelection.node()!

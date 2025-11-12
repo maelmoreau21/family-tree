@@ -16,6 +16,13 @@ const CONTROL_PANEL_STATE_KEY = 'family-tree:builder:controlsCollapsed'
 let builderSearchOptions = []
 let builderSearchReady = false
 
+function clearElement(target) {
+  if (!target) return
+  while (target.firstChild) {
+    target.removeChild(target.firstChild)
+  }
+}
+
 function setBuilderSearchState(state) {
   if (!searchRoot) return
   if (!state) {
@@ -808,7 +815,7 @@ function setupChart(payload) {
     throw new Error('Conteneur du graphique introuvable')
   }
 
-  container.innerHTML = ''
+  clearElement(container)
   builderSearchReady = false
   builderSearchOptions = []
   setBuilderSearchState('loading')
@@ -1460,7 +1467,7 @@ function attachPanelControls({ chart, card }) {
     if (!mainProfileSelect) return
     const persons = getAllPersons()
     const previousValue = keepSelection ? mainProfileSelect.value : ''
-    mainProfileSelect.innerHTML = ''
+    clearElement(mainProfileSelect)
 
     if (!persons.length) {
       const placeholder = document.createElement('option')

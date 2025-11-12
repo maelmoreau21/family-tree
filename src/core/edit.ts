@@ -7,6 +7,7 @@ import { deletePerson, cleanupDataJson } from "../store/edit"
 import { handleLinkRel } from "../store/add-existing-rel"
 import removeRelative, { RemoveRelative } from "./remove-relative"
 import modal, { Modal } from "../features/modal"
+import { clearElement } from "../utils/safe-html"
 
 import { Store } from "../types/store"
 import { Data, Datum } from "../types/data"
@@ -249,14 +250,15 @@ export class EditTree {
     return {
       el: form_cont,
       populate(form_element: HTMLElement) {
-        form_cont.innerHTML = ''
+        clearElement(form_cont)
         form_cont.appendChild(form_element)
       },
       open() {
         d3.select(form_cont).classed('opened', true)
       },
       close() {
-        d3.select(form_cont).classed('opened', false).html('')
+        d3.select(form_cont).classed('opened', false)
+        clearElement(form_cont)
       },
     }
   }
