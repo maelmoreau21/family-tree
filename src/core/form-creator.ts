@@ -90,6 +90,11 @@ export function formCreatorSetup({
   const getLabel = (field: FieldInput) => ('label' in field && field.label) ? field.label : field.id
   const getType = (field: FieldInput) => ('type' in field && field.type) ? field.type : 'text'
 
+  // Type guard for RelReferenceFieldCreator
+  function isRelReferenceCreator(f: FieldInput): f is RelReferenceFieldCreator {
+    return typeof (f as Partial<RelReferenceFieldCreator>).getRelLabel === 'function' || (('type' in f) && ((f as Record<string, unknown>)['type'] === 'rel_reference'))
+  }
+
   fields.forEach(field => {
     if ('initial_value' in field) {
       form_creator.fields.push(field)
@@ -103,9 +108,8 @@ export function formCreatorSetup({
       // Provide a safe fallback for getRelLabel so callers (including external
       // builder scripts) that forget to supply it don't break form creation.
       // allow previous code to accept external callables without enforcing strict typing
-      const providedGetRelLabel = 'getRelLabel' in field && typeof field.getRelLabel === 'function'
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ? (field as any).getRelLabel as (d: Datum) => string
+      const providedGetRelLabel = isRelReferenceCreator(field) && typeof field.getRelLabel === 'function'
+        ? field.getRelLabel
         : undefined
 
       const defaultGetRelLabel = (d: Datum) => {
@@ -121,8 +125,7 @@ export function formCreatorSetup({
         id: field.id,
         type: 'rel_reference',
         label,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        rel_type: 'rel_type' in field ? (field as any).rel_type : 'spouse',
+        rel_type: ('rel_type' in field ? (field as unknown as RelReferenceFieldCreator).rel_type : 'spouse') as 'spouse',
         getRelLabel: providedGetRelLabel || defaultGetRelLabel,
       }
       if (!providedGetRelLabel) {

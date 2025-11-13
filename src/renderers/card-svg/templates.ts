@@ -1,4 +1,8 @@
 import { TreeDatum } from "../../types/treeData"
+
+// Explicit renderer types to avoid use of the banned `Function` type.
+export type IconRenderer = (opts: { card_dim: CardDim }) => string
+export type OptionalIconRenderer = IconRenderer | undefined
 import { escapeHtml, isSafeImageSrc } from "../../utils/escape"
 import { setElementHtml } from "../../utils/safe-html"
 
@@ -123,7 +127,7 @@ export function LinkBreakIconWrapper({d,card_dim}: {d: TreeDatum, card_dim: Card
   return {template: g}
 }
 
-export function CardImage({d, image, card_dim, maleIcon, femaleIcon}: {d: TreeDatum, image: string, card_dim: CardDim, maleIcon?: ({card_dim}: {card_dim: CardDim}) => string, femaleIcon?: ({card_dim}: {card_dim: CardDim}) => string}) {
+export function CardImage({d, image, card_dim, maleIcon, femaleIcon}: {d: TreeDatum, image: string, card_dim: CardDim, maleIcon?: IconRenderer, femaleIcon?: IconRenderer}) {
   return ({template: (`
     <g style="transform: translate(${card_dim.img_x}px,${card_dim.img_y}px);" class="card_image" clip-path="url(#card_image_clip)">
       ${image && isSafeImageSrc(image)
