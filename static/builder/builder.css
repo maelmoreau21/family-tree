@@ -254,11 +254,6 @@ body.controls-collapsed .controls > * {
   box-shadow: none !important;
 }
 
-.links_view path.link {
-  stroke-linejoin: round;
-  stroke-linecap: round;
-}
-
 .breadcrumb-item + .breadcrumb-item::before {
   content: '\203A';
   margin-right: 0.35rem;

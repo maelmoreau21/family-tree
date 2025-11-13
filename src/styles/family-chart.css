@@ -22,6 +22,10 @@
 .f3 svg.main_svg text {
   fill: currentColor;
 }
+.f3 .links_view path.link {
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
 .f3 rect.card-female, .f3 .card-female .card-body-rect, .f3 .card-female .text-overflow-mask {
   fill: var(--female-color);
 }
