@@ -369,10 +369,10 @@ const EDITABLE_DEFAULTS = [
   { value: 'maiden name', label: 'Nom de naissance', checked: true },
   { value: 'birthday', label: 'Date de naissance', checked: true },
   { value: 'death', label: 'Date de Décès', checked: true },
-  { value: 'avatar', label: 'Avatar', checked: true },
-  { value: 'gender', label: 'Genre', checked: true },
   { value: 'birthplace', label: 'Lieu de naissance', checked: true },
   { value: 'deathplace', label: 'Lieu de Décès', checked: true },
+  { value: 'avatar', label: 'Avatar', checked: true },
+  { value: 'gender', label: 'Genre', checked: true },
   { value: 'bio', label: 'Biographie', checked: false }
   ,{ value: 'union paragraph', label: "Paragraphe d'union", checked: true }
 ]
