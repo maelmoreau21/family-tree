@@ -856,6 +856,58 @@ function setupChart(payload) {
     .setCardImageField('avatar')
     .setMiniTree(chartConfig.miniTree !== false)
 
+  // When clicking a card in the builder, mirror viewer behaviour:
+  // - set the clicked person as main
+  // - open the editor for that person
+  // - populate and focus the builder search input so the UX mirrors the viewer
+  try {
+    if (typeof card.setOnCardClick === 'function') {
+      card.setOnCardClick((event, treeDatum) => {
+        try {
+          const id = treeDatum && treeDatum.data && treeDatum.data.id
+          if (!id) return
+          setMainProfile(id, { openEditor: true })
+          try {
+            const input = searchTarget?.querySelector('input')
+            if (input) {
+              const label = buildPersonLabel(treeDatum)
+              input.value = label
+              input.focus()
+            }
+          } catch (e) {
+            /* ignore search focus errors */
+          }
+        } catch (e) {
+          console.error('builder: erreur lors du clic sur la carte', e)
+        }
+      })
+    }
+
+    if (typeof card.setOnMiniTreeClick === 'function') {
+      card.setOnMiniTreeClick((event, treeDatum) => {
+        try {
+          const id = treeDatum && treeDatum.data && treeDatum.data.id
+          if (!id) return
+          setMainProfile(id, { openEditor: true })
+          try {
+            const input = searchTarget?.querySelector('input')
+            if (input) {
+              const label = buildPersonLabel(treeDatum)
+              input.value = label
+              input.focus()
+            }
+          } catch (e) {
+            /* ignore search focus errors */
+          }
+        } catch (e) {
+          console.error('builder: erreur lors du clic sur le mini-arbre', e)
+        }
+      })
+    }
+  } catch (e) {
+    console.warn('builder: impossible d’attacher les gestionnaires de clic sur les cartes', e)
+  }
+
   let panelControlAPI = null
   let searchControlAPI = null
   const dataArray = Array.isArray(data) ? data : []
