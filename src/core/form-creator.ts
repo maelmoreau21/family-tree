@@ -31,6 +31,10 @@ export function formCreatorSetup({
   canEdit,
   canDelete,
 }: FormCreatorSetupProps) {
+  // Track warnings for missing rel_reference.getRelLabel to avoid spamming console
+  // across multiple form creations. We warn once per field id.
+  const warnedRelReferenceGetRelLabel = new Set<string>()
+
   let can_delete = canDelete ? canDelete(datum) : true
   const can_edit = canEdit ? canEdit(datum) : true
   if (!can_edit) {
@@ -129,8 +133,12 @@ export function formCreatorSetup({
         getRelLabel: providedGetRelLabel || defaultGetRelLabel,
       }
       if (!providedGetRelLabel) {
-        // preserve the previous behavior of logging a helpful message
-        console.warn('rel_reference field creator did not provide getRelLabel — using default')
+        // preserve a helpful message but avoid spamming the console repeatedly
+        const warnKey = field.id || '__rel_reference_missing_getRelLabel__'
+        if (!warnedRelReferenceGetRelLabel.has(warnKey)) {
+          console.warn('rel_reference field creator did not provide getRelLabel — using default')
+          warnedRelReferenceGetRelLabel.add(warnKey)
+        }
       }
       addRelReferenceField(relField)
       return
