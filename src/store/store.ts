@@ -10,6 +10,7 @@ export default function createStore(initial_state: StoreState): Store {
   let onUpdate: ((props?: ViewProps) => void) | undefined;
   const state = {
     transition_time: 1000,
+    link_style: 'legacy',
     ...initial_state,
   };
   state.main_id_history = []

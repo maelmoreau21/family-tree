@@ -17,6 +17,7 @@ export type SortChildrenFunction = ((a: Datum, b: Datum) => number);
 export type SortSpousesFunction = ((d: Datum, data: Data) => void);
 export type AncestryDepth = number | null;
 export type ProgenyDepth = number | null;
+export type LinkStyle = 'smooth' | 'legacy';
 
 export interface StoreState extends CalculateTreeOptions {
   data: Data;
@@ -36,6 +37,7 @@ export interface StoreState extends CalculateTreeOptions {
   sortSpousesFunction?: SortSpousesFunction;
   ancestry_depth?: AncestryDepth;
   progeny_depth?: ProgenyDepth;
+  link_style?: LinkStyle;
 }
 
 export interface Store {
@@ -59,4 +61,5 @@ export interface UpdateTreeProps {
   initial?: boolean;
   tree_position?: 'fit' | 'main_to_middle' | 'inherit';
   transition_time?: number;
+  link_style?: LinkStyle;
 }

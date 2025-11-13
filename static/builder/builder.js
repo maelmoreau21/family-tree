@@ -643,6 +643,7 @@ const DEFAULT_CHART_CONFIG = Object.freeze({
   ancestryDepth: 4,
   progenyDepth: 4,
   miniTree: true,
+  linkStyle: 'legacy',
   editableFields: [...DEFAULT_EDITABLE_FIELDS],
   cardDisplay: DEFAULT_CARD_DISPLAY.map(row => [...row]),
   mainId: null
@@ -688,6 +689,7 @@ function buildChartConfig(overrides = {}) {
     ancestryDepth: DEFAULT_CHART_CONFIG.ancestryDepth,
     progenyDepth: DEFAULT_CHART_CONFIG.progenyDepth,
     miniTree: DEFAULT_CHART_CONFIG.miniTree,
+    linkStyle: DEFAULT_CHART_CONFIG.linkStyle,
   
     editableFields: [...DEFAULT_EDITABLE_FIELDS],
     cardDisplay: cloneCardDisplay(DEFAULT_CARD_DISPLAY),
@@ -739,7 +741,11 @@ function buildChartConfig(overrides = {}) {
     base.miniTree = overrides.miniTree
   }
 
-  
+  const rawLinkStyle = overrides.linkStyle ?? overrides.link_style
+  if (rawLinkStyle === 'legacy' || rawLinkStyle === 'smooth') {
+    base.linkStyle = rawLinkStyle
+  }
+
 
   if (Array.isArray(overrides.editableFields)) {
     const sanitizedEditable = sanitizeFieldValues(overrides.editableFields)
@@ -900,6 +906,7 @@ function applyChartConfigToChart(chart) {
   chart.setCardXSpacing(chartConfig.cardXSpacing)
   chart.setCardYSpacing(chartConfig.cardYSpacing)
   chart.setShowSiblingsOfMain(chartConfig.showSiblingsOfMain)
+  chart.setLinkStyle(chartConfig.linkStyle || 'legacy')
 
   if (chartConfig.orientation === 'horizontal') {
     chart.setOrientationHorizontal()

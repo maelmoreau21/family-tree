@@ -6,6 +6,7 @@ import updateCardsHtml from "./view-cards-html"
 import updateCardsComponent from "../features/card-component/card-component"
 import { Tree } from "../layout/calculate-tree"
 import { TreeDatum } from "../types/treeData"
+import { LinkStyle } from "../types/store"
 
 export interface ViewProps {
   initial?: boolean
@@ -15,6 +16,7 @@ export interface ViewProps {
   cardHtmlDiv?: HTMLElement
   tree_position?: 'fit' | 'main_to_middle' | 'inherit'
   scale?: number
+  link_style?: LinkStyle
 }
 
 type CardRenderer = (this: Element, datum: TreeDatum) => void

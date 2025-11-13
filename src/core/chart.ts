@@ -55,6 +55,7 @@ export class Chart {
   afterUpdate: ((props?: ViewProps) => void) | null
 
   editTreeInstance: EditTree | null
+  linkStyle: ST.LinkStyle
 
 
   constructor(cont: HTMLElement | string, data: Data) {
@@ -75,6 +76,8 @@ export class Chart {
     createNavCont(this.cont)
     const main_id = data && data.length > 0 ? data[0].id : ''
     this.store = this.createStore(data, main_id)
+    if (!this.store.state.link_style) this.store.state.link_style = 'legacy'
+    this.linkStyle = this.store.state.link_style
     this.setOnUpdate()
 
     this.editTreeInstance = null
@@ -96,12 +99,25 @@ export class Chart {
   private setOnUpdate() {
     this.store.setOnUpdate((props?: ViewProps) => {
       if (this.beforeUpdate) this.beforeUpdate(props)
-      props = Object.assign({transition_time: this.store.state.transition_time}, props || {})
+      props = Object.assign({
+        transition_time: this.store.state.transition_time,
+        link_style: this.store.state.link_style || this.linkStyle
+      }, props || {})
       if (this.is_card_html) props = Object.assign({}, props || {}, {cardHtml: true})
       view(this.store.getTree()!, this.svg, this.getCard!(), props || {})
       if (this.linkSpouseText) linkSpouseText(this.svg, this.store.getTree()!, Object.assign({}, props || {}, {linkSpouseText: this.linkSpouseText, node_separation: this.store.state.node_separation!}))
       if (this.afterUpdate) this.afterUpdate(props)
     })
+  }
+
+  /**
+   * Set the link rendering style
+   * @param link_style - 'legacy' for angular bezier corners or 'smooth' for Catmull-Rom curves
+   */
+  setLinkStyle(link_style: ST.LinkStyle) {
+    this.linkStyle = link_style
+    this.store.state.link_style = link_style
+    return this
   }
 
   /**

@@ -5,6 +5,7 @@ import { calculateDelay } from "../handlers/general";
 import { ViewProps } from "./view";
 import { Tree } from "../layout/calculate-tree";
 import { Link } from "../layout/create-links";
+import { LinkStyle } from "../types/store";
 
 type AnimationMeta = {
   index: number
@@ -23,6 +24,7 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
   }, {});
   const links_data: Link[] = Object.values(links_data_dct);
   prepareAnimationMetadata(links_data, tree.is_horizontal)
+  const linkStyle: LinkStyle = props.link_style ?? 'smooth'
 
   const baseDuration = Math.max(260, Math.round((props.transition_time ?? 200) * 1.25))
   const updateDuration = Math.max(220, Math.round(baseDuration * 0.85))
@@ -52,7 +54,7 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
       .attr("stroke", "#fff")
       .attr("stroke-width", 1)
       .style("opacity", 0)
-      .attr("d", createPath(d, true));
+      .attr("d", createPath(d, true, linkStyle, tree.is_horizontal));
 
     const meta = (d as AnimatedLink).__animation
     const extraDelay = meta ? meta.index * siblingDelayStep : 0
@@ -66,7 +68,7 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
 
     // Animate to the final path and fade in in a single transition to avoid conflicts
     path.transition().duration(baseDuration).delay(delay).ease(d3.easeCubicInOut)
-      .attr("d", createPath(d, false))
+      .attr("d", createPath(d, false, linkStyle, tree.is_horizontal))
       .style("opacity", 1)
       .attr("transform", "translate(0,0)")
   }
@@ -82,7 +84,7 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
 
     // Use a single transition for both shape and opacity to keep animation smooth
     path.transition().duration(updateDuration).delay(delay).ease(d3.easeCubicInOut)
-      .attr("d", createPath(d, false))
+      .attr("d", createPath(d, false, linkStyle, tree.is_horizontal))
       .style("opacity", 1)
   }
 
@@ -92,7 +94,7 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
     const extraDelay = meta ? (meta.count - meta.index - 1) * Math.max(30, Math.round(siblingDelayStep * 0.35)) : 0
     // Transition shape back to collapsed (_d) and fade out in one transition, then remove
     path.transition().duration(exitDuration).delay(extraDelay).ease(d3.easeSinInOut)
-      .attr("d", createPath(d as Link, true))
+      .attr("d", createPath(d as Link, true, linkStyle, tree.is_horizontal))
       .style("opacity", 0)
       .attr("transform", "translate(0,0)")
       .on("end", () => path.remove());
@@ -142,10 +144,15 @@ function computeEntryOffset(meta: AnimationMeta | undefined, isHorizontal: boole
   return [dx, dy]
 }
 
-function createPath(link: Link, collapsed: boolean = false) {
+function createPath(link: Link, collapsed: boolean = false, style: LinkStyle = 'smooth', isHorizontal: boolean = false) {
   const animated = link as AnimatedLink
   const sourcePoints = (collapsed ? link._d() : link.d).map(([x, y]) => [x, y] as [number, number])
   const adjusted = applySiblingOffset(sourcePoints, animated.__animation)
+
+  if (style === 'legacy') {
+    if (!link.curve) return buildPolylinePath(adjusted)
+    return buildLegacyCurve(adjusted, isHorizontal)
+  }
 
   if (!link.curve) return buildPolylinePath(adjusted)
   return buildSmoothCurve(adjusted)
@@ -252,4 +259,70 @@ function formatNumber(value: number): string {
   if (!Number.isFinite(value)) return "0";
   const fixed = Number(value.toFixed(3));
   return Number.isInteger(fixed) ? fixed.toString() : fixed.toString();
+}
+
+function buildLegacyCurve(points: [number, number][], isHorizontal: boolean): string {
+  const deduped = dedupePoints(points);
+  if (deduped.length < 2) return buildPolylinePath(deduped);
+
+  const pathParts: string[] = [];
+  const start = deduped[0];
+  pathParts.push(`M${formatNumber(start[0])},${formatNumber(start[1])}`);
+
+  for (let i = 1; i < deduped.length; i++) {
+    const current = deduped[i];
+    const prev = deduped[i - 1];
+
+    if (i === deduped.length - 1) {
+      pathParts.push(`L${formatNumber(current[0])},${formatNumber(current[1])}`);
+      continue;
+    }
+
+    const next = deduped[i + 1];
+    const prevVec: [number, number] = [current[0] - prev[0], current[1] - prev[1]];
+    const nextVec: [number, number] = [next[0] - current[0], next[1] - current[1]];
+    const prevLength = Math.hypot(prevVec[0], prevVec[1]);
+    const nextLength = Math.hypot(nextVec[0], nextVec[1]);
+
+    if (prevLength === 0 || nextLength === 0) {
+      pathParts.push(`L${formatNumber(current[0])},${formatNumber(current[1])}`);
+      continue;
+    }
+
+    const cornerRadius = computeCornerRadius(prevLength, nextLength, isHorizontal);
+    if (cornerRadius <= 0.5) {
+      pathParts.push(`L${formatNumber(current[0])},${formatNumber(current[1])}`);
+      continue;
+    }
+
+    const startCorner: [number, number] = [
+      current[0] - (prevVec[0] / prevLength) * cornerRadius,
+      current[1] - (prevVec[1] / prevLength) * cornerRadius
+    ];
+
+    const endCorner: [number, number] = [
+      current[0] + (nextVec[0] / nextLength) * cornerRadius,
+      current[1] + (nextVec[1] / nextLength) * cornerRadius
+    ];
+
+    pathParts.push(`L${formatNumber(startCorner[0])},${formatNumber(startCorner[1])}`);
+    pathParts.push(`Q${formatNumber(current[0])},${formatNumber(current[1])} ${formatNumber(endCorner[0])},${formatNumber(endCorner[1])}`);
+  }
+
+  return pathParts.join(" ");
+}
+
+function computeCornerRadius(prevLength: number, nextLength: number, isHorizontal: boolean): number {
+  const minAvailable = Math.min(prevLength, nextLength);
+  if (minAvailable <= 0.001) return 0;
+
+  const minRadius = isHorizontal ? 16 : 20;
+  const idealRadius = isHorizontal ? 32 : 40;
+  const growthScale = isHorizontal ? 48 : 64;
+
+  const maxGeometricRadius = Math.max(2, minAvailable / 2);
+  const easedTarget = idealRadius * (1 - Math.exp(-minAvailable / growthScale));
+  const clampedTarget = Math.max(minRadius, Math.min(easedTarget, idealRadius));
+
+  return Math.min(clampedTarget, maxGeometricRadius);
 }
