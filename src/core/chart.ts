@@ -76,7 +76,7 @@ export class Chart {
     createNavCont(this.cont)
     const main_id = data && data.length > 0 ? data[0].id : ''
     this.store = this.createStore(data, main_id)
-    if (!this.store.state.link_style) this.store.state.link_style = 'legacy'
+    if (!this.store.state.link_style) this.store.state.link_style = 'smooth'
     this.linkStyle = this.store.state.link_style
     this.setOnUpdate()
 

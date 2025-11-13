@@ -72,7 +72,8 @@ const DEFAULT_SEED_DATASET = {
     cardXSpacing: 240,
     cardYSpacing: 140,
     orientation: 'vertical',
-    miniTree: false
+    miniTree: false,
+    linkStyle: 'smooth'
   },
   meta: {
     seeded: true,

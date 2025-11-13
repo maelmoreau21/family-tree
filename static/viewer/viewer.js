@@ -419,7 +419,7 @@ const DEFAULT_CHART_CONFIG = Object.freeze({
   ancestryDepth: 4,
   progenyDepth: 4,
   miniTree: true,
-  linkStyle: 'legacy',
+  linkStyle: 'smooth',
   cardDisplay: DEFAULT_CARD_DISPLAY.map(row => [...row]),
   mainId: null
   ,
@@ -595,7 +595,7 @@ function applyConfigToChart(chart, rawConfig) {
   chart.setCardXSpacing(config.cardXSpacing)
   chart.setCardYSpacing(config.cardYSpacing)
   chart.setShowSiblingsOfMain(config.showSiblingsOfMain)
-  chart.setLinkStyle(config.linkStyle || 'legacy')
+  chart.setLinkStyle(config.linkStyle || 'smooth')
 
   if (config.orientation === 'horizontal') {
     chart.setOrientationHorizontal()
