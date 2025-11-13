@@ -158,9 +158,17 @@ const uploadMiddleware = multer({
   storage: uploadStorage,
   limits: { fileSize: MAX_UPLOAD_SIZE },
   fileFilter: (req, file, cb) => {
+    // Disallow non-image uploads and specifically disallow SVG uploads
+    // because SVG can contain embedded scripts and pose an XSS risk when
+    // later rendered or inlined. Prefer raster formats (jpg/png/webp).
     if (!file.mimetype || !file.mimetype.startsWith('image/')) {
       const error = new Error('UNSUPPORTED_FILE_TYPE')
       error.code = 'UNSUPPORTED_FILE_TYPE'
+      return cb(error)
+    }
+    if (file.mimetype === 'image/svg+xml') {
+      const error = new Error('UNSUPPORTED_FILE_TYPE_SVG')
+      error.code = 'UNSUPPORTED_FILE_TYPE_SVG'
       return cb(error)
     }
     cb(null, true)
