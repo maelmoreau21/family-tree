@@ -11,10 +11,21 @@ const searchEmptyEl = document.querySelector('[data-role="builder-search-empty"]
 const searchLabel = document.getElementById('builderSearchLabel')
 const searchHint = document.getElementById('builderSearchHint')
 const panelToggleBtn = document.querySelector('[data-action="toggle-panel"]')
+const breadcrumbRoot = document.querySelector('[data-role="builder-breadcrumbs"]')
+const chartLoadingEl = document.querySelector('[data-role="chart-loading"]')
+const chartLoadingLabel = chartLoadingEl?.querySelector('[data-role="chart-loading-label"]') || null
 
 const CONTROL_PANEL_STATE_KEY = 'family-tree:builder:controlsCollapsed'
 let builderSearchOptions = []
 let builderSearchReady = false
+let builderSearchInput = null
+let searchFocusTimer = null
+let chartLoadingHideTimer = null
+let setMainProfileHandler = null
+let activeChartInstance = null
+let activeHighlightedCard = null
+let cardHighlightTimer = null
+let pendingHighlightId = null
 
 function clearElement(target) {
   if (!target) return
@@ -51,6 +62,180 @@ function sanitizeFieldValues(values) {
     result.push(trimmed)
   })
   return result
+}
+
+function cssEscape(value) {
+  if (value === null || value === undefined) return ''
+  if (window.CSS?.escape) {
+    try {
+      return window.CSS.escape(String(value))
+    } catch (error) {
+      /* fall through */
+    }
+  }
+  return String(value).replace(/[^a-zA-Z0-9_-]/g, char => `\\${char}`)
+}
+
+function requestSetMainProfile(id, options) {
+  if (!id) return
+  if (typeof setMainProfileHandler === 'function') {
+    setMainProfileHandler(id, options)
+  }
+}
+
+function setSearchPanelFocusState(active) {
+  if (!searchRoot) return
+  searchRoot.classList.toggle('is-focused', Boolean(active))
+}
+
+function flashSearchPanel() {
+  if (!searchRoot) return
+  searchRoot.classList.add('is-flashing')
+  if (searchFocusTimer) {
+    clearTimeout(searchFocusTimer)
+  }
+  searchFocusTimer = setTimeout(() => {
+    searchRoot.classList.remove('is-flashing')
+  }, 1200)
+}
+
+function focusBuilderSearch({ label, select = true, flash = false, preventScroll = false } = {}) {
+  if (!builderSearchInput) return
+  if (typeof label === 'string') {
+    builderSearchInput.value = label
+  }
+  try {
+    builderSearchInput.focus({ preventScroll })
+  } catch (error) {
+    builderSearchInput.focus()
+  }
+  if (select && typeof builderSearchInput.select === 'function') {
+    builderSearchInput.select()
+  }
+  setSearchPanelFocusState(true)
+  if (flash) {
+    flashSearchPanel()
+  }
+}
+
+function setChartLoading(isLoading, message = '') {
+  if (!chartLoadingEl) return
+  if (chartLoadingHideTimer) {
+    clearTimeout(chartLoadingHideTimer)
+    chartLoadingHideTimer = null
+  }
+  if (isLoading) {
+    chartLoadingEl.classList.remove('is-hidden')
+    chartLoadingEl.setAttribute('aria-hidden', 'false')
+    if (chartLoadingLabel) {
+      chartLoadingLabel.textContent = message || 'Chargement…'
+    }
+  } else {
+    const hide = () => {
+      chartLoadingEl.classList.add('is-hidden')
+      chartLoadingEl.setAttribute('aria-hidden', 'true')
+    }
+    chartLoadingHideTimer = setTimeout(hide, 150)
+  }
+}
+
+function getCardElementByPersonId(personId) {
+  if (!personId || !activeChartInstance?.store?.getTreeDatum) return null
+  const treeDatum = activeChartInstance.store.getTreeDatum(personId)
+  const tid = treeDatum?.tid
+  if (!tid) return null
+  const container = activeChartInstance.cont || document.querySelector(chartSelector)
+  if (!container) return null
+  const selector = `.card[data-id="${cssEscape(tid)}"]`
+  return container.querySelector(selector)
+}
+
+function applyCardHighlight(cardEl, { animate = true } = {}) {
+  if (!cardEl) return
+  if (activeHighlightedCard && activeHighlightedCard !== cardEl) {
+    activeHighlightedCard.classList.remove('card-highlight')
+    activeHighlightedCard.classList.remove('card-highlight-pulse')
+  }
+  cardEl.classList.add('card-highlight')
+  cardEl.classList.toggle('card-highlight-pulse', Boolean(animate))
+  if (cardHighlightTimer) {
+    clearTimeout(cardHighlightTimer)
+  }
+  if (animate) {
+    cardHighlightTimer = setTimeout(() => {
+      cardEl.classList.remove('card-highlight-pulse')
+    }, 1400)
+  }
+  activeHighlightedCard = cardEl
+}
+
+function highlightCardById(personId, { animate = true } = {}) {
+  pendingHighlightId = personId || null
+  if (!personId) return
+  const cardEl = getCardElementByPersonId(personId)
+  if (cardEl) {
+    applyCardHighlight(cardEl, { animate })
+    return
+  }
+  requestAnimationFrame(() => {
+    if (pendingHighlightId === personId) {
+      const nextEl = getCardElementByPersonId(personId)
+      if (nextEl) {
+        applyCardHighlight(nextEl, { animate })
+      }
+    }
+  })
+}
+
+function renderBreadcrumbTrail(mainId) {
+  if (!breadcrumbRoot) return
+  breadcrumbRoot.dataset.state = mainId ? 'ready' : 'empty'
+  clearElement(breadcrumbRoot)
+  if (!mainId || !activeChartInstance?.store?.getTreeDatum) {
+    const placeholder = document.createElement('span')
+    placeholder.className = 'breadcrumb-empty'
+    placeholder.textContent = 'Sélectionnez une personne pour afficher son parcours.'
+    breadcrumbRoot.append(placeholder)
+    return
+  }
+
+  const nodes = []
+  const seen = new Set()
+  let current = activeChartInstance.store.getTreeDatum(mainId) || null
+  while (current && !seen.has(current)) {
+    nodes.push(current)
+    seen.add(current)
+    current = current.parent || null
+  }
+  nodes.reverse()
+
+  if (!nodes.length) {
+    breadcrumbRoot.dataset.state = 'empty'
+    const placeholder = document.createElement('span')
+    placeholder.className = 'breadcrumb-empty'
+    placeholder.textContent = 'Parcours indisponible pour ce profil.'
+    breadcrumbRoot.append(placeholder)
+    return
+  }
+
+  nodes.forEach((node, index) => {
+    const personId = node?.data?.id
+    const label = buildPersonLabel(node?.data || node)
+    const isActive = index === nodes.length - 1
+    const element = document.createElement(isActive ? 'span' : 'button')
+    element.className = 'breadcrumb-item'
+    if (isActive) {
+      element.classList.add('is-active')
+      element.textContent = label
+    } else {
+      element.type = 'button'
+      element.textContent = label
+      element.addEventListener('click', () => {
+        requestSetMainProfile(personId, { openEditor: false, highlightCard: true })
+      })
+    }
+    breadcrumbRoot.append(element)
+  })
 }
 
 function escapeHtml(input) {
@@ -411,13 +596,13 @@ function initBuilderSearch(chart) {
       onSelect: (id) => {
         if (!id) return
         // Mirror viewer behaviour: set the selected person as main and open editor
-        try {
-          setMainProfile(id, { openEditor: true })
-        } catch (e) {
-          // Fallback: try to open editor directly if available
-          const datum = editTreeInstance?.store?.getDatum?.(id)
-          if (datum && editTreeInstance) editTreeInstance.open(datum)
+        if (typeof setMainProfileHandler === 'function') {
+          requestSetMainProfile(id, { openEditor: true, focusSearch: true, highlightCard: true, source: 'search' })
+          return
         }
+        // Fallback: try to open editor directly if available when handler is unavailable
+        const datum = editTreeInstance?.store?.getDatum?.(id)
+        if (datum && editTreeInstance) editTreeInstance.open(datum)
       }
     }
   )
@@ -429,6 +614,9 @@ function initBuilderSearch(chart) {
     if (searchHint) input.setAttribute('aria-describedby', searchHint.id)
     input.setAttribute('autocomplete', 'off')
     input.setAttribute('spellcheck', 'false')
+    builderSearchInput = input
+    builderSearchInput.addEventListener('focus', () => setSearchPanelFocusState(true))
+    builderSearchInput.addEventListener('blur', () => setSearchPanelFocusState(false))
   }
 
   function refreshSearchOptions() {
@@ -448,7 +636,7 @@ function initBuilderSearch(chart) {
 }
 
 const DEFAULT_CHART_CONFIG = Object.freeze({
-  transitionTime: 200,
+  transitionTime: 320,
   cardXSpacing: 240,
   cardYSpacing: 140,
   orientation: 'vertical',
@@ -731,6 +919,7 @@ function applyChartConfigToChart(chart) {
 
 async function loadTree() {
   setStatus('Chargement des données…')
+  setChartLoading(true, 'Chargement des données…')
   const response = await fetch('/api/tree', { cache: 'no-store' })
   if (!response.ok) {
     throw new Error(`Échec du chargement (${response.status})`)
@@ -819,10 +1008,21 @@ function setupChart(payload) {
     throw new Error('Conteneur du graphique introuvable')
   }
 
+  setChartLoading(true, 'Construction du graphique…')
   clearElement(container)
   builderSearchReady = false
   builderSearchOptions = []
   setBuilderSearchState('loading')
+  setMainProfileHandler = null
+  renderBreadcrumbTrail(null)
+  builderSearchInput = null
+  setSearchPanelFocusState(false)
+  if (cardHighlightTimer) {
+    clearTimeout(cardHighlightTimer)
+    cardHighlightTimer = null
+  }
+  activeHighlightedCard = null
+  pendingHighlightId = null
 
   if (typeof activePanelTeardown === 'function') {
     activePanelTeardown()
@@ -845,6 +1045,7 @@ function setupChart(payload) {
   }
 
   const chart = f3.createChart(chartSelector, data)
+  activeChartInstance = chart
   applyChartConfigToChart(chart)
 
   const initialCardDisplay = chartConfig.cardDisplay && chartConfig.cardDisplay.length
@@ -855,6 +1056,21 @@ function setupChart(payload) {
     .setCardDisplay(initialCardDisplay)
     .setCardImageField('avatar')
     .setMiniTree(chartConfig.miniTree !== false)
+    .setOnCardUpdate(function onCardUpdate(treeDatum) {
+      const cardNode = this.querySelector('.card')
+      if (!cardNode) return
+      const personId = treeDatum && treeDatum.data ? treeDatum.data.id : null
+      if (personId) {
+        cardNode.dataset.personId = personId
+      } else {
+        delete cardNode.dataset.personId
+      }
+      const mainId = chart.store && typeof chart.store.getMainId === 'function' ? chart.store.getMainId() : null
+      cardNode.classList.toggle('card-main-active', Boolean(mainId && personId === mainId))
+      if (personId && pendingHighlightId === personId) {
+        applyCardHighlight(cardNode, { animate: false })
+      }
+    })
 
   // When clicking a card in the builder, mirror viewer behaviour:
   // - set the clicked person as main
@@ -866,17 +1082,9 @@ function setupChart(payload) {
         try {
           const id = treeDatum && treeDatum.data && treeDatum.data.id
           if (!id) return
-          setMainProfile(id, { openEditor: true })
-          try {
-            const input = searchTarget?.querySelector('input')
-            if (input) {
-              const label = buildPersonLabel(treeDatum)
-              input.value = label
-              input.focus()
-            }
-          } catch (e) {
-            /* ignore search focus errors */
-          }
+          requestSetMainProfile(id, { openEditor: true, highlightCard: true, source: 'card' })
+          const label = buildPersonLabel(treeDatum)
+          focusBuilderSearch({ label, select: true, flash: false })
         } catch (e) {
           console.error('builder: erreur lors du clic sur la carte', e)
         }
@@ -888,17 +1096,9 @@ function setupChart(payload) {
         try {
           const id = treeDatum && treeDatum.data && treeDatum.data.id
           if (!id) return
-          setMainProfile(id, { openEditor: true })
-          try {
-            const input = searchTarget?.querySelector('input')
-            if (input) {
-              const label = buildPersonLabel(treeDatum)
-              input.value = label
-              input.focus()
-            }
-          } catch (e) {
-            /* ignore search focus errors */
-          }
+          requestSetMainProfile(id, { openEditor: true, highlightCard: true, source: 'mini-tree' })
+          const label = buildPersonLabel(treeDatum)
+          focusBuilderSearch({ label, select: true, flash: false })
         } catch (e) {
           console.error('builder: erreur lors du clic sur le mini-arbre', e)
         }
@@ -968,6 +1168,7 @@ function setupChart(payload) {
     if (!builderSearchReady && searchControlAPI) {
       searchControlAPI.refreshSearchOptions()
     }
+    renderBreadcrumbTrail(storeMainId || chartConfig.mainId || null)
   })
 
   if (panelControlAPI) {
@@ -981,11 +1182,13 @@ function setupChart(payload) {
   if (mainDatum) {
     editTreeInstance.open(mainDatum)
   }
+  renderBreadcrumbTrail(chart.store?.getMainId?.() || initialMainId || null)
 
   const initialSnapshot = getSnapshot()
   lastSnapshotString = initialSnapshot ? JSON.stringify(initialSnapshot) : null
   const totalPersons = dataArray.length
   setStatus(totalPersons > 0 ? `Éditeur prêt ✅ – ${totalPersons} personne(s) chargée(s)` : 'Fichier de données vide', totalPersons > 0 ? 'success' : 'error')
+  setChartLoading(false)
 
   function resolveInitialMainId(persons, chartInstance) {
     if (!Array.isArray(persons) || persons.length === 0) {
@@ -1660,7 +1863,13 @@ function attachPanelControls({ chart, card }) {
     updateMainProfileDisplay(nextConfigMain || null)
   }
 
-  function setMainProfile(id, { openEditor = true, suppressSave = false } = {}) {
+  function setMainProfile(id, {
+    openEditor = true,
+    suppressSave = false,
+    focusSearch = false,
+    highlightCard = true,
+    source = 'manual'
+  } = {}) {
     if (!id) return
     const persons = getAllPersons()
     if (!persons.some(person => person.id === id)) {
@@ -1684,9 +1893,12 @@ function attachPanelControls({ chart, card }) {
       ? chart.store.getMainId()
       : null
 
-    if (chart && typeof chart.updateMainId === 'function' && storeMainBefore !== id) {
+    const shouldUpdateMainId = chart && typeof chart.updateMainId === 'function'
+    let recenterAlreadyScheduled = false
+    if (shouldUpdateMainId && storeMainBefore !== id) {
       chart.updateMainId(id)
       chart.updateTree({ initial: false, tree_position: 'main_to_middle' })
+      recenterAlreadyScheduled = true
     }
 
     if (mainProfileSelect && mainProfileSelect.value !== id) {
@@ -1698,15 +1910,23 @@ function attachPanelControls({ chart, card }) {
     // Ensure the chart recenters on the selected person (match viewer behaviour).
     // If the main id was already set, callers may still expect a recenter.
     try {
-      if (chart && typeof chart.updateTree === 'function') {
+      if (!recenterAlreadyScheduled && chart && typeof chart.updateTree === 'function') {
         chart.updateTree({ initial: false, tree_position: 'main_to_middle' })
       }
     } catch (error) {
       console.error('Impossible de recentrer le graphique après sélection du profil', error)
     }
-    if (openEditor && editTreeInstance) {
-      const datum = editTreeInstance.store?.getDatum?.(id)
-      if (datum) editTreeInstance.open(datum)
+    const datum = editTreeInstance?.store?.getDatum?.(id) || null
+    if (focusSearch) {
+      const label = datum ? buildPersonLabel(datum) : `Profil ${id}`
+      focusBuilderSearch({ label, select: true, flash: true, preventScroll: source === 'search' })
+    }
+    if (highlightCard) {
+      highlightCardById(id, { animate: true })
+    }
+    renderBreadcrumbTrail(id)
+    if (openEditor && editTreeInstance && datum) {
+      editTreeInstance.open(datum)
     }
   }
 
@@ -1719,8 +1939,7 @@ function attachPanelControls({ chart, card }) {
   }
 
   function escapeSelector(value) {
-    if (window.CSS?.escape) return window.CSS.escape(value)
-    return value.replace(/[^a-zA-Z0-9_-]/g, char => `\\${char}`)
+    return cssEscape(value)
   }
 
   function addRemoveButton(item) {
@@ -2240,6 +2459,8 @@ function attachPanelControls({ chart, card }) {
 
   applyEditableFields({ suppressSave: true })
 
+  setMainProfileHandler = setMainProfile
+
   return {
     refreshMainProfileOptions,
     syncMainProfileSelection,
@@ -2263,6 +2484,7 @@ async function initialise() {
   } catch (error) {
     console.error(error)
     setStatus(`Erreur: ${error.message}`, 'error')
+    setChartLoading(false, 'Erreur')
   }
 }
 
