@@ -775,7 +775,19 @@ let activePanelTeardown = null
 
 function setStatus(message, type = 'info') {
   if (!statusEl) return
-  statusEl.textContent = message
+  try {
+    if (typeof message === 'string') {
+      // support explicit newlines in messages -> render as line breaks
+      statusEl.innerHTML = message.replace(/\n/g, '<br>')
+    } else if (Array.isArray(message)) {
+      statusEl.innerHTML = message.map(m => String(m)).join('<br>')
+    } else {
+      statusEl.textContent = String(message)
+    }
+  } catch (e) {
+    // fallback to plain text
+    statusEl.textContent = String(message)
+  }
   statusEl.dataset.status = type
 }
 

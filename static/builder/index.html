@@ -33,7 +33,6 @@
   <main class="workspace">
     <button type="button" class="panel-toggle" data-action="toggle-panel" aria-controls="controlPanel" aria-expanded="true">Replier le panneau</button>
         <aside class="controls" id="controlPanel">
-          <div class="builder-status" id="status" role="status" aria-live="assertive"></div>
           <div class="search-panel" data-role="builder-search" data-state="loading">
             <h2 class="search-title" id="builderSearchLabel">Recherche rapide</h2>
             <div class="search-widget" data-role="builder-search-target"></div>
@@ -67,7 +66,6 @@
 
               <fieldset class="main-profile" data-role="main-profile">
                 <legend>Profil affiché par défaut</legend>
-                <p class="group-hint">Sélectionnez la personne qui sera ouverte automatiquement dans le builder et le visualiseur.</p>
                 <label for="mainProfileSelect">Personne par défaut</label>
                 <select id="mainProfileSelect">
                   <option value="">Chargement…</option>
@@ -221,6 +219,8 @@
               </ul>
             </div>
           </details>
+          <!-- Moved status here so it appears under "Dimensions de la carte" -->
+          <div class="builder-status" id="status" role="status" aria-live="assertive"></div>
         </aside>
       <section class="canvas">
           <div id="FamilyChart" class="f3"></div>
