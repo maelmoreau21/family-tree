@@ -241,6 +241,16 @@ body.controls-collapsed .controls > * {
   height: 100%;
 }
 
+#FamilyChart svg.main_svg .links_view path.link {
+  fill: none;
+  stroke: rgba(248, 250, 252, 0.9);
+  stroke-width: 1.15px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  transition: stroke 0.2s ease, opacity 0.2s ease;
+}
+
 #FamilyChart .card,
 #FamilyChart .card * {
   outline: none;
