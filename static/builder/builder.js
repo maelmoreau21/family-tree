@@ -1187,7 +1187,12 @@ function setupChart(payload) {
   const initialSnapshot = getSnapshot()
   lastSnapshotString = initialSnapshot ? JSON.stringify(initialSnapshot) : null
   const totalPersons = dataArray.length
-  setStatus(totalPersons > 0 ? `Éditeur prêt ✅ – ${totalPersons} personne(s) chargée(s)` : 'Fichier de données vide', totalPersons > 0 ? 'success' : 'error')
+  setStatus(
+    totalPersons > 0
+      ? `Éditeur prêt ✅ –\n${totalPersons} personne(s) chargée(s)`
+      : 'Fichier de données vide',
+    totalPersons > 0 ? 'success' : 'error'
+  )
   setChartLoading(false)
 
   function resolveInitialMainId(persons, chartInstance) {

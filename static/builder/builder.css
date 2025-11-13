@@ -155,7 +155,7 @@ body.controls-collapsed .controls > * {
   border-radius: 12px;
   padding: 1.25rem;
   overflow-y: auto;
-  max-height: none;
+  max-height: calc(100vh - 4rem);
   height: auto;
   min-height: 0;
   overscroll-behavior: contain;
