@@ -8,7 +8,7 @@ import { ViewProps } from "../renderers/view"
 
 export default function createStore(initial_state: StoreState): Store {
   let onUpdate: ((props?: ViewProps) => void) | undefined;
-  const state = {
+  const state: StoreState = {
     transition_time: 1000,
     link_style: 'legacy',
     ...initial_state,
