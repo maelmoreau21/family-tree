@@ -144,3 +144,55 @@ Invoke-RestMethod -Method Post -Uri 'http://localhost:7921/api/admin/import?drop
 ---
 
 Licence : MIT — voir `LICENSE.txt`
+
+## Nouveautés (Éditeur / Builder)
+
+Cette branche a introduit plusieurs améliorations UX pour l'éditeur (builder) :
+
+- Indicateur de chargement progressif lors de la construction/rafraîchissement du graphe.
+- Fil d’Ariane (breadcrumb) affichant l’arborescence jusqu’à la personne active.
+- Mise au point visuelle temporaire des cartes lorsque l’on cible une personne (highlight + pulse).
+- Meilleure mise au point du champ de recherche (focus + sélection du texte) pour l’édition rapide.
+- Transitions de recentrage légèrement adoucies (transition par défaut augmentée pour des panoramiques plus fluides).
+
+Ces changements concernent principalement les fichiers :
+
+- `static/builder/builder.js`
+- `static/builder/index.html`
+- `static/builder/builder.css`
+
+Si vous remarquez un comportement inattendu dans l’éditeur, ouvrez une issue en indiquant :
+
+- la version du navigateur
+- la page testée (Builder / Viewer)
+- les étapes pour reproduire
+
+## Notes développeur — tests & vérifications rapides
+
+Pour exécuter les tests unitaires et la vérification TypeScript localement :
+
+- Sur Windows PowerShell (si vous rencontrez des erreurs liées à la politique d’exécution) : utilisez `cmd` ou `npm.cmd` depuis PowerShell.
+
+Exemples de commandes :
+
+```powershell
+# via cmd.exe (évite la politique d'exécution PowerShell)
+cmd /c "npm test"
+
+# ou depuis PowerShell en appelant explicitement npm.cmd
+npm.cmd install
+npm.cmd test
+
+# Vérification TypeScript (sans générer de fichiers)
+cmd /c "npx tsc --noEmit"
+```
+
+Remarque : si PowerShell bloque l’exécution des scripts (`.ps1`), vous pouvez temporairement lancer :
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+
+Mais la manière la plus sûre est d'exécuter `npm` via `cmd` ou `npm.cmd` depuis PowerShell.
+
+---
