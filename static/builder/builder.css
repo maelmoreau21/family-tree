@@ -1,6 +1,9 @@
 :root {
   color-scheme: light dark;
   font-family: "Segoe UI", sans-serif;
+  --scrollbar-track: rgba(15, 23, 42, 0.65);
+  --scrollbar-thumb: rgba(59, 130, 246, 0.55);
+  --scrollbar-thumb-hover: rgba(148, 163, 184, 0.75);
 }
 
 body {
@@ -11,6 +14,36 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 .hidden {
@@ -123,10 +156,11 @@ body.controls-collapsed .controls > * {
   padding: 1.25rem;
   overflow-y: auto;
   max-height: none;
-  height: 100%;
+  height: auto;
   min-height: 0;
   overscroll-behavior: contain;
   grid-area: controls;
+  align-self: start;
 }
 
 .canvas {
@@ -168,6 +202,10 @@ body.controls-collapsed .controls > * {
   border-radius: 10px;
   background: rgba(15, 23, 42, 0.75);
   border: 1px solid rgba(148, 163, 184, 0.25);
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.4;
+  text-align: left;
 }
 
 #status[data-status="saving"] {
@@ -202,7 +240,24 @@ body.controls-collapsed .controls > * {
   min-height: 0;
   height: 100%;
 }
-  color: inherit;
+
+#FamilyChart .card,
+#FamilyChart .card * {
+  outline: none;
+  box-shadow: none;
+}
+
+#FamilyChart .card:focus-visible,
+#FamilyChart .card-main,
+#FamilyChart .card-main-active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.links_view path.link {
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
 
 .breadcrumb-item + .breadcrumb-item::before {
   content: '\203A';
