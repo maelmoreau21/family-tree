@@ -643,7 +643,7 @@ const DEFAULT_CHART_CONFIG = Object.freeze({
   ancestryDepth: 4,
   progenyDepth: 4,
   miniTree: true,
-  linkStyle: 'smooth',
+  linkStyle: 'legacy',
   editableFields: [...DEFAULT_EDITABLE_FIELDS],
   cardDisplay: DEFAULT_CARD_DISPLAY.map(row => [...row]),
   mainId: null
@@ -906,7 +906,7 @@ function applyChartConfigToChart(chart) {
   chart.setCardXSpacing(chartConfig.cardXSpacing)
   chart.setCardYSpacing(chartConfig.cardYSpacing)
   chart.setShowSiblingsOfMain(chartConfig.showSiblingsOfMain)
-  chart.setLinkStyle(chartConfig.linkStyle || 'smooth')
+  chart.setLinkStyle(chartConfig.linkStyle || 'legacy')
 
   if (chartConfig.orientation === 'horizontal') {
     chart.setOrientationHorizontal()
