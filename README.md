@@ -3,6 +3,7 @@
 > Priorité : GitHub — instructions pour cloner/télécharger, construire une image Docker et lancer l'application (PowerShell inclus).
 
 Family Tree est un fork maintenu de **family-chart**. Il fournit :
+
 - une bibliothèque TypeScript/ESM avec typages (`dist/`),
 - deux applications web statiques (viewer & builder),
 - un serveur Express pour l'API et la persistance (PostgreSQL).
@@ -26,7 +27,7 @@ cd family-tree
 
 Option B — télécharger un ZIP via l'interface GitHub
 
-- Rendez-vous sur https://github.com/maelmoreau21/family-tree
+- Rendez-vous sur [maelmoreau21/family-tree](https://github.com/maelmoreau21/family-tree)
 - Cliquez sur « Code » → « Download ZIP » → décompressez.
 
 ---
@@ -52,14 +53,14 @@ npm.cmd run build
 
 ## 3) Construire une image Docker (manuellement)
 
-1) Construire l'image :
+1. Construire l'image :
 
 ```powershell
 # depuis la racine du projet
 docker build -t family-tree:latest .
 ```
 
-2) Lancer le conteneur (exemple simple) :
+1. Lancer le conteneur (exemple simple) :
 
 ```powershell
 # Exemple : expose viewer (7920) et builder (7921)
@@ -70,12 +71,13 @@ docker run -d `
   family-tree:latest
 ```
 
-3) Vérifier :
+1. Vérifier :
 
-- Viewer : http://localhost:7920
-- Builder : http://localhost:7921
+- Viewer : <http://localhost:7920>
+- Builder : <http://localhost:7921>
 
 Notes :
+
 - En production, fournissez une base PostgreSQL séparée et montez des volumes pour `./uploads` et `./data/backups`.
 
 ---
@@ -96,9 +98,10 @@ docker compose down
 ```
 
 Par défaut :
+
 - PostgreSQL peut écouter sur `localhost:5433` selon la configuration du compose.
-- Viewer → http://localhost:7920
-- Builder → http://localhost:7921
+- Viewer → <http://localhost:7920>
+- Builder → <http://localhost:7921>
 
 Consultez `docker-compose.yml` pour adapter ports, volumes et variables d'environnement.
 
