@@ -85,6 +85,7 @@ button.primary:hover {
   color: inherit;
   transition: background 0.2s ease, border 0.2s ease;
   margin: 0;
+  margin-top: 0.6rem;
 }
 
 .panel-toggle:hover {
@@ -158,31 +159,50 @@ body.controls-collapsed .controls > * {
   opacity: 0.75;
 }
 
-.breadcrumb-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  border: 1px solid transparent;
-  background: rgba(30, 41, 59, 0.5);
+#status {
+  width: 100%;
+  display: block;
+  font-size: 0.95rem;
+  padding: 0.85rem 1.25rem;
+  margin-bottom: 1rem;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+#status[data-status="saving"] {
+  color: #fbbf24;
+}
+
+#status[data-status="error"] {
+  color: #f87171;
+}
+
+#status[data-status="success"] {
+  color: #34d399;
+}
+
+.canvas {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+  padding: 0.75rem;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+#FamilyChart {
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
   color: inherit;
-  padding: 0.2rem 0.65rem;
-  border-radius: 999px;
-  font: inherit;
-  cursor: pointer;
-  transition: background 0.2s ease, border 0.2s ease, color 0.2s ease;
-}
-
-.breadcrumb-item:not(.is-active):hover {
-  border-color: rgba(148, 163, 184, 0.5);
-  background: rgba(59, 130, 246, 0.3);
-}
-
-.breadcrumb-item.is-active {
-  cursor: default;
-  border-color: rgba(59, 130, 246, 0.4);
-  background: rgba(59, 130, 246, 0.2);
-  font-weight: 600;
-}
 
 .breadcrumb-item + .breadcrumb-item::before {
   content: '\203A';
@@ -832,32 +852,15 @@ body.controls-collapsed .controls > * {
   text-decoration: underline;
 }
 
-.canvas {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  background: rgba(15, 23, 42, 0.55);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 12px;
-  overflow: hidden;
-  padding: 1rem;
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-#FamilyChart {
-  width: 100%;
-  flex: 1 1 auto;
-  min-height: 520px;
-  height: 100%;
-}
-
 #status {
-  padding: 0.85rem 1.5rem;
+  width: 100%;
+  display: block;
   font-size: 0.95rem;
-  background: rgba(15, 23, 42, 0.9);
-  border-top: 1px solid rgba(148, 163, 184, 0.25);
+  padding: 0.85rem 1.25rem;
+  margin-bottom: 1rem;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.25);
 }
 
 #status[data-status="saving"] {
@@ -870,6 +873,27 @@ body.controls-collapsed .controls > * {
 
 #status[data-status="success"] {
   color: #34d399;
+}
+
+.canvas {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+  padding: 0.75rem;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+#FamilyChart {
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
 }
 
 @media (max-width: 1100px) {
