@@ -70,6 +70,24 @@ body {
   min-width: 0;
 }
 
+/* Make the HTML card overlay fill the entire viewport when present */
+#FamilyChart #htmlSvg,
+#htmlSvg {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 2 !important;
+}
+
+#FamilyChart #htmlSvg .cards_view,
+#htmlSvg .cards_view {
+  transform-origin: 0 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
 .details {
   flex: 0 0 clamp(260px, 22vw, 360px);
   display: flex;
