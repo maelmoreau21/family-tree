@@ -595,7 +595,11 @@ function applyConfigToChart(chart, rawConfig) {
   chart.setCardXSpacing(config.cardXSpacing)
   chart.setCardYSpacing(config.cardYSpacing)
   chart.setShowSiblingsOfMain(config.showSiblingsOfMain)
-  chart.setLinkStyle(config.linkStyle || 'legacy')
+  if (chart && typeof chart.setLinkStyle === 'function') {
+    chart.setLinkStyle(config.linkStyle || 'legacy')
+  } else {
+    console.warn('viewer: chart.setLinkStyle is not available; skipping link style configuration')
+  }
 
   if (config.orientation === 'horizontal') {
     chart.setOrientationHorizontal()
