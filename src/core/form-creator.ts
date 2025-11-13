@@ -115,7 +115,7 @@ export function formCreatorSetup({
       const defaultGetRelLabel = (d: Datum) => {
         try {
           if (d) return formatPersonName(d)
-        } catch (e) {
+        } catch {
           // ignore and fall through
         }
         return 'Profil sans nom'
