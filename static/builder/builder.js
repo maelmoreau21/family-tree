@@ -595,14 +595,11 @@ function initBuilderSearch(chart) {
   placeholder: 'Rechercher (nom, date, lieu, etc.)',
       onSelect: (id) => {
         if (!id) return
-        // Mirror viewer behaviour: set the selected person as main and open editor
-        if (typeof setMainProfileHandler === 'function') {
-          requestSetMainProfile(id, { openEditor: true, focusSearch: true, highlightCard: true, source: 'search' })
-          return
-        }
-        // Fallback: try to open editor directly if available when handler is unavailable
         const datum = editTreeInstance?.store?.getDatum?.(id)
-        if (datum && editTreeInstance) editTreeInstance.open(datum)
+        if (datum && editTreeInstance) {
+          editTreeInstance.open(datum)
+          highlightCardById(id, { animate: true })
+        }
       }
     }
   )
