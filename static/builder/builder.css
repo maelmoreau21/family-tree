@@ -125,7 +125,7 @@ button.primary:hover {
   max-width: 260px;
   position: absolute;
   top: 0.85rem;
-  left: 1.25rem;
+  left: 0.85rem;
   z-index: 12;
 }
 
@@ -241,6 +241,23 @@ body.controls-collapsed .controls > * {
   flex: 1 1 auto;
   min-height: 0;
   height: 100%;
+}
+
+/* Viewer-like selection outline for cards */
+#FamilyChart .card .card-inner {
+  outline: 0px solid rgba(255, 255, 255, 1);
+  transition: outline 0.25s ease-in-out;
+}
+
+#FamilyChart .card.card-main .card-inner,
+#FamilyChart .card:focus-visible .card-inner,
+#FamilyChart .card-main-active .card-inner {
+  outline: 4px solid rgba(220, 220, 220, 1);
+  outline-offset: 0.15rem;
+}
+
+#FamilyChart .card-inner.f3-path-to-main {
+  outline: 4px solid rgba(255, 255, 255, 1);
 }
 
 #FamilyChart svg.main_svg .links_view path.link {
