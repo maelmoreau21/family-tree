@@ -99,7 +99,8 @@ button.primary:hover {
     "panel-toggle panel-toggle"
     "controls canvas";
   gap: 0.9rem 1.5rem;
-  padding: 0.4rem 1.25rem 0.9rem;
+  /* remove vertical padding so the canvas can reach page top/bottom */
+  padding: 0 1.25rem;
   height: 100%;
   min-height: 0;
   overflow: hidden;
@@ -231,7 +232,8 @@ body.controls-collapsed .controls > * {
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 12px;
   overflow: hidden;
-  padding: 0.5rem 0.75rem 0.6rem;
+  /* remove canvas padding so the chart area fills top-to-bottom */
+  padding: 0;
   flex: 1 1 auto;
   min-height: 0;
 }
@@ -474,7 +476,8 @@ body.controls-collapsed .controls > * {
 .panel-body fieldset {
   border: 1px solid rgba(148, 163, 184, 0.25);
   border-radius: 10px;
-  padding: 0.75rem;
+  /* remove canvas padding so the chart area fills top-to-bottom */
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
