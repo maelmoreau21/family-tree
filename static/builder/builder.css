@@ -202,47 +202,25 @@ body.controls-collapsed .controls > * {
 }
 
 #status {
-  width: 100%;
-  display: block;
-  font-size: 0.95rem;
-  padding: 0.85rem 1.25rem;
-  margin-bottom: 1rem;
-  border-radius: 10px;
-  background: rgba(15, 23, 42, 0.75);
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  white-space: normal;
-  word-break: break-word;
-  line-height: 1.4;
-  text-align: left;
-}
-
-#status[data-status="saving"] {
-  color: #fbbf24;
-}
-
-#status[data-status="error"] {
-  color: #f87171;
-}
-
-#status[data-status="success"] {
-  color: #34d399;
-}
-
-#status {
   display: inline-block;
+  align-self: start;
   max-width: 64ch;
   width: auto;
   font-size: 0.95rem;
-  padding: 0.85rem 1.25rem;
-  margin-bottom: 1rem;
+  padding: 0.65rem 1rem;
+  margin: 0 0 1rem 0;
   border-radius: 10px;
   background: rgba(15, 23, 42, 0.75);
   border: 1px solid rgba(148, 163, 184, 0.25);
   white-space: normal;
   word-break: break-word;
-  line-height: 1.4;
+  line-height: 1.35;
   text-align: left;
 }
+
+#status[data-status="saving"] { color: #fbbf24; }
+#status[data-status="error"] { color: #f87171; }
+#status[data-status="success"] { color: #34d399; }
 .canvas {
   position: relative;
   display: flex;
@@ -935,28 +913,7 @@ body.controls-collapsed .controls > * {
   text-decoration: underline;
 }
 
-#status {
-  width: 100%;
-  display: block;
-  font-size: 0.95rem;
-  padding: 0.85rem 1.25rem;
-  margin-bottom: 1rem;
-  border-radius: 10px;
-  background: rgba(15, 23, 42, 0.75);
-  border: 1px solid rgba(148, 163, 184, 0.25);
-}
-
-#status[data-status="saving"] {
-  color: #fbbf24;
-}
-
-#status[data-status="error"] {
-  color: #f87171;
-}
-
-#status[data-status="success"] {
-  color: #34d399;
-}
+/* removed duplicate full-width status block (kept single compact style earlier in file) */
 
 .canvas {
   position: relative;
