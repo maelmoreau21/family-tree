@@ -164,8 +164,9 @@ body.controls-collapsed .controls > * {
   background: rgba(15, 23, 42, 0.8);
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 12px;
-  /* add extra top padding so the panel-toggle doesn't overlap content */
-  padding: 2.25rem 1.25rem 1.25rem;
+  /* add extra top padding so the panel-toggle doesn't overlap content
+     increased to push controls lower and avoid overlap with the toggle */
+  padding: 3.25rem 1.25rem 1.5rem;
   overflow-y: auto;
   max-height: calc(100vh - 4rem);
   height: auto;
@@ -212,7 +213,9 @@ body.controls-collapsed .controls > * {
   width: auto;
   font-size: 0.95rem;
   padding: 0.65rem 1rem;
-  margin: 0 0 1rem 0;
+  /* add a small top margin and slightly larger bottom margin so the
+     status block is visually separated and won't overlap the toggle */
+  margin: 0.5rem 0 1.25rem 0;
   border-radius: 10px;
   background: rgba(15, 23, 42, 0.75);
   border: 1px solid rgba(148, 163, 184, 0.25);
