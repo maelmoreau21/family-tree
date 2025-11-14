@@ -124,7 +124,13 @@ body {
   padding-block: 1rem;
   grid-column: 2 / 3;
   position: relative;
-  padding-left: 1.5rem; /* increased inner spacing for content */
+  padding-left: 0; /* removed left padding to align with request */
+}
+
+/* Ensure any element with id personDetails has no left padding/margin */
+#personDetails {
+  margin-left: 0;
+  padding-left: 0;
 }
 
 /* Render the divider centered inside the column gap so it visually sits between the tree and panel */
@@ -643,7 +649,7 @@ body.viewer-details-collapsed .canvas {
     max-height: 40vh;
     /* On narrow screens the details sit below the chart; use a top border instead */
     border-top: 1px solid rgba(148, 163, 184, 0.12);
-    padding-left: 0.75rem;
+    padding-left: 0; /* remove left padding on small screens as well */
     padding-top: 0.75rem;
     /* hide the divider pseudo-element on stacked layout */
     --hide-divider: 1;

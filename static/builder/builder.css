@@ -1020,3 +1020,9 @@ body.controls-collapsed .controls > * {
     min-height: 420px;
   }
 }
+
+/* Ensure person details panel in builder has no left padding/margin */
+#personDetails {
+  margin-left: 0;
+  padding-left: 0;
+}

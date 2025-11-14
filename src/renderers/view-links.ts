@@ -153,9 +153,9 @@ function createPath(
   const animated = link as AnimatedLink;
   const sourcePoints = (collapsed ? link._d() : link.d).map(([x, y]) => [x, y] as [number, number]);
   const adjusted = applySiblingOffset(sourcePoints, animated.__animation);
-  const preferRawOrder = style === "smooth" && link.curve
-  const points = preferRawOrder ? adjusted : dedupePoints(adjusted)
-  const fallbackPoints = dedupePoints(adjusted)
+  const deduped = dedupePoints(adjusted);
+  const points = deduped;
+  const fallbackPoints = deduped;
 
   if (points.length < 2) {
     return buildPolylinePath(fallbackPoints)
