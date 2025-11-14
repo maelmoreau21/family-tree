@@ -126,6 +126,13 @@ body {
   grid-column: 2 / 3;
 }
 
+/* Visual divider between the tree (left) and the details panel (right) */
+.details {
+  border-left: 1px solid rgba(148, 163, 184, 0.12);
+  padding-left: 1rem;
+  box-shadow: -8px 0 16px -12px rgba(2,6,23,0.5) inset;
+}
+
 body.viewer-details-collapsed .details {
   display: none;
 }
@@ -626,6 +633,11 @@ body.viewer-details-collapsed .canvas {
     width: 100%;
     height: auto;
     max-height: 40vh;
+    /* On narrow screens the details sit below the chart; use a top border instead */
+    border-left: none;
+    border-top: 1px solid rgba(148, 163, 184, 0.12);
+    padding-left: 0.75rem;
+    padding-top: 0.75rem;
   }
 
   .details .f3-autocomplete-items {
