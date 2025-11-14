@@ -602,13 +602,6 @@ function initBuilderSearch(chart) {
           // visual highlight
           highlightCardById(id, { animate: true })
 
-          // ensure the chart treats this person as the "main" and recenters like the viewer
-          try {
-            requestSetMainProfile(id, { openEditor: false, highlightCard: true, source: 'search' })
-          } catch (e) {
-            console.warn('builder: requestSetMainProfile failed', e)
-          }
-
           // attempt to center/zoom the selected person in the chart as a fallback
           try {
             const treeDatum = activeChartInstance?.store?.getTreeDatum?.(id) || null
