@@ -1,6 +1,5 @@
 import { TreeDatum } from "../../types/treeData"
 
-// Explicit renderer types to avoid use of the banned `Function` type.
 export type IconRenderer = (opts: { card_dim: CardDim }) => string
 export type OptionalIconRenderer = IconRenderer | undefined
 import { escapeHtml, isSafeImageSrc } from "../../utils/escape"

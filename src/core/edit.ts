@@ -214,7 +214,6 @@ export class EditTree {
 
   private createHistory() {
     const historyUpdateTree = function(this: EditTree) {
-      // history updated; avoid logging to keep output clean
       if (this.addRelativeInstance.is_active) this.addRelativeInstance.onCancel!()
       if (this.removeRelativeInstance.is_active) this.removeRelativeInstance.onCancel!()
       this.store.updateTree({initial: false})

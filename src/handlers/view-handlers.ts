@@ -136,10 +136,7 @@ export interface ZoomProps {
 
 export function setupZoom(el: Element, props: ZoomProps = {}) {
   const zoomableEl = el as ZoomHost & { __zoom?: unknown }
-  if (zoomableEl.__zoom) {
-    // zoom already setup; silently return to avoid noisy logs in consumers
-    return
-  }
+  if (zoomableEl.__zoom) return
   const view = el.querySelector<SVGGraphicsElement>('.view')
   if (!view) throw new Error('Zoom view container not found')
   const zoomBehavior = d3.zoom<Element, unknown>().on("zoom", props.onZoom || zoomed)

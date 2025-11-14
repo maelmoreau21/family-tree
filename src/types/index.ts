@@ -1,4 +1,3 @@
-// Re-export all types from individual files
 export * from './data'
 export * from './card'
 export * from './store'
