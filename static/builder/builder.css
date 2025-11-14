@@ -166,7 +166,7 @@ body.controls-collapsed .controls > * {
   border-radius: 12px;
   /* add extra top padding so the panel-toggle doesn't overlap content
      increased to push controls lower and avoid overlap with the toggle */
-  padding: 3.25rem 1.25rem 1.5rem;
+  padding: 4rem 1.25rem 2rem;
   overflow-y: auto;
   max-height: calc(100vh - 4rem);
   height: auto;
@@ -438,6 +438,7 @@ body.controls-collapsed .controls > * {
   border: 1px solid rgba(148, 163, 184, 0.25);
   border-radius: 10px;
   padding: 0.45rem 0.75rem 0.75rem;
+  margin: 0.75rem 0;
 }
 
 .panel summary {
