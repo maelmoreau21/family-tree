@@ -1,5 +1,6 @@
 :root {
   --viewer-details-width: clamp(260px, 22vw, 360px);
+  --viewer-column-gap: 1.25rem;
   --scrollbar-track: rgba(15, 23, 42, 0.65);
   --scrollbar-thumb: rgba(59, 130, 246, 0.55);
   --scrollbar-thumb-hover: rgba(148, 163, 184, 0.75);
@@ -107,7 +108,7 @@ body {
   flex: 1 1 auto;
   display: grid;
   grid-template-columns: 1fr minmax(0, var(--viewer-details-width));
-  column-gap: 1.25rem;
+  column-gap: var(--viewer-column-gap);
   padding: 0;
   align-items: stretch;
   min-height: 0;
@@ -124,12 +125,20 @@ body {
   margin: 0;
   padding-block: 1rem;
   grid-column: 2 / 3;
+  position: relative;
+  padding-left: 1rem; /* inner spacing for content */
 }
 
-/* Visual divider between the tree (left) and the details panel (right) */
-.details {
-  border-left: 1px solid rgba(148, 163, 184, 0.12);
-  padding-left: 1rem;
+/* Render the divider centered inside the column gap so it visually sits between the tree and panel */
+.details::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(-1 * var(--viewer-column-gap) / 2);
+  width: 1px;
+  background: rgba(148, 163, 184, 0.12);
+  pointer-events: none;
   box-shadow: -8px 0 16px -12px rgba(2,6,23,0.5) inset;
 }
 
@@ -634,11 +643,14 @@ body.viewer-details-collapsed .canvas {
     height: auto;
     max-height: 40vh;
     /* On narrow screens the details sit below the chart; use a top border instead */
-    border-left: none;
     border-top: 1px solid rgba(148, 163, 184, 0.12);
     padding-left: 0.75rem;
     padding-top: 0.75rem;
+    /* hide the divider pseudo-element on stacked layout */
+    --hide-divider: 1;
   }
+
+  .details::before { display: none; }
 
   .details .f3-autocomplete-items {
     max-height: 180px;
