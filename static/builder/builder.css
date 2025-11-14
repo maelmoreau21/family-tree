@@ -778,6 +778,30 @@ body.controls-collapsed .controls > * {
   padding: 0.45rem 0.6rem;
 }
 
+/* Remove any unexpected white contour/border that appears when items
+   or fieldsets get focused — prefer no outline and no elevated box-shadow */
+.editable-item,
+.display-item,
+.editable-item *,
+.display-item *,
+.panel-body fieldset,
+.panel,
+.controls {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Also remove focus outlines coming from internal controls */
+.editable-item:focus,
+.display-item:focus,
+.editable-item:focus-within,
+.display-item:focus-within,
+.panel-body fieldset:focus,
+.panel:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 .panel-body fieldset legend {
   font-size: 0.95rem;
   padding: 0 0.25rem;

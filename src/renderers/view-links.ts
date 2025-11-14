@@ -168,17 +168,16 @@ function createPath(
     .x((d) => d[0])
     .y((d) => d[1]);
 
-  const curveLine =
-    style === "smooth"
-      ? baseLine.curve(d3.curveBasis)
-      : baseLine.curve(isHorizontal ? d3.curveMonotoneX : d3.curveMonotoneY);
+  const curve = isHorizontal ? d3.curveMonotoneX : d3.curveMonotoneY
+  const curveLine = baseLine.curve(curve)
 
   return curveLine(points) ?? buildPolylinePath(points);
 }
 
 function applySiblingOffset(points: [number, number][], meta: AnimationMeta | undefined): [number, number][] {
   if (!meta?.offset) return points
-  const { dx, dy } = meta.offset
+  const dx = clamp(meta.offset.dx, -18, 18)
+  const dy = clamp(meta.offset.dy, -18, 18)
   if (Math.abs(dx) < 0.01 && Math.abs(dy) < 0.01) return points
 
   const totalSegments = points.length - 1
@@ -187,7 +186,7 @@ function applySiblingOffset(points: [number, number][], meta: AnimationMeta | un
   const adjusted = points.map(([x, y]) => [x, y] as [number, number])
   for (let i = 1; i < totalSegments; i++) {
     const t = i / totalSegments
-    const weight = Math.sin(Math.PI * t)
+    const weight = Math.sin(Math.PI * t) * 0.6
     if (!Number.isFinite(weight)) continue
     if (Math.abs(dx) > 0.01) adjusted[i][0] += dx * weight
     if (Math.abs(dy) > 0.01) adjusted[i][1] += dy * weight
@@ -201,11 +200,15 @@ function computeSiblingOffsetVector(index: number, count: number, isHorizontal: 
   const offsetIndex = index - center
   if (Math.abs(offsetIndex) < 0.05) return undefined
 
-  const baseSpread = isHorizontal ? 12 : 14
-  const scale = Math.min(28, baseSpread + count * 2)
-  const displacement = offsetIndex * scale
+  const baseSpread = isHorizontal ? 10 : 12
+  const scale = Math.min(20, baseSpread + count)
+  const displacement = clamp(offsetIndex * scale, -24, 24)
 
   return isHorizontal ? { dx: 0, dy: displacement } : { dx: displacement, dy: 0 }
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value))
 }
 
 
