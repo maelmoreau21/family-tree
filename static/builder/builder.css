@@ -94,7 +94,8 @@ button.primary:hover {
   flex: 1 1 auto;
   display: grid;
   grid-template-columns: minmax(300px, 360px) 1fr;
-  grid-template-rows: auto 1fr;
+  /* top row is only for the overlay toggle (absolutely positioned) - collapse its reserved height */
+  grid-template-rows: 0 1fr;
   grid-template-areas:
     "panel-toggle panel-toggle"
     "controls canvas";
