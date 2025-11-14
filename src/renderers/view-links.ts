@@ -153,19 +153,39 @@ function createPath(
   const animated = link as AnimatedLink;
   const sourcePoints = (collapsed ? link._d() : link.d).map(([x, y]) => [x, y] as [number, number]);
   const adjusted = applySiblingOffset(sourcePoints, animated.__animation);
-  const points = dedupePoints(adjusted);
+  const preferRawOrder = style === "smooth" && link.curve
+  const points = preferRawOrder ? adjusted : dedupePoints(adjusted)
+  const fallbackPoints = dedupePoints(adjusted)
 
-  if (points.length < 2) return buildPolylinePath(points);
-
-  if (style === "smooth" && link.curve) {
-    return buildSmoothCurve(points, isHorizontal)
+  if (points.length < 2) {
+    return buildPolylinePath(fallbackPoints)
   }
 
-  if (link.curve && style === "legacy") {
-    return buildLegacyCurve(points, isHorizontal)
+  if (!link.curve) {
+    return buildPolylinePath(fallbackPoints)
   }
 
-  return buildPolylinePath(points)
+  if (style === "legacy") {
+    return buildLegacyCurve(fallbackPoints, isHorizontal)
+  }
+
+  if (style === "smooth") {
+    const smoothLine = d3
+      .line<[number, number]>()
+      .x((d) => d[0])
+      .y((d) => d[1])
+      .curve(d3.curveBasis)
+
+    return smoothLine(points) ?? buildPolylinePath(fallbackPoints)
+  }
+
+  const monotoneLine = d3
+    .line<[number, number]>()
+    .x((d) => d[0])
+    .y((d) => d[1])
+    .curve(isHorizontal ? d3.curveMonotoneX : d3.curveMonotoneY)
+
+  return monotoneLine(points) ?? buildPolylinePath(fallbackPoints)
 }
 
 function applySiblingOffset(points: [number, number][], meta: AnimationMeta | undefined): [number, number][] {
@@ -212,78 +232,6 @@ function buildPolylinePath(points: [number, number][]): string {
   return deduped
     .map(([x, y], index) => `${index === 0 ? "M" : "L"}${formatNumber(x)},${formatNumber(y)}`)
     .join(" ");
-}
-
-function buildSmoothCurve(points: [number, number][], isHorizontal: boolean): string {
-  const deduped = dedupePoints(points)
-  if (deduped.length < 2) return buildPolylinePath(deduped)
-  if (deduped.length === 2) return buildPolylinePath(deduped)
-
-  const pathParts: string[] = []
-  pathParts.push(`M${formatNumber(deduped[0][0])},${formatNumber(deduped[0][1])}`)
-
-  for (let i = 1; i < deduped.length; i++) {
-    const current = deduped[i]
-    const next = deduped[i + 1]
-
-    if (!next) {
-      pathParts.push(`L${formatNumber(current[0])},${formatNumber(current[1])}`)
-      break
-    }
-
-    const prev = deduped[i - 1]
-    const prevVec: [number, number] = [current[0] - prev[0], current[1] - prev[1]]
-    const nextVec: [number, number] = [next[0] - current[0], next[1] - current[1]]
-    const prevLen = Math.hypot(prevVec[0], prevVec[1])
-    const nextLen = Math.hypot(nextVec[0], nextVec[1])
-
-    if (prevLen === 0 || nextLen === 0) {
-      continue
-    }
-
-    const prevDir: [number, number] = [prevVec[0] / prevLen, prevVec[1] / prevLen]
-    const nextDir: [number, number] = [nextVec[0] / nextLen, nextVec[1] / nextLen]
-    const alignment = prevDir[0] * nextDir[0] + prevDir[1] * nextDir[1]
-
-    if (alignment >= 0.995) {
-      pathParts.push(`L${formatNumber(current[0])},${formatNumber(current[1])}`)
-      continue
-    }
-
-    const radius = computeSmoothCornerRadius(prevLen, nextLen, isHorizontal)
-    if (radius <= 0.5) {
-      pathParts.push(`L${formatNumber(current[0])},${formatNumber(current[1])}`)
-      continue
-    }
-
-    const entry: [number, number] = [
-      current[0] - prevDir[0] * radius,
-      current[1] - prevDir[1] * radius
-    ]
-
-    const exit: [number, number] = [
-      current[0] + nextDir[0] * radius,
-      current[1] + nextDir[1] * radius
-    ]
-
-    pathParts.push(`L${formatNumber(entry[0])},${formatNumber(entry[1])}`)
-
-    const tension = isHorizontal ? 0.6 : 0.7
-    const cp1: [number, number] = [
-      entry[0] + prevDir[0] * radius * tension,
-      entry[1] + prevDir[1] * radius * tension
-    ]
-    const cp2: [number, number] = [
-      exit[0] - nextDir[0] * radius * tension,
-      exit[1] - nextDir[1] * radius * tension
-    ]
-
-    pathParts.push(
-      `C${formatNumber(cp1[0])},${formatNumber(cp1[1])} ${formatNumber(cp2[0])},${formatNumber(cp2[1])} ${formatNumber(exit[0])},${formatNumber(exit[1])}`
-    )
-  }
-
-  return pathParts.join(" ")
 }
 
 function dedupePoints(points: [number, number][]): [number, number][] {
@@ -368,16 +316,4 @@ function computeCornerRadius(prevLength: number, nextLength: number, isHorizonta
   const clampedTarget = Math.max(minRadius, Math.min(easedTarget, idealRadius));
 
   return Math.min(clampedTarget, maxGeometricRadius);
-}
-
-function computeSmoothCornerRadius(prevLength: number, nextLength: number, isHorizontal: boolean): number {
-  const minAvailable = Math.min(prevLength, nextLength)
-  if (minAvailable <= 0.5) return 0
-
-  const softness = isHorizontal ? 0.85 : 1
-  const ideal = isHorizontal ? 42 : 48
-  const response = ideal * (1 - Math.exp(-minAvailable / (isHorizontal ? 90 : 110)))
-  const capped = Math.min(response, minAvailable * 0.5)
-  const radius = Math.max(10, capped * softness)
-  return Math.min(radius, minAvailable * 0.6)
 }
