@@ -54,8 +54,8 @@ export function createLinks(d: TreeDatum, is_horizontal: boolean = false) {
   d.children.forEach((child) => {
       const other_parent = otherParent(child, d) || d
       const anchorX = child.psx ?? other_parent.sx ?? d.x
-      // Prefer child.psy, then other_parent.sy, otherwise fallback to current node y
-      const anchorY = child.psy ?? other_parent.sy ?? d.y
+      // Prefer child.psy, then other parent anchors (sy then sx) before falling back to current node y
+      const anchorY = child.psy ?? other_parent.sy ?? other_parent.sx ?? d.y
 
       if (typeof anchorX !== 'number' || Number.isNaN(anchorX)) {
         throw new Error('Cannot resolve progeny link anchor X')
@@ -66,7 +66,7 @@ export function createLinks(d: TreeDatum, is_horizontal: boolean = false) {
 
       const parent_pos: LinkPoint = !is_horizontal ? {x: anchorX, y: d.y} : {x: d.x, y: anchorY}
       links.push({
-        d: Link(parent_pos, child),
+        d: Link(child, parent_pos),
         _d: () => Link(parent_pos, {x: _or(parent_pos, 'x'), y: _or(parent_pos, 'y')}),
         curve: true,
         id: linkId(child, d, other_parent),
