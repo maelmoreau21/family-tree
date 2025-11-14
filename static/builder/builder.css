@@ -105,6 +105,7 @@ button.primary:hover {
   overflow: hidden;
   box-sizing: border-box;
   align-content: stretch;
+  position: relative;
 }
 
 .panel-toggle {
@@ -119,9 +120,13 @@ button.primary:hover {
   color: inherit;
   transition: background 0.2s ease, border 0.2s ease;
   margin: 0;
-  margin-top: 0.6rem;
+  margin-top: 0;
   width: fit-content;
   max-width: 260px;
+  position: absolute;
+  top: 0.85rem;
+  left: 1.25rem;
+  z-index: 12;
 }
 
 .panel-toggle:hover {
