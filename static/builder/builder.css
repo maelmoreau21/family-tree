@@ -249,17 +249,25 @@ body.controls-collapsed .controls > * {
 #FamilyChart .card .card-inner {
   outline: 0px solid rgba(255, 255, 255, 1);
   transition: outline 0.25s ease-in-out;
+  outline-offset: 0; /* ensure outline hugs the element */
 }
 
 #FamilyChart .card.card-main .card-inner,
 #FamilyChart .card:focus-visible .card-inner,
 #FamilyChart .card-main-active .card-inner {
   outline: 4px solid rgba(220, 220, 220, 1);
-  outline-offset: 0.15rem;
+  outline-offset: 0; /* remove offset so no visible gap */
 }
 
 #FamilyChart .card-inner.f3-path-to-main {
   outline: 4px solid rgba(255, 255, 255, 1);
+}
+
+/* Remove any parent-level outline offset that creates a gap
+   and prefer the inner .card-inner outline for the white contour */
+#FamilyChart .card-main-active {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 #FamilyChart svg.main_svg .links_view path.link {
