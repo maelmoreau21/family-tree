@@ -607,8 +607,14 @@ function initBuilderSearch(chart) {
             const treeDatum = activeChartInstance?.store?.getTreeDatum?.(id) || null
             const svg = activeChartInstance?.svg || null
             if (treeDatum && svg && typeof f3.cardToMiddle === 'function') {
-              const svg_dim = svg.getBoundingClientRect()
-              f3.cardToMiddle({ datum: treeDatum, svg, svg_dim, transition_time: chartConfig.transitionTime })
+              requestAnimationFrame(() => {
+                try {
+                  const svg_dim = svg.getBoundingClientRect()
+                  f3.cardToMiddle({ datum: treeDatum, svg, svg_dim, transition_time: chartConfig.transitionTime })
+                } catch (inner) {
+                  console.warn('builder: cardToMiddle animation failed', inner)
+                }
+              })
             }
           } catch (e) {
             console.warn('builder: unable to center selected person', e)

@@ -1,6 +1,6 @@
 :root {
   --viewer-details-width: clamp(260px, 22vw, 360px);
-  --viewer-column-gap: 1.25rem;
+  --viewer-column-gap: 0;
   --scrollbar-track: rgba(15, 23, 42, 0.65);
   --scrollbar-thumb: rgba(59, 130, 246, 0.55);
   --scrollbar-thumb-hover: rgba(148, 163, 184, 0.75);
@@ -65,8 +65,6 @@ body {
   top: 0.85rem;
   left: 0.85rem;
   display: flex;
-  justify-content: flex-start;
-  align-items: center;
   gap: 0.75rem;
   flex: 0 0 auto;
   z-index: 10;

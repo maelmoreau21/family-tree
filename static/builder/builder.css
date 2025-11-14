@@ -639,12 +639,17 @@ body.controls-collapsed .controls > * {
 }
 
 .card-highlight {
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.45), 0 0 20px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35), 0 0 18px rgba(59, 130, 246, 0.45);
   border-radius: 12px;
 }
 
 .card-highlight-pulse {
   animation: card-highlight-pulse 1.2s ease-out 1;
+}
+
+#FamilyChart .card-highlight .card-inner {
+  outline: 4px solid rgba(255, 255, 255, 0.95);
+  outline-offset: 0;
 }
 
 .card-main-active {
