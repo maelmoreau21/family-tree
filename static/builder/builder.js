@@ -599,6 +599,18 @@ function initBuilderSearch(chart) {
         if (datum && editTreeInstance) {
           editTreeInstance.open(datum)
           highlightCardById(id, { animate: true })
+
+          // attempt to center/zoom the selected person in the chart
+          try {
+            const treeDatum = activeChartInstance?.store?.getTreeDatum?.(id) || null
+            const svg = activeChartInstance?.svg || null
+            if (treeDatum && svg && typeof f3.cardToMiddle === 'function') {
+              const svg_dim = svg.getBoundingClientRect()
+              f3.cardToMiddle({ datum: treeDatum, svg, svg_dim, transition_time: chartConfig.transitionTime })
+            }
+          } catch (e) {
+            console.warn('builder: unable to center selected person', e)
+          }
         }
       }
     }
