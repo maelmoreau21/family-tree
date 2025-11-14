@@ -124,7 +124,7 @@ body {
   padding-block: 1rem;
   grid-column: 2 / 3;
   position: relative;
-  padding-left: 1rem; /* inner spacing for content */
+  padding-left: 1.5rem; /* increased inner spacing for content */
 }
 
 /* Render the divider centered inside the column gap so it visually sits between the tree and panel */
@@ -135,9 +135,10 @@ body {
   bottom: 0;
   left: calc(-1 * var(--viewer-column-gap) / 2);
   width: 1px;
-  background: rgba(148, 163, 184, 0.12);
+  /* Divider removed per request: keep pseudo-element but hide it
+     so the panel no longer shows the faint separator line */
+  display: none;
   pointer-events: none;
-  box-shadow: -8px 0 16px -12px rgba(2,6,23,0.5) inset;
 }
 
 body.viewer-details-collapsed .details {
