@@ -144,18 +144,36 @@ function computeEntryOffset(meta: AnimationMeta | undefined, isHorizontal: boole
   return [dx, dy]
 }
 
-function createPath(link: Link, collapsed: boolean = false, style: LinkStyle = 'smooth', isHorizontal: boolean = false) {
-  const animated = link as AnimatedLink
-  const sourcePoints = (collapsed ? link._d() : link.d).map(([x, y]) => [x, y] as [number, number])
-  const adjusted = applySiblingOffset(sourcePoints, animated.__animation)
+function createPath(
+  link: Link,
+  collapsed: boolean = false,
+  style: LinkStyle = "smooth",
+  isHorizontal: boolean = false
+) {
+  const animated = link as AnimatedLink;
+  const sourcePoints = (collapsed ? link._d() : link.d).map(([x, y]) => [x, y] as [number, number]);
+  const adjusted = applySiblingOffset(sourcePoints, animated.__animation);
+  const points = dedupePoints(adjusted);
 
-  if (style === 'legacy') {
-    if (!link.curve) return buildPolylinePath(adjusted)
-    return buildLegacyCurve(adjusted, isHorizontal)
+  if (points.length < 2) return buildPolylinePath(points);
+
+  if (!link.curve || style === "legacy") {
+    return link.curve && style === "legacy"
+      ? buildLegacyCurve(points, isHorizontal)
+      : buildPolylinePath(points);
   }
 
-  if (!link.curve) return buildPolylinePath(adjusted)
-  return buildSmoothCurve(adjusted)
+  const baseLine = d3
+    .line<[number, number]>()
+    .x((d) => d[0])
+    .y((d) => d[1]);
+
+  const curveLine =
+    style === "smooth"
+      ? baseLine.curve(d3.curveBasis)
+      : baseLine.curve(isHorizontal ? d3.curveMonotoneX : d3.curveMonotoneY);
+
+  return curveLine(points) ?? buildPolylinePath(points);
 }
 
 function applySiblingOffset(points: [number, number][], meta: AnimationMeta | undefined): [number, number][] {
@@ -198,50 +216,6 @@ function buildPolylinePath(points: [number, number][]): string {
     .map(([x, y], index) => `${index === 0 ? "M" : "L"}${formatNumber(x)},${formatNumber(y)}`)
     .join(" ");
 }
-
-function buildSmoothCurve(points: [number, number][]): string {
-  const deduped = dedupePoints(points);
-  if (deduped.length < 2) return buildPolylinePath(deduped);
-  if (deduped.length === 2) return buildPolylinePath(deduped);
-
-  // Use Catmull-Rom to generate smooth cubic Bezier segments that pass through
-  // the given points. This produces visually harmonious curves while keeping
-  // the path anchored at the original points.
-  const pathParts: string[] = [];
-  const start = deduped[0];
-  pathParts.push(`M${formatNumber(start[0])},${formatNumber(start[1])}`);
-
-  const beziers = catmullRomToBeziers(deduped);
-  for (const b of beziers) {
-    // b: [cp1x, cp1y, cp2x, cp2y, x, y]
-    pathParts.push(
-      `C${formatNumber(b[0])},${formatNumber(b[1])} ${formatNumber(b[2])},${formatNumber(b[3])} ${formatNumber(b[4])},${formatNumber(b[5])}`
-    );
-  }
-
-  return pathParts.join(" ");
-}
-
-function catmullRomToBeziers(points: [number, number][]): number[][] {
-  const beziers: number[][] = [];
-  const n = points.length;
-  for (let i = 0; i < n - 1; i++) {
-    const p0 = i === 0 ? points[0] : points[i - 1];
-    const p1 = points[i];
-    const p2 = points[i + 1];
-    const p3 = i + 2 < n ? points[i + 2] : points[n - 1];
-
-    const cp1x = p1[0] + (p2[0] - p0[0]) / 6;
-    const cp1y = p1[1] + (p2[1] - p0[1]) / 6;
-    const cp2x = p2[0] - (p3[0] - p1[0]) / 6;
-    const cp2y = p2[1] - (p3[1] - p1[1]) / 6;
-
-    beziers.push([cp1x, cp1y, cp2x, cp2y, p2[0], p2[1]]);
-  }
-  return beziers;
-}
-
-// computeCornerRadius removed — replaced by Catmull-Rom based smoothing above.
 
 function dedupePoints(points: [number, number][]): [number, number][] {
   if (points.length < 2) return points.slice();
