@@ -107,7 +107,7 @@ body {
   flex: 1 1 auto;
   display: grid;
   grid-template-columns: 1fr minmax(0, var(--viewer-details-width));
-  gap: 0;
+  column-gap: 1.25rem;
   padding: 0;
   align-items: stretch;
   min-height: 0;
