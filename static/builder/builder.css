@@ -164,7 +164,8 @@ body.controls-collapsed .controls > * {
   background: rgba(15, 23, 42, 0.8);
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 12px;
-  padding: 1.25rem;
+  /* add extra top padding so the panel-toggle doesn't overlap content */
+  padding: 2.25rem 1.25rem 1.25rem;
   overflow-y: auto;
   max-height: calc(100vh - 4rem);
   height: auto;
