@@ -35,25 +35,7 @@ jobs:
       - name: Build
         run: npm run build --silent
 
-  # Optional job to run on a self-hosted Raspberry Pi runner.
-  # This job will only run when you register a self-hosted runner with the
-  # label `raspberry-pi` (see .github/raspberry-runner.md for setup instructions).
-  build-raspberry:
-    runs-on: [self-hosted, linux, arm64, raspberry-pi]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Use Node.js 18.x
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18.x
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests
-        run: npm test --silent
-
-      - name: Build
-        run: npm run build --silent
+  # build-raspberry job removed to avoid workflow cancellation due to
+  # lack of an available self-hosted runner. If you need Raspberry Pi
+  # checks in CI, re-add this job or provide a self-hosted runner with
+  # the label `raspberry-pi` to the repository or organization.
