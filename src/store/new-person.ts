@@ -1,7 +1,5 @@
 import { Data, Datum } from "../types/data"
 
-type RelType = 'daughter' | 'son' | 'mother' | 'father' | 'spouse'
-
 export function createNewPerson({data, rels}: {data: Datum['data'], rels?: {parents?: string[], spouses?: string[], children?: string[]}}) {
   return {
     id: generateUUID(),
