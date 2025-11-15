@@ -1946,7 +1946,9 @@ function attachPanelControls({ chart, card }) {
 
     const shouldUpdateMainId = chart && typeof chart.updateMainId === 'function'
     let recenterAlreadyScheduled = false
-    if (shouldUpdateMainId && storeMainBefore !== id) {
+    // Only update the chart main id when we persist the main profile in config
+    // or when a caller explicitly requests this via `persistConfig`.
+    if (persistConfig && shouldUpdateMainId && storeMainBefore !== id) {
       chart.updateMainId(id)
       chart.updateTree({ initial: false, tree_position: 'main_to_middle' })
       recenterAlreadyScheduled = true
