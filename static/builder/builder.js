@@ -1112,9 +1112,9 @@ function setupChart(payload) {
       }
     })
 
-  // When clicking a card in the builder, mirror viewer behaviour:
-  // - set the clicked person as main
+  // When clicking a card in the builder:
   // - open the editor for that person
+  // - highlight the clicked person
   // - populate and focus the builder search input so the UX mirrors the viewer
   try {
     if (typeof card.setOnCardClick === 'function') {
