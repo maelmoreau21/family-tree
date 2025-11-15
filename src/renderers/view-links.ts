@@ -170,7 +170,10 @@ function createPath(
   }
 
   if (style === "smooth") {
-    const smoothCurve = link.is_ancestry
+    const isAncestorLink = link.is_ancestry === true
+    const isDescendantLink = link.is_ancestry === false && !link.spouse && Array.isArray(link.source)
+
+    const smoothCurve = (isAncestorLink || isDescendantLink)
       ? (isHorizontal ? d3.curveMonotoneX : d3.curveMonotoneY)
       : d3.curveBasis
 
