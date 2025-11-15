@@ -1,7 +1,5 @@
 import { Data, Datum } from "../types/data"
 
-type RelType = 'daughter' | 'son' | 'mother' | 'father' | 'spouse'
-
 export function createNewPerson({data, rels}: {data: Datum['data'], rels?: {parents?: string[], spouses?: string[], children?: string[]}}) {
   return {
     id: generateUUID(),
@@ -10,16 +8,6 @@ export function createNewPerson({data, rels}: {data: Datum['data'], rels?: {pare
       ...{parents: [], children: [], spouses: []},
       ...(rels || {})}
     }
-}
-
-export function createNewPersonWithGenderFromRel({data, rel_type, rel_datum}: {data: Datum['data'], rel_type: RelType, rel_datum: Datum}) {
-  const gender = getGenderFromRelative(rel_datum, rel_type)
-  data = Object.assign(data || {}, {gender})
-  return createNewPerson({data})
-
-  function getGenderFromRelative(rel_datum: Datum, rel_type: RelType) {
-    return (["daughter", "mother"].includes(rel_type) || rel_type === "spouse" && rel_datum.data.gender === "M") ? "F" : "M"
-  }
 }
 
 export function addNewPerson({data_stash, datum}: {data_stash: Data, datum: Datum}) {

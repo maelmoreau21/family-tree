@@ -27,7 +27,6 @@ export default function updateCardsComponent(svg: SVGElement, tree: Tree, Card: 
   card_enter.each(d => calculateEnterAndExitPositions(d, true, false))
 
   card_exit.each(cardExit)
-  card.each(cardUpdateNoEnter)
   card_enter.each(cardEnter)
   card_update.each(cardUpdate)
 
@@ -40,9 +39,7 @@ export default function updateCardsComponent(svg: SVGElement, tree: Tree, Card: 
       .style("transform", `translate(${d._x}px, ${d._y}px)`)
   }
 
-  function cardUpdateNoEnter(this: HTMLDivElement) {
-    void this
-  }
+ 
 
   function cardUpdate(this: HTMLDivElement, d: TreeDatum) {
     const card_element = d3.select(Card(d))

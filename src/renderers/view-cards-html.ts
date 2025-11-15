@@ -19,7 +19,6 @@ export default function updateCardsHtml(svg: SVGElement, tree: Tree, Card: HtmlC
   card_enter.each(d => calculateEnterAndExitPositions((d as TreeDatum), true, false))
 
   card_exit.each(cardExit)
-  card.each(cardUpdateNoEnter)
   card_enter.each(cardEnter)
   card_update.each(cardUpdate)
 
@@ -33,7 +32,7 @@ export default function updateCardsHtml(svg: SVGElement, tree: Tree, Card: HtmlC
     Card.call(this, d)
   }
 
-  function cardUpdateNoEnter(this: HTMLDivElement) {}
+ 
 
   function cardUpdate(this: HTMLDivElement, d: TreeDatum) {
     Card.call(this, d)
