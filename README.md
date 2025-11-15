@@ -1,8 +1,8 @@
-Family Tree — Démarrage (Docker)
+# Family Tree — Démarrage (Docker)
 
-Ce dépôt contient l'application Family Tree (viewer + builder + API).
+Ce dépôt contient l'application Family Tree (viewer, builder et API).
 
-Méthode 1 — Lancer avec docker run
+## Lancer via Docker (run)
 
 Remplacez les valeurs d'environnement par vos valeurs de connexion PostgreSQL.
 
@@ -13,7 +13,7 @@ docker run --rm -p 7920:7920 -p 7921:7921 \
   ghcr.io/<votre-registre>/family-tree:latest
 ```
 
-Méthode 2 — Lancer avec Docker Compose
+## Lancer via Docker Compose
 
 Le fichier `docker-compose.yml` inclus démarre l'application et une base Postgres pour le développement local.
 
@@ -23,5 +23,7 @@ docker compose up -d --build
 
 ---
 
-Licence: MIT — voir `LICENSE.txt`.
+## Licence
+
+MIT — voir `LICENSE.txt`.
 
