@@ -90,31 +90,7 @@ button.primary:hover {
 }
 
 
-.workspace {
-  flex: 1 1 auto;
-  display: grid;
-  /* Make the chart full-width by default and position controls as an overlay */
-  grid-template-columns: 1fr;
-  /* top row is only for the overlay toggle (absolutely positioned) - collapse its reserved height */
-  grid-template-rows: 0 1fr;
-  grid-template-areas:
-    "panel-toggle panel-toggle"
-    "controls canvas";
-  gap: 0.9rem 1.5rem;
-  /* remove padding so the canvas can reach page edges */
-  padding: 0;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
-  box-sizing: border-box;
-  align-content: stretch;
-  position: relative;
-}
-
 .panel-toggle {
-  grid-area: panel-toggle;
-  justify-self: flex-start;
-  align-self: flex-start;
   padding: 0.45rem 1rem;
   font-size: 0.95rem;
   background: rgba(30, 41, 59, 0.85);
@@ -137,12 +113,6 @@ button.primary:hover {
   background: rgba(59, 130, 246, 0.35);
 }
 
-body.controls-collapsed .workspace {
-  grid-template-columns: 1fr;
-  gap: 0.75rem 0;
-  column-gap: 0;
-}
-
 body.controls-collapsed .controls {
   padding: 0;
   border: 0;
@@ -158,6 +128,19 @@ body.controls-collapsed .controls > * {
   display: none;
 }
 
+.workspace {
+  position: relative;
+  flex: 1 1 auto;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
 .controls {
   display: flex;
   flex-direction: column;
@@ -165,44 +148,42 @@ body.controls-collapsed .controls > * {
   background: rgba(15, 23, 42, 0.8);
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 12px;
-  /* add extra top padding so the panel-toggle doesn't overlap content
-     increased to push controls lower and avoid overlap with the toggle */
   padding: 4rem 1.25rem 2rem;
   overflow-y: auto;
-  /* account for increased top/bottom spacing to avoid overflow */
   max-height: calc(100vh - 3.8rem);
   height: auto;
   min-height: 0;
   overscroll-behavior: contain;
-  grid-area: controls;
-  align-self: start;
-  /* overlay behaviour */
   position: absolute;
   left: 1.25rem;
-  /* increase top gap x3 compared to viewer's default 0.85rem */
   top: 2.55rem;
-  /* add bottom spacing so there is a visible space between the panel and bottom of the screen */
   bottom: 1.25rem;
   width: clamp(260px, 22vw, 360px);
   z-index: 11;
 }
 
 .canvas {
-  grid-area: canvas;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
   min-height: 0;
-  /* Make canvas fill entire viewport as an overlay so the chart covers the full screen */
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100vw;
-  height: 100vh;
-  padding: 0;
   margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  z-index: 1; /* base layer under overlay controls */
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+#FamilyChart {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  position: relative;
 }
 
 .chart-toolbar {
@@ -252,27 +233,6 @@ body.controls-collapsed .controls > * {
 #status[data-status="saving"] { color: #fbbf24; }
 #status[data-status="error"] { color: #f87171; }
 #status[data-status="success"] { color: #34d399; }
-.canvas {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  background: rgba(15, 23, 42, 0.55);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 12px;
-  overflow: hidden;
-  /* remove canvas padding so the chart area fills top-to-bottom */
-  padding: 0;
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-#FamilyChart {
-  width: 100%;
-  flex: 1 1 auto;
-  min-height: 0;
-  height: 100vh; /* ensure chart occupies full viewport height inside canvas */
-}
 
 /* Viewer-like selection outline for cards */
 #FamilyChart .card .card-inner {
@@ -1008,35 +968,7 @@ body.controls-collapsed .controls > * {
 
 /* removed duplicate full-width status block (kept single compact style earlier in file) */
 
-.canvas {
-  /* Make canvas full viewport area while staying in flow for layout stability */
-  position: relative;
-  width: 100%;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  background: rgba(15, 23, 42, 0.55);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 12px;
-  overflow: hidden;
-  padding: 0;
-  margin: 0;
-  z-index: 1;
-}
-
-#FamilyChart {
-  width: 100%;
-  flex: 1 1 auto;
-  min-height: 0;
-  height: 100%; /* fill the canvas height */
-}
-
 @media (max-width: 1100px) {
-  .workspace {
-    grid-template-columns: 1fr;
-  }
-
   .controls {
     max-height: none;
     height: auto;
@@ -1053,3 +985,4 @@ body.controls-collapsed .controls > * {
   margin-left: 0;
   padding-left: 0;
 }
+
