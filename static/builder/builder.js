@@ -203,6 +203,28 @@ function scrollCardIntoView(personId) {
   return true
 }
 
+function focusChartOnPerson(personId, { persistSelection = false, treePosition = 'main_to_middle' } = {}) {
+  if (!personId || !activeChartInstance) return false
+  const chart = activeChartInstance
+  const storeMainId = chart.store?.getMainId?.() || null
+  const canUpdateMain = typeof chart.updateMainId === 'function'
+  const shouldUpdateMain = canUpdateMain && storeMainId !== personId
+
+  if (!persistSelection && shouldUpdateMain) {
+    ignoreNextMainSync = true
+  }
+
+  if (shouldUpdateMain) {
+    chart.updateMainId(personId)
+  }
+
+  if (typeof chart.updateTree === 'function') {
+    chart.updateTree({ initial: false, tree_position: treePosition })
+  }
+
+  return true
+}
+
 function activateProfileInteraction(personId, {
   openEditor = true,
   highlightCard = true,
@@ -210,10 +232,12 @@ function activateProfileInteraction(personId, {
   searchLabel = null,
   flashSearch = false,
   preventSearchScroll = false,
-  scrollCard = true
+  scrollCard = true,
+  persistChartSelection = false
 } = {}) {
   if (!personId) return
   const datum = editTreeInstance?.store?.getDatum?.(personId) || null
+  focusChartOnPerson(personId, { persistSelection: persistChartSelection })
   if (highlightCard) {
     highlightCardById(personId, { animate: true })
   }
