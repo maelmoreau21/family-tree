@@ -27,6 +27,7 @@ let activeHighlightedCard = null
 let cardHighlightTimer = null
 let pendingHighlightId = null
 let ignoreNextMainSync = false
+let transientMainSelection = false
 
 function clearElement(target) {
   if (!target) return
@@ -210,11 +211,14 @@ function focusChartOnPerson(personId, { persistSelection = false, treePosition =
   const canUpdateMain = typeof chart.updateMainId === 'function'
   const shouldUpdateMain = canUpdateMain && storeMainId !== personId
 
-  if (!persistSelection && shouldUpdateMain) {
+  if (shouldUpdateMain && !persistSelection) {
+    transientMainSelection = true
     ignoreNextMainSync = true
+  } else if (persistSelection) {
+    transientMainSelection = false
   }
 
-  if (shouldUpdateMain) {
+  if (shouldUpdateMain && canUpdateMain) {
     chart.updateMainId(personId)
   }
 
@@ -1119,6 +1123,7 @@ function setupChart(payload) {
   builderSearchOptions = []
   setBuilderSearchState('loading')
   setMainProfileHandler = null
+  transientMainSelection = false
   renderBreadcrumbTrail(null)
   builderSearchInput = null
   setSearchPanelFocusState(false)
@@ -1944,7 +1949,11 @@ function attachPanelControls({ chart, card }) {
       nextConfigMain = null
     }
 
-    if (!ignoreNextMainSync && storeMainId && availableIds.has(storeMainId)) {
+    const configMissing = !nextConfigMain
+    const shouldAdoptStoreMain = !ignoreNextMainSync && storeMainId && availableIds.has(storeMainId)
+      && (!transientMainSelection || configMissing)
+
+    if (shouldAdoptStoreMain) {
       nextConfigMain = storeMainId
     }
 
@@ -1991,6 +2000,9 @@ function attachPanelControls({ chart, card }) {
     persistConfig = true
   } = {}) {
     if (!id) return
+    if (persistConfig) {
+      transientMainSelection = false
+    }
     const persons = getAllPersons()
     if (!persons.some(person => person.id === id)) {
       refreshMainProfileOptions({ keepSelection: false })
