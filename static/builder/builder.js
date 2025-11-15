@@ -1913,15 +1913,28 @@ function attachPanelControls({ chart, card }) {
 
     const availableIds = new Set(persons.map(d => d.id))
     const preferred = []
-    if (keepSelection && previousValue && availableIds.has(previousValue)) preferred.push(previousValue)
+    if (keepSelection && previousValue && availableIds.has(previousValue)) {
+      preferred.push(previousValue)
+    }
 
     const configMain = typeof chartConfig.mainId === 'string' ? chartConfig.mainId : ''
-    if (configMain && availableIds.has(configMain)) preferred.push(configMain)
+    if (configMain && availableIds.has(configMain)) {
+      preferred.push(configMain)
+    }
 
-    const storeMainId = chart.store && typeof chart.store.getMainId === 'function' ? chart.store.getMainId() : ''
-    if (storeMainId && availableIds.has(storeMainId)) preferred.push(storeMainId)
+    // Only fall back to the current store main when we do not yet have a
+    // persisted main profile available. This keeps card navigation/search
+    // interactions from implicitly changing the "profil par défaut".
+    if (!preferred.length) {
+      const storeMainId = chart.store && typeof chart.store.getMainId === 'function' ? chart.store.getMainId() : ''
+      if (storeMainId && availableIds.has(storeMainId)) {
+        preferred.push(storeMainId)
+      }
+    }
 
-    if (persons[0]?.id) preferred.push(persons[0].id)
+    if (!preferred.length && persons[0]?.id) {
+      preferred.push(persons[0].id)
+    }
 
     const targetValue = preferred.find(Boolean) || ''
     if (targetValue) {
@@ -1950,8 +1963,7 @@ function attachPanelControls({ chart, card }) {
     }
 
     const configMissing = !nextConfigMain
-    const shouldAdoptStoreMain = !ignoreNextMainSync && storeMainId && availableIds.has(storeMainId)
-      && (!transientMainSelection || configMissing)
+    const shouldAdoptStoreMain = configMissing && !ignoreNextMainSync && storeMainId && availableIds.has(storeMainId)
 
     if (shouldAdoptStoreMain) {
       nextConfigMain = storeMainId
