@@ -192,7 +192,10 @@ function createPath(
       const p3 = { x: points[points.length - 1][0], y: points[points.length - 1][1] }
       // prefer using explicit cubic bezier for ancestry/descendant links to control offsets
       if ((isAncestorLink || isDescendantLink) && !link.spouse) {
-        const { d: pathStr } = cubicBezierPath(p0, p3, center)
+        const axisDirection = isHorizontal
+          ? Math.sign((p3.x - p0.x) || 1)
+          : Math.sign((p3.y - p0.y) || 1)
+        const { d: pathStr } = cubicBezierPath(p0, p3, center, isHorizontal, axisDirection)
         return pathStr
       }
     }
@@ -209,7 +212,13 @@ function createPath(
   return monotoneLine(points) ?? buildPolylinePath(fallbackPoints)
 }
 
-function cubicBezierPath(p0: { x: number; y: number }, p3: { x: number; y: number }, center: { x: number; y: number } | null = null) {
+function cubicBezierPath(
+  p0: { x: number; y: number },
+  p3: { x: number; y: number },
+  center: { x: number; y: number } | null = null,
+  isHorizontal: boolean = false,
+  axisDirection: number = 1
+) {
   const x0 = p0.x
   const y0 = p0.y
   const x3 = p3.x
@@ -232,6 +241,15 @@ function cubicBezierPath(p0: { x: number; y: number }, p3: { x: number; y: numbe
       ux = -ux
       uy = -uy
     }
+  }
+
+  const enforcedDirection = axisDirection === 0 ? 1 : Math.sign(axisDirection)
+  if (isHorizontal) {
+    const targetSign = enforcedDirection || 1
+    ux = Math.abs(ux) * targetSign
+  } else {
+    const targetSign = enforcedDirection || 1
+    uy = Math.abs(uy) * targetSign
   }
   // adaptive base offset relative to segment length (clamped)
   const base = Math.min(140, Math.max(24, Math.hypot(dx, dy) * 0.18))
