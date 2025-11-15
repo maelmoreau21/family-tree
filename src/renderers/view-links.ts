@@ -71,21 +71,7 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
       .attr("d", createPath(d, false, linkStyle, tree.is_horizontal, { x: tree.dim.center_x, y: tree.dim.center_y }))
       .style("opacity", 1)
       .attr("transform", "translate(0,0)")
-    // Optional debug overlay to show control points
-    try {
-      const debugFlag = (window as any).__F3_LINK_DEBUG === true
-      if (debugFlag && !d.spouse) {
-        const points = (d.curve ? (d.d && d.d.slice?.(0)) : null) || (d.d ? d.d : null)
-        if (points && points.length >= 2) {
-          const p0 = { x: points[0][0], y: points[0][1] }
-          const p3 = { x: points[points.length - 1][0], y: points[points.length - 1][1] }
-          const controls = cubicBezierPath(p0, p3).controls
-          drawDebugControls(svg as unknown as SVGSVGElement, p0, p3, controls)
-        }
-      }
-    } catch (e) {
-      /* ignore debug errors */
-    }
+    
   }
 
   function linkUpdate(this: SVGPathElement, d: Link) {
@@ -387,26 +373,4 @@ function computeCornerRadius(prevLength: number, nextLength: number, isHorizonta
   return Math.min(clampedTarget, maxGeometricRadius);
 }
 
-function drawDebugControls(svgRoot: SVGSVGElement, p0: { x: number; y: number }, p3: { x: number; y: number }, controls: { c1: { x: number; y: number }; c2: { x: number; y: number } }) {
-  try {
-    // remove any previous debug overlay
-    const prev = svgRoot.querySelector('.debug-controls')
-    if (prev) prev.remove()
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-    g.setAttribute('class', 'debug-controls')
-    const pts = [p0, controls.c1, controls.c2, p3]
-    pts.forEach((pt, idx) => {
-      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
-      c.setAttribute('cx', String(pt.x))
-      c.setAttribute('cy', String(pt.y))
-      c.setAttribute('r', idx === 0 || idx === pts.length - 1 ? '3' : '2')
-      c.setAttribute('fill', idx === 0 || idx === pts.length - 1 ? 'black' : 'none')
-      c.setAttribute('stroke', 'black')
-      c.setAttribute('stroke-width', '1')
-      g.appendChild(c)
-    })
-    svgRoot.appendChild(g)
-  } catch (e) {
-    /* ignore */
-  }
-}
+ 

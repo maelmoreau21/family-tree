@@ -12,16 +12,6 @@ export function createNewPerson({data, rels}: {data: Datum['data'], rels?: {pare
     }
 }
 
-export function createNewPersonWithGenderFromRel({data, rel_type, rel_datum}: {data: Datum['data'], rel_type: RelType, rel_datum: Datum}) {
-  const gender = getGenderFromRelative(rel_datum, rel_type)
-  data = Object.assign(data || {}, {gender})
-  return createNewPerson({data})
-
-  function getGenderFromRelative(rel_datum: Datum, rel_type: RelType) {
-    return (["daughter", "mother"].includes(rel_type) || rel_type === "spouse" && rel_datum.data.gender === "M") ? "F" : "M"
-  }
-}
-
 export function addNewPerson({data_stash, datum}: {data_stash: Data, datum: Datum}) {
   data_stash.push(datum)
 }

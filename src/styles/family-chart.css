@@ -372,7 +372,7 @@
 }
 
 .f3 .card.card-has-hidden-relatives {
-  /* Removed green halo: kept for historical reasons but disabled by default */
+  /* Removed green halo */
   box-shadow: none;
 }
 

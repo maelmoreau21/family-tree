@@ -477,13 +477,7 @@ body.controls-collapsed .panel-toggle {
   padding-top: 0.25rem;
 }
 
-.section-divider {
-  width: 100%;
-  border: none;
-  height: 1px;
-  background: rgba(148, 163, 184, 0.2);
-  margin: 0.75rem 0;
-}
+/* .section-divider removed — no longer used in builder markup */
 
 .panel-body fieldset {
   /* remove the pale frame around detail groups in the builder */

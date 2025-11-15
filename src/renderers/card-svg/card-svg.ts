@@ -8,7 +8,7 @@ import { CardDim } from "./templates"
 import { Store } from "../../types/store"
 import { clearElement, updateSelectionHtml } from "../../utils/safe-html"
 
-// todo: remove store from props
+ 
 interface CardSvgProps {
   store: Store
   svg: SVGElement

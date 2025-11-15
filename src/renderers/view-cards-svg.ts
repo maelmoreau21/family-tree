@@ -22,7 +22,6 @@ export default function updateCardsSvg(svg: SVGElement, tree: Tree, Card: SvgCar
   card_enter.each(d => calculateEnterAndExitPositions(d, true, false))
 
   card_exit.each(cardExit)
-  card.each(cardUpdateNoEnter)
   card_enter.each(cardEnter)
   card_update.each(cardUpdate)
 
@@ -34,7 +33,7 @@ export default function updateCardsSvg(svg: SVGElement, tree: Tree, Card: SvgCar
     Card.call(this, d)
   }
 
-  function cardUpdateNoEnter(this: SVGGElement) {}
+ 
 
   function cardUpdate(this: SVGGElement, d: TreeDatum) {
     Card.call(this, d)
