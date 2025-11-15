@@ -192,7 +192,11 @@ function createPath(
       const p3 = { x: points[points.length - 1][0], y: points[points.length - 1][1] }
       // prefer using explicit cubic bezier for ancestry/descendant links to control offsets
       if ((isAncestorLink || isDescendantLink) && !link.spouse) {
-        const { d: pathStr } = cubicBezierPath(p0, p3, center)
+        const { d: pathStr } = cubicBezierPath(p0, p3, {
+          center,
+          via: points,
+          isHorizontal
+        })
         return pathStr
       }
     }
@@ -209,43 +213,110 @@ function createPath(
   return monotoneLine(points) ?? buildPolylinePath(fallbackPoints)
 }
 
+type CubicOptions = {
+  center?: { x: number; y: number } | null
+  via?: [number, number][]
+  isHorizontal?: boolean
+}
+
 function cubicBezierPath(
   p0: { x: number; y: number },
   p3: { x: number; y: number },
-  center: { x: number; y: number } | null = null,
+  options: CubicOptions = {}
 ) {
+  const { center = null, via, isHorizontal = false } = options
   const x0 = p0.x
   const y0 = p0.y
   const x3 = p3.x
   const y3 = p3.y
   const dx = x3 - x0
   const dy = y3 - y0
-  const len = Math.hypot(dx, dy) || 1
-  // normalized perpendicular (left-hand normal)
-  let ux = -dy / len
-  let uy = dx / len
-  // If given a center, choose the direction of the offset (sign) so that the
-  // curve bulges away from the chart center to avoid flipped curves across sides.
-  if (center) {
+  const span = Math.hypot(dx, dy) || 1
+
+  const startNext = via && via.length > 1 ? via[1] : null
+  const endPrev = via && via.length > 1 ? via[via.length - 2] : null
+  const startDir = normalizeVector(startNext ? [startNext[0] - x0, startNext[1] - y0] : [dx, dy])
+  const endDir = normalizeVector(endPrev ? [x3 - endPrev[0], y3 - endPrev[1]] : [dx, dy])
+
+  let normal = normalizeVector([-dy, dx])
+
+  if (via && via.length >= 3) {
+    const segMid = { x: x0 + dx / 2, y: y0 + dy / 2 }
+    const anchor = via[Math.floor(via.length / 2)]
+    const toAnchor: [number, number] = [anchor[0] - segMid.x, anchor[1] - segMid.y]
+    if (dotProduct(toAnchor, normal) < 0) {
+      normal = [-normal[0], -normal[1]]
+    }
+  } else if (center) {
     const mx = x0 + dx / 2
     const my = y0 + dy / 2
     const toCenterX = mx - center.x
     const toCenterY = my - center.y
     const cross = dx * toCenterY - dy * toCenterX
     if (cross < 0) {
-      ux = -ux
-      uy = -uy
+      normal = [-normal[0], -normal[1]]
     }
   }
 
-  // adaptive base offset relative to segment length (clamped)
-  const base = Math.min(140, Math.max(24, Math.hypot(dx, dy) * 0.18))
-  const c1 = { x: x0 + dx * 0.25 + ux * base, y: y0 + dy * 0.25 + uy * base }
-  const c2 = { x: x0 + dx * 0.75 + ux * base, y: y0 + dy * 0.75 + uy * base }
+  const startSeg = startNext ? distancePoints([x0, y0], startNext) : span
+  const endSeg = endPrev ? distancePoints(endPrev, [x3, y3]) : span
+  const bias = Math.min(0.65 * span, Math.max(18, span * 0.28))
+  const handle1 = clamp(startSeg * 0.9 + bias * 0.35, 16, span * 0.72)
+  const handle2 = clamp(endSeg * 0.9 + bias * 0.35, 16, span * 0.72)
+
+  let c1 = {
+    x: x0 + startDir[0] * handle1,
+    y: y0 + startDir[1] * handle1
+  }
+  let c2 = {
+    x: x3 - endDir[0] * handle2,
+    y: y3 - endDir[1] * handle2
+  }
+
+  const bend = via && via.length >= 3 ? distancePointToSegment(
+    { x: via[Math.floor(via.length / 2)][0], y: via[Math.floor(via.length / 2)][1] },
+    { x: x0, y: y0 },
+    { x: x3, y: y3 }
+  ) : 0
+  const lateralBase = bend > 0 ? bend : span * 0.14
+  const lateral = clamp(lateralBase, 0, isHorizontal ? 120 : 140) * 0.45
+
+  const nx = normal[0]
+  const ny = normal[1]
+
+  c1 = { x: c1.x + nx * lateral, y: c1.y + ny * lateral }
+  c2 = { x: c2.x + nx * lateral, y: c2.y + ny * lateral }
+
   return {
     d: `M ${formatNumber(x0)},${formatNumber(y0)} C ${formatNumber(c1.x)},${formatNumber(c1.y)} ${formatNumber(c2.x)},${formatNumber(c2.y)} ${formatNumber(x3)},${formatNumber(y3)}`,
     controls: { c1, c2 }
   }
+}
+
+function normalizeVector(vec: [number, number]): [number, number] {
+  const len = Math.hypot(vec[0], vec[1])
+  if (!len || len < 1e-5) return [0, 0]
+  return [vec[0] / len, vec[1] / len]
+}
+
+function dotProduct(a: [number, number], b: [number, number]): number {
+  return a[0] * b[0] + a[1] * b[1]
+}
+
+function distancePoints(a: [number, number], b: [number, number]): number {
+  return Math.hypot(a[0] - b[0], a[1] - b[1])
+}
+
+function distancePointToSegment(p: { x: number; y: number }, a: { x: number; y: number }, b: { x: number; y: number }): number {
+  const abx = b.x - a.x
+  const aby = b.y - a.y
+  const abLenSq = abx * abx + aby * aby || 1
+  const apx = p.x - a.x
+  const apy = p.y - a.y
+  const t = clamp((apx * abx + apy * aby) / abLenSq, 0, 1)
+  const projx = a.x + abx * t
+  const projy = a.y + aby * t
+  return Math.hypot(p.x - projx, p.y - projy)
 }
 
 function applySiblingOffset(points: [number, number][], meta: AnimationMeta | undefined): [number, number][] {
