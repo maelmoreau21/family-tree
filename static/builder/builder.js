@@ -232,7 +232,7 @@ function renderBreadcrumbTrail(mainId) {
       element.type = 'button'
       element.textContent = label
       element.addEventListener('click', () => {
-        requestSetMainProfile(personId, { openEditor: false, highlightCard: true })
+        requestSetMainProfile(personId, { openEditor: false, highlightCard: true, persistConfig: false })
       })
     }
     breadcrumbRoot.append(element)
@@ -1122,7 +1122,7 @@ function setupChart(payload) {
         try {
           const id = treeDatum && treeDatum.data && treeDatum.data.id
           if (!id) return
-          requestSetMainProfile(id, { openEditor: true, highlightCard: true, source: 'card' })
+          requestSetMainProfile(id, { openEditor: true, highlightCard: true, source: 'card', persistConfig: false })
           const label = buildPersonLabel(treeDatum)
           focusBuilderSearch({ label, select: true, flash: false })
         } catch (e) {
@@ -1136,7 +1136,7 @@ function setupChart(payload) {
         try {
           const id = treeDatum && treeDatum.data && treeDatum.data.id
           if (!id) return
-          requestSetMainProfile(id, { openEditor: true, highlightCard: true, source: 'mini-tree' })
+          requestSetMainProfile(id, { openEditor: true, highlightCard: true, source: 'mini-tree', persistConfig: false })
           const label = buildPersonLabel(treeDatum)
           focusBuilderSearch({ label, select: true, flash: false })
         } catch (e) {
