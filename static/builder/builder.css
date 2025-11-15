@@ -169,7 +169,8 @@ body.controls-collapsed .controls > * {
      increased to push controls lower and avoid overlap with the toggle */
   padding: 4rem 1.25rem 2rem;
   overflow-y: auto;
-  max-height: calc(100vh - 4rem);
+  /* account for increased top/bottom spacing to avoid overflow */
+  max-height: calc(100vh - 3.8rem);
   height: auto;
   min-height: 0;
   overscroll-behavior: contain;
@@ -178,7 +179,10 @@ body.controls-collapsed .controls > * {
   /* overlay behaviour */
   position: absolute;
   left: 1.25rem;
-  top: 0.85rem;
+  /* increase top gap x3 compared to viewer's default 0.85rem */
+  top: 2.55rem;
+  /* add bottom spacing so there is a visible space between the panel and bottom of the screen */
+  bottom: 1.25rem;
   width: clamp(260px, 22vw, 360px);
   z-index: 11;
 }
