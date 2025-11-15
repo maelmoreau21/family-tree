@@ -109,7 +109,8 @@ button.primary:hover {
   max-width: 260px;
   position: absolute;
   top: 0.85rem;
-  left: 0.85rem;
+  /* place toggle just outside the panel's right edge so it's visible when panel is open */
+  left: calc(clamp(260px, 22vw, 360px) + 0.85rem);
   z-index: 12;
 }
 
@@ -133,6 +134,11 @@ body.controls-collapsed .controls > * {
   display: none;
 }
 
+/* When the controls are collapsed, put the toggle back to the top-left */
+body.controls-collapsed .panel-toggle {
+  left: 0.85rem;
+}
+
 .workspace {
   position: relative;
   flex: 1 1 auto;
@@ -152,7 +158,7 @@ body.controls-collapsed .controls > * {
   gap: var(--space);
   background: rgba(15, 23, 42, 0.8);
   border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 12px;
+  border-radius: 0 12px 12px 0;
   padding: 4rem 1.25rem 2rem;
   overflow-y: auto;
   max-height: calc(100vh - 3.8rem);
@@ -160,7 +166,7 @@ body.controls-collapsed .controls > * {
   min-height: 0;
   overscroll-behavior: contain;
   position: absolute;
-  left: 1.25rem;
+  left: 0;
   top: 2.55rem;
   bottom: 1.25rem;
   width: clamp(260px, 22vw, 360px);
