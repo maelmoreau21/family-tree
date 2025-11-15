@@ -192,10 +192,12 @@ function createPath(
       const p3 = { x: points[points.length - 1][0], y: points[points.length - 1][1] }
       // prefer using explicit cubic bezier for ancestry/descendant links to control offsets
       if ((isAncestorLink || isDescendantLink) && !link.spouse) {
-        const axisDirection = isHorizontal
-          ? Math.sign((p3.x - p0.x) || 1)
-          : Math.sign((p3.y - p0.y) || 1)
-        const { d: pathStr } = cubicBezierPath(p0, p3, center, isHorizontal, axisDirection)
+        const linkDirection: 'ancestor' | 'descendant' | 'other' = isAncestorLink
+          ? 'ancestor'
+          : isDescendantLink
+            ? 'descendant'
+            : 'other'
+        const { d: pathStr } = cubicBezierPath(p0, p3, center, isHorizontal, linkDirection)
         return pathStr
       }
     }
@@ -217,7 +219,7 @@ function cubicBezierPath(
   p3: { x: number; y: number },
   center: { x: number; y: number } | null = null,
   isHorizontal: boolean = false,
-  axisDirection: number = 1
+  linkDirection: 'ancestor' | 'descendant' | 'other' = 'other'
 ) {
   const x0 = p0.x
   const y0 = p0.y
@@ -226,6 +228,32 @@ function cubicBezierPath(
   const dx = x3 - x0
   const dy = y3 - y0
   const len = Math.hypot(dx, dy) || 1
+
+  if (linkDirection === 'descendant') {
+    if (isHorizontal) {
+      const axisSign = dx === 0 ? 1 : Math.sign(dx)
+      const axisMagnitude = clamp(Math.abs(dx) * 0.45, 26, 140)
+      const lateralSign = dy === 0 ? 0 : Math.sign(dy)
+      const lateralMagnitude = clamp(Math.abs(dy) * 0.22, 0, 60)
+      const c1 = { x: x0 + axisMagnitude * axisSign, y: y0 + lateralMagnitude * lateralSign }
+      const c2 = { x: x3 - axisMagnitude * axisSign, y: y3 - lateralMagnitude * lateralSign }
+      return {
+        d: `M ${formatNumber(x0)},${formatNumber(y0)} C ${formatNumber(c1.x)},${formatNumber(c1.y)} ${formatNumber(c2.x)},${formatNumber(c2.y)} ${formatNumber(x3)},${formatNumber(y3)}`,
+        controls: { c1, c2 }
+      }
+    }
+
+    const axisSign = dy === 0 ? 1 : Math.sign(dy)
+    const axisMagnitude = clamp(Math.abs(dy) * 0.45, 26, 140)
+    const lateralSign = dx === 0 ? 0 : Math.sign(dx)
+    const lateralMagnitude = clamp(Math.abs(dx) * 0.18, 0, 64)
+    const c1 = { x: x0 + lateralMagnitude * lateralSign, y: y0 + axisMagnitude * axisSign }
+    const c2 = { x: x3 - lateralMagnitude * lateralSign, y: y3 - axisMagnitude * axisSign }
+    return {
+      d: `M ${formatNumber(x0)},${formatNumber(y0)} C ${formatNumber(c1.x)},${formatNumber(c1.y)} ${formatNumber(c2.x)},${formatNumber(c2.y)} ${formatNumber(x3)},${formatNumber(y3)}`,
+      controls: { c1, c2 }
+    }
+  }
   // normalized perpendicular (left-hand normal)
   let ux = -dy / len
   let uy = dx / len
@@ -243,14 +271,6 @@ function cubicBezierPath(
     }
   }
 
-  const enforcedDirection = axisDirection === 0 ? 1 : Math.sign(axisDirection)
-  if (isHorizontal) {
-    const targetSign = enforcedDirection || 1
-    ux = Math.abs(ux) * targetSign
-  } else {
-    const targetSign = enforcedDirection || 1
-    uy = Math.abs(uy) * targetSign
-  }
   // adaptive base offset relative to segment length (clamped)
   const base = Math.min(140, Math.max(24, Math.hypot(dx, dy) * 0.18))
   const c1 = { x: x0 + dx * 0.25 + ux * base, y: y0 + dy * 0.25 + uy * base }
