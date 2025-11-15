@@ -232,11 +232,10 @@ function cubicBezierPath(
   if (linkDirection === 'descendant') {
     if (isHorizontal) {
       const axisSign = dx === 0 ? 1 : Math.sign(dx)
-      const axisMagnitude = clamp(Math.abs(dx) * 0.45, 26, 140)
-      const lateralSign = dy === 0 ? 0 : Math.sign(dy)
-      const lateralMagnitude = clamp(Math.abs(dy) * 0.22, 0, 60)
-      const c1 = { x: x0 + axisMagnitude * axisSign, y: y0 + lateralMagnitude * lateralSign }
-      const c2 = { x: x3 - axisMagnitude * axisSign, y: y3 - lateralMagnitude * lateralSign }
+      const flow = clamp(Math.abs(dx) * 0.42, 22, 140)
+      const bend = clamp(Math.abs(dy) * 0.25, 0, 70) * (dy === 0 ? 0 : Math.sign(dy))
+      const c1 = { x: x0 + flow * axisSign, y: y0 + bend }
+      const c2 = { x: x3 - flow * axisSign, y: y3 - bend }
       return {
         d: `M ${formatNumber(x0)},${formatNumber(y0)} C ${formatNumber(c1.x)},${formatNumber(c1.y)} ${formatNumber(c2.x)},${formatNumber(c2.y)} ${formatNumber(x3)},${formatNumber(y3)}`,
         controls: { c1, c2 }
@@ -244,11 +243,10 @@ function cubicBezierPath(
     }
 
     const axisSign = dy === 0 ? 1 : Math.sign(dy)
-    const axisMagnitude = clamp(Math.abs(dy) * 0.45, 26, 140)
-    const lateralSign = dx === 0 ? 0 : Math.sign(dx)
-    const lateralMagnitude = clamp(Math.abs(dx) * 0.18, 0, 64)
-    const c1 = { x: x0 + lateralMagnitude * lateralSign, y: y0 + axisMagnitude * axisSign }
-    const c2 = { x: x3 - lateralMagnitude * lateralSign, y: y3 - axisMagnitude * axisSign }
+    const flow = clamp(Math.abs(dy) * 0.42, 24, 135)
+    const lateral = clamp((dx) * 0.25, -72, 72)
+    const c1 = { x: x0 + lateral, y: y0 + flow * axisSign }
+    const c2 = { x: x3 - lateral, y: y3 - flow * axisSign }
     return {
       d: `M ${formatNumber(x0)},${formatNumber(y0)} C ${formatNumber(c1.x)},${formatNumber(c1.y)} ${formatNumber(c2.x)},${formatNumber(c2.y)} ${formatNumber(x3)},${formatNumber(y3)}`,
       controls: { c1, c2 }
