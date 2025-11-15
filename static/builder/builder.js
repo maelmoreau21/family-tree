@@ -188,6 +188,49 @@ function highlightCardById(personId, { animate = true } = {}) {
   })
 }
 
+function scrollCardIntoView(personId) {
+  const cardEl = getCardElementByPersonId(personId)
+  if (!cardEl) return false
+  try {
+    cardEl.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' })
+  } catch (error) {
+    try {
+      cardEl.scrollIntoView({ block: 'center', inline: 'center' })
+    } catch (innerError) {
+      /* ignore */
+    }
+  }
+  return true
+}
+
+function activateProfileInteraction(personId, {
+  openEditor = true,
+  highlightCard = true,
+  focusSearch = false,
+  searchLabel = null,
+  flashSearch = false,
+  preventSearchScroll = false,
+  scrollCard = true
+} = {}) {
+  if (!personId) return
+  const datum = editTreeInstance?.store?.getDatum?.(personId) || null
+  if (highlightCard) {
+    highlightCardById(personId, { animate: true })
+  }
+  if (scrollCard) {
+    scrollCardIntoView(personId)
+  }
+  if (focusSearch) {
+    const label = searchLabel || (datum ? buildPersonLabel(datum) : null)
+    if (label) {
+      focusBuilderSearch({ label, select: true, flash: flashSearch, preventScroll: preventSearchScroll })
+    }
+  }
+  if (openEditor && datum && editTreeInstance) {
+    editTreeInstance.open(datum)
+  }
+}
+
 function renderBreadcrumbTrail(mainId) {
   if (!breadcrumbRoot) return
   breadcrumbRoot.dataset.state = mainId ? 'ready' : 'empty'
@@ -232,7 +275,7 @@ function renderBreadcrumbTrail(mainId) {
       element.type = 'button'
       element.textContent = label
       element.addEventListener('click', () => {
-        requestSetMainProfile(personId, { openEditor: false, highlightCard: true, persistConfig: false })
+        activateProfileInteraction(personId, { openEditor: false })
       })
     }
     breadcrumbRoot.append(element)
@@ -599,13 +642,11 @@ function initBuilderSearch(chart) {
         const datum = editTreeInstance?.store?.getDatum?.(id)
         if (!datum) return
 
-        requestSetMainProfile(id, {
+        activateProfileInteraction(id, {
           openEditor: true,
           highlightCard: true,
-          suppressSave: true,
-          persistConfig: false,
           focusSearch: false,
-          source: 'search'
+          scrollCard: true
         })
 
         // Don't use the global status bar for search results to avoid overwriting
@@ -1122,9 +1163,13 @@ function setupChart(payload) {
         try {
           const id = treeDatum && treeDatum.data && treeDatum.data.id
           if (!id) return
-          requestSetMainProfile(id, { openEditor: true, highlightCard: true, source: 'card', persistConfig: false })
           const label = buildPersonLabel(treeDatum)
-          focusBuilderSearch({ label, select: true, flash: false })
+          activateProfileInteraction(id, {
+            openEditor: true,
+            highlightCard: true,
+            focusSearch: true,
+            searchLabel: label
+          })
         } catch (e) {
           console.error('builder: erreur lors du clic sur la carte', e)
         }
@@ -1136,9 +1181,13 @@ function setupChart(payload) {
         try {
           const id = treeDatum && treeDatum.data && treeDatum.data.id
           if (!id) return
-          requestSetMainProfile(id, { openEditor: true, highlightCard: true, source: 'mini-tree', persistConfig: false })
           const label = buildPersonLabel(treeDatum)
-          focusBuilderSearch({ label, select: true, flash: false })
+          activateProfileInteraction(id, {
+            openEditor: true,
+            highlightCard: true,
+            focusSearch: true,
+            searchLabel: label
+          })
         } catch (e) {
           console.error('builder: erreur lors du clic sur le mini-arbre', e)
         }
