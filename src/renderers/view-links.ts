@@ -54,7 +54,7 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
       .attr("stroke", "#fff")
       .attr("stroke-width", 1)
       .style("opacity", 0)
-      .attr("d", createPath(d, true, linkStyle, tree.is_horizontal));
+      .attr("d", createPath(d, true, linkStyle, tree.is_horizontal, { x: tree.dim.center_x, y: tree.dim.center_y }));
 
     const meta = (d as AnimatedLink).__animation
     const extraDelay = meta ? meta.index * siblingDelayStep : 0
@@ -68,9 +68,24 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
 
     // Animate to the final path and fade in in a single transition to avoid conflicts
     path.transition().duration(baseDuration).delay(delay).ease(d3.easeCubicInOut)
-      .attr("d", createPath(d, false, linkStyle, tree.is_horizontal))
+      .attr("d", createPath(d, false, linkStyle, tree.is_horizontal, { x: tree.dim.center_x, y: tree.dim.center_y }))
       .style("opacity", 1)
       .attr("transform", "translate(0,0)")
+    // Optional debug overlay to show control points
+    try {
+      const debugFlag = (window as any).__F3_LINK_DEBUG === true
+      if (debugFlag && !d.spouse) {
+        const points = (d.curve ? (d.d && d.d.slice?.(0)) : null) || (d.d ? d.d : null)
+        if (points && points.length >= 2) {
+          const p0 = { x: points[0][0], y: points[0][1] }
+          const p3 = { x: points[points.length - 1][0], y: points[points.length - 1][1] }
+          const controls = cubicBezierPath(p0, p3).controls
+          drawDebugControls(svg as unknown as SVGSVGElement, p0, p3, controls)
+        }
+      }
+    } catch (e) {
+      /* ignore debug errors */
+    }
   }
 
   function linkUpdate(this: SVGPathElement, d: Link) {
@@ -94,7 +109,7 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
     const extraDelay = meta ? (meta.count - meta.index - 1) * Math.max(30, Math.round(siblingDelayStep * 0.35)) : 0
     // Transition shape back to collapsed (_d) and fade out in one transition, then remove
     path.transition().duration(exitDuration).delay(extraDelay).ease(d3.easeSinInOut)
-      .attr("d", createPath(d as Link, true, linkStyle, tree.is_horizontal))
+      .attr("d", createPath(d as Link, true, linkStyle, tree.is_horizontal, { x: tree.dim.center_x, y: tree.dim.center_y }))
       .style("opacity", 0)
       .attr("transform", "translate(0,0)")
       .on("end", () => path.remove());
@@ -148,7 +163,8 @@ function createPath(
   link: Link,
   collapsed: boolean = false,
   style: LinkStyle = "smooth",
-  isHorizontal: boolean = false
+  isHorizontal: boolean = false,
+  center: { x: number; y: number } | null = null
 ) {
   const animated = link as AnimatedLink;
   const sourcePoints = (collapsed ? link._d() : link.d).map(([x, y]) => [x, y] as [number, number]);
@@ -182,6 +198,18 @@ function createPath(
       .x((d) => d[0])
       .y((d) => d[1])
       .curve(smoothCurve)
+    // If the points only contain a start and end (or simple mid points),
+    // prefer an explicit cubic bezier based on the vector between the end points
+    // to ensure consistent perpendicular offsets and avoid inversion issues.
+    if (points && points.length >= 2) {
+      const p0 = { x: points[0][0], y: points[0][1] }
+      const p3 = { x: points[points.length - 1][0], y: points[points.length - 1][1] }
+      // prefer using explicit cubic bezier for ancestry/descendant links to control offsets
+      if ((isAncestorLink || isDescendantLink) && !link.spouse) {
+        const { d: pathStr } = cubicBezierPath(p0, p3, center)
+        return pathStr
+      }
+    }
 
     return smoothLine(points) ?? buildPolylinePath(fallbackPoints)
   }
@@ -193,6 +221,40 @@ function createPath(
     .curve(isHorizontal ? d3.curveMonotoneX : d3.curveMonotoneY)
 
   return monotoneLine(points) ?? buildPolylinePath(fallbackPoints)
+}
+
+function cubicBezierPath(p0: { x: number; y: number }, p3: { x: number; y: number }, center: { x: number; y: number } | null = null) {
+  const x0 = p0.x
+  const y0 = p0.y
+  const x3 = p3.x
+  const y3 = p3.y
+  const dx = x3 - x0
+  const dy = y3 - y0
+  const len = Math.hypot(dx, dy) || 1
+  // normalized perpendicular (left-hand normal)
+  let ux = -dy / len
+  let uy = dx / len
+  // If given a center, choose the direction of the offset (sign) so that the
+  // curve bulges away from the chart center to avoid flipped curves across sides.
+  if (center) {
+    const mx = x0 + dx / 2
+    const my = y0 + dy / 2
+    const toCenterX = mx - center.x
+    const toCenterY = my - center.y
+    const cross = dx * toCenterY - dy * toCenterX
+    if (cross < 0) {
+      ux = -ux
+      uy = -uy
+    }
+  }
+  // adaptive base offset relative to segment length (clamped)
+  const base = Math.min(140, Math.max(24, Math.hypot(dx, dy) * 0.18))
+  const c1 = { x: x0 + dx * 0.25 + ux * base, y: y0 + dy * 0.25 + uy * base }
+  const c2 = { x: x0 + dx * 0.75 + ux * base, y: y0 + dy * 0.75 + uy * base }
+  return {
+    d: `M ${formatNumber(x0)},${formatNumber(y0)} C ${formatNumber(c1.x)},${formatNumber(c1.y)} ${formatNumber(c2.x)},${formatNumber(c2.y)} ${formatNumber(x3)},${formatNumber(y3)}`,
+    controls: { c1, c2 }
+  }
 }
 
 function applySiblingOffset(points: [number, number][], meta: AnimationMeta | undefined): [number, number][] {
@@ -323,4 +385,28 @@ function computeCornerRadius(prevLength: number, nextLength: number, isHorizonta
   const clampedTarget = Math.max(minRadius, Math.min(easedTarget, idealRadius));
 
   return Math.min(clampedTarget, maxGeometricRadius);
+}
+
+function drawDebugControls(svgRoot: SVGSVGElement, p0: { x: number; y: number }, p3: { x: number; y: number }, controls: { c1: { x: number; y: number }; c2: { x: number; y: number } }) {
+  try {
+    // remove any previous debug overlay
+    const prev = svgRoot.querySelector('.debug-controls')
+    if (prev) prev.remove()
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g')
+    g.setAttribute('class', 'debug-controls')
+    const pts = [p0, controls.c1, controls.c2, p3]
+    pts.forEach((pt, idx) => {
+      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
+      c.setAttribute('cx', String(pt.x))
+      c.setAttribute('cy', String(pt.y))
+      c.setAttribute('r', idx === 0 || idx === pts.length - 1 ? '3' : '2')
+      c.setAttribute('fill', idx === 0 || idx === pts.length - 1 ? 'black' : 'none')
+      c.setAttribute('stroke', 'black')
+      c.setAttribute('stroke-width', '1')
+      g.appendChild(c)
+    })
+    svgRoot.appendChild(g)
+  } catch (e) {
+    /* ignore */
+  }
 }
