@@ -32,7 +32,6 @@ export function formCreatorSetup({
   canDelete,
 }: FormCreatorSetupProps) {
   const warnedRelReferenceGetRelLabel = new Set<string>()
-  const warnedRelReferenceGetRelLabel = new Set<string>()
 
   let can_delete = canDelete ? canDelete(datum) : true
   const can_edit = canEdit ? canEdit(datum) : true
