@@ -1,6 +1,7 @@
+
 # Family Tree — Démarrage (Docker)
 
-Ce dépôt contient l'application Family Tree (viewer, builder et API).
+Un guide rapide pour démarrer l'application localement via Docker.
 
 ## Lancer via Docker (run)
 
@@ -22,6 +23,11 @@ docker compose up -d --build
 ```
 
 ---
+
+## Ports
+
+- Viewer: 7920
+- Builder: 7921
 
 ## Licence
 
