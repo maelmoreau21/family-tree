@@ -26,6 +26,7 @@ let activeChartInstance = null
 let activeHighlightedCard = null
 let cardHighlightTimer = null
 let pendingHighlightId = null
+let ignoreNextMainSync = false
 
 function clearElement(target) {
   if (!target) return
@@ -596,46 +597,32 @@ function initBuilderSearch(chart) {
       onSelect: (id) => {
         if (!id) return
         const datum = editTreeInstance?.store?.getDatum?.(id)
-        if (datum && editTreeInstance) {
-          // open the editor for this datum (existing behaviour)
-          editTreeInstance.open(datum)
-          // visual highlight
-          highlightCardById(id, { animate: true })
+        if (!datum) return
 
-          // status message and clear input to mirror viewer UX
-          try {
-            const label = buildPersonLabel(datum)
-            setStatus(`Resultat : ${label}`, 'info')
-          } catch (e) {
-            /* ignore */
-          }
-          try {
-            const input = searchTarget.querySelector('input')
-            if (input) {
-              input.value = ''
-              input.blur()
-            }
-          } catch (e) {
-            /* ignore */
-          }
+        requestSetMainProfile(id, {
+          openEditor: true,
+          highlightCard: true,
+          suppressSave: true,
+          persistConfig: false,
+          focusSearch: false,
+          source: 'search'
+        })
 
-          // attempt to center/zoom the selected person in the chart as a fallback (without changing mainId)
-          try {
-            const treeDatum = activeChartInstance?.store?.getTreeDatum?.(id) || null
-            const svg = activeChartInstance?.svg || null
-            if (treeDatum && svg && typeof f3.cardToMiddle === 'function') {
-              requestAnimationFrame(() => {
-                try {
-                  const svg_dim = svg.getBoundingClientRect()
-                  f3.cardToMiddle({ datum: treeDatum, svg, svg_dim, transition_time: chartConfig.transitionTime })
-                } catch (inner) {
-                  console.warn('builder: cardToMiddle animation failed', inner)
-                }
-              })
-            }
-          } catch (e) {
-            console.warn('builder: unable to center selected person', e)
+        try {
+          const label = buildPersonLabel(datum)
+          setStatus(`Resultat : ${label}`, 'info')
+        } catch (e) {
+          /* ignore */
+        }
+
+        try {
+          const input = searchTarget.querySelector('input')
+          if (input) {
+            input.value = ''
+            input.blur()
           }
+        } catch (e) {
+          /* ignore */
         }
       }
     }
@@ -1888,7 +1875,7 @@ function attachPanelControls({ chart, card }) {
       nextConfigMain = null
     }
 
-    if (!nextConfigMain && storeMainId && availableIds.has(storeMainId)) {
+    if (!ignoreNextMainSync && storeMainId && availableIds.has(storeMainId)) {
       nextConfigMain = storeMainId
     }
 
@@ -1923,6 +1910,7 @@ function attachPanelControls({ chart, card }) {
     }
 
     updateMainProfileDisplay(nextConfigMain || null)
+    ignoreNextMainSync = false
   }
 
   function setMainProfile(id, {
@@ -1930,7 +1918,8 @@ function attachPanelControls({ chart, card }) {
     suppressSave = false,
     focusSearch = false,
     highlightCard = true,
-    source = 'manual'
+    source = 'manual',
+    persistConfig = true
   } = {}) {
     if (!id) return
     const persons = getAllPersons()
@@ -1939,7 +1928,7 @@ function attachPanelControls({ chart, card }) {
       return
     }
 
-    const configChanged = chartConfig.mainId !== id
+    const configChanged = persistConfig && chartConfig.mainId !== id
     if (configChanged) {
       chartConfig = { ...chartConfig, mainId: id }
     }
@@ -1955,6 +1944,10 @@ function attachPanelControls({ chart, card }) {
       ? chart.store.getMainId()
       : null
 
+    if (!persistConfig && storeMainBefore !== id) {
+      ignoreNextMainSync = true
+    }
+
     const shouldUpdateMainId = chart && typeof chart.updateMainId === 'function'
     let recenterAlreadyScheduled = false
     if (shouldUpdateMainId && storeMainBefore !== id) {
@@ -1963,12 +1956,16 @@ function attachPanelControls({ chart, card }) {
       recenterAlreadyScheduled = true
     }
 
-    if (mainProfileSelect && mainProfileSelect.value !== id) {
+    if (persistConfig && mainProfileSelect && mainProfileSelect.value !== id) {
       mainProfileSelect.value = id
       mainProfileSelect.disabled = false
     }
 
-    updateMainProfileDisplay(id)
+    if (persistConfig) {
+      updateMainProfileDisplay(id)
+    } else {
+      updateMainProfileDisplay(chartConfig.mainId || null)
+    }
     // Ensure the chart recenters on the selected person (match viewer behaviour).
     // If the main id was already set, callers may still expect a recenter.
     try {
