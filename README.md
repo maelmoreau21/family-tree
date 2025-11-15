@@ -1,4 +1,3 @@
-
 # Family Tree — Démarrage (Docker)
 
 Un guide rapide pour démarrer l'application localement via Docker.
@@ -16,7 +15,7 @@ docker run --rm -p 7920:7920 -p 7921:7921 \
 
 ## Lancer via Docker Compose
 
-Le fichier `docker-compose.yml` inclus démarre l'application et une base Postgres pour le développement local.
+Le fichier `docker-compose.yml` démarre l'application et PostgreSQL pour le développement local.
 
 ```bash
 docker compose up -d --build
@@ -32,4 +31,3 @@ docker compose up -d --build
 ## Licence
 
 MIT — voir `LICENSE.txt`.
-
