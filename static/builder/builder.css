@@ -109,8 +109,7 @@ button.primary:hover {
   max-width: 260px;
   position: absolute;
   top: 0.85rem;
-  /* place toggle just outside the panel's right edge so it's visible when panel is open */
-  left: calc(clamp(260px, 22vw, 360px) + 0.85rem);
+  left: 0.85rem;
   z-index: 12;
 }
 
@@ -168,7 +167,7 @@ body.controls-collapsed .panel-toggle {
   overscroll-behavior: contain;
   position: absolute;
   left: 0;
-  top: 2.55rem;
+  top: 3.5rem;
   bottom: 1.25rem;
   width: clamp(260px, 22vw, 360px);
   z-index: 11;

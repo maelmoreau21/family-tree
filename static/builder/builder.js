@@ -608,12 +608,8 @@ function initBuilderSearch(chart) {
           source: 'search'
         })
 
-        try {
-          const label = buildPersonLabel(datum)
-          setStatus(`Resultat : ${label}`, 'info')
-        } catch (e) {
-          /* ignore */
-        }
+        // Don't use the global status bar for search results to avoid overwriting
+        // the persistent editor status located at the bottom of the panel.
 
         try {
           const input = searchTarget.querySelector('input')
