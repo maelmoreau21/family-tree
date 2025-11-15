@@ -186,6 +186,19 @@ body.controls-collapsed .controls > * {
 .canvas {
   grid-area: canvas;
   min-height: 0;
+  /* Make canvas fill entire viewport as an overlay so the chart covers the full screen */
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 1; /* base layer under overlay controls */
 }
 
 .chart-toolbar {
@@ -254,7 +267,7 @@ body.controls-collapsed .controls > * {
   width: 100%;
   flex: 1 1 auto;
   min-height: 0;
-  height: 100%;
+  height: 100vh; /* ensure chart occupies full viewport height inside canvas */
 }
 
 /* Viewer-like selection outline for cards */
