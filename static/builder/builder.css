@@ -93,7 +93,8 @@ button.primary:hover {
 .workspace {
   flex: 1 1 auto;
   display: grid;
-  grid-template-columns: minmax(300px, 360px) 1fr;
+  /* Make the chart full-width by default and position controls as an overlay */
+  grid-template-columns: 1fr;
   /* top row is only for the overlay toggle (absolutely positioned) - collapse its reserved height */
   grid-template-rows: 0 1fr;
   grid-template-areas:
@@ -137,7 +138,7 @@ button.primary:hover {
 }
 
 body.controls-collapsed .workspace {
-  grid-template-columns: 0 1fr;
+  grid-template-columns: 1fr;
   gap: 0.75rem 0;
   column-gap: 0;
 }
@@ -174,6 +175,12 @@ body.controls-collapsed .controls > * {
   overscroll-behavior: contain;
   grid-area: controls;
   align-self: start;
+  /* overlay behaviour */
+  position: absolute;
+  left: 1.25rem;
+  top: 0.85rem;
+  width: clamp(260px, 22vw, 360px);
+  z-index: 11;
 }
 
 .canvas {
