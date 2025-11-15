@@ -619,14 +619,7 @@ function initBuilderSearch(chart) {
             /* ignore */
           }
 
-          // update the chart's main id and center on the selected person (mirror viewer behavior)
-          try {
-            requestSetMainProfile(id, { openEditor: true, focusSearch: false, highlightCard: true, source: 'search' })
-          } catch (e) {
-            /* ignore */
-          }
-
-          // attempt to center/zoom the selected person in the chart as a fallback (if requestSetMainProfile didn't already)
+          // attempt to center/zoom the selected person in the chart as a fallback (without changing mainId)
           try {
             const treeDatum = activeChartInstance?.store?.getTreeDatum?.(id) || null
             const svg = activeChartInstance?.svg || null
