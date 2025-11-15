@@ -170,11 +170,15 @@ function createPath(
   }
 
   if (style === "smooth") {
+    const smoothCurve = link.is_ancestry
+      ? (isHorizontal ? d3.curveMonotoneX : d3.curveMonotoneY)
+      : d3.curveBasis
+
     const smoothLine = d3
       .line<[number, number]>()
       .x((d) => d[0])
       .y((d) => d[1])
-      .curve(d3.curveBasis)
+      .curve(smoothCurve)
 
     return smoothLine(points) ?? buildPolylinePath(fallbackPoints)
   }
