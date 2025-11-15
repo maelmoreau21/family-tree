@@ -192,12 +192,7 @@ function createPath(
       const p3 = { x: points[points.length - 1][0], y: points[points.length - 1][1] }
       // prefer using explicit cubic bezier for ancestry/descendant links to control offsets
       if ((isAncestorLink || isDescendantLink) && !link.spouse) {
-        const linkDirection: 'ancestor' | 'descendant' | 'other' = isAncestorLink
-          ? 'ancestor'
-          : isDescendantLink
-            ? 'descendant'
-            : 'other'
-        const { d: pathStr } = cubicBezierPath(p0, p3, center, isHorizontal, linkDirection)
+        const { d: pathStr } = cubicBezierPath(p0, p3, center)
         return pathStr
       }
     }
@@ -218,8 +213,6 @@ function cubicBezierPath(
   p0: { x: number; y: number },
   p3: { x: number; y: number },
   center: { x: number; y: number } | null = null,
-  isHorizontal: boolean = false,
-  linkDirection: 'ancestor' | 'descendant' | 'other' = 'other'
 ) {
   const x0 = p0.x
   const y0 = p0.y
@@ -228,28 +221,6 @@ function cubicBezierPath(
   const dx = x3 - x0
   const dy = y3 - y0
   const len = Math.hypot(dx, dy) || 1
-
-  if (linkDirection === 'descendant') {
-    if (isHorizontal) {
-      const axisSign = dx === 0 ? 1 : Math.sign(dx)
-      const flow = clamp(Math.abs(dx) * 0.4, 18, 130)
-      const c1 = { x: x0 + flow * axisSign, y: y0 }
-      const c2 = { x: x3 - flow * axisSign, y: y3 }
-      return {
-        d: `M ${formatNumber(x0)},${formatNumber(y0)} C ${formatNumber(c1.x)},${formatNumber(c1.y)} ${formatNumber(c2.x)},${formatNumber(c2.y)} ${formatNumber(x3)},${formatNumber(y3)}`,
-        controls: { c1, c2 }
-      }
-    }
-
-    const axisSign = dy === 0 ? 1 : Math.sign(dy)
-    const flow = clamp(Math.abs(dy) * 0.4, 20, 120)
-    const c1 = { x: x0, y: y0 + flow * axisSign }
-    const c2 = { x: x3, y: y3 - flow * axisSign }
-    return {
-      d: `M ${formatNumber(x0)},${formatNumber(y0)} C ${formatNumber(c1.x)},${formatNumber(c1.y)} ${formatNumber(c2.x)},${formatNumber(c2.y)} ${formatNumber(x3)},${formatNumber(y3)}`,
-      controls: { c1, c2 }
-    }
-  }
   // normalized perpendicular (left-hand normal)
   let ux = -dy / len
   let uy = dx / len
