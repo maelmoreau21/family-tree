@@ -39,6 +39,7 @@ export default function(tree: Tree, svg: SVGElement, Card: CardHandler, props: V
   else if (tree_position === 'main_to_middle') cardToMiddle({datum: tree.data[0], svg, svg_dim: svg.getBoundingClientRect(), scale: props.scale, transition_time: props.transition_time})
   else if (tree_position === 'inherit') {
     // keep current viewport/scale so external caller preserves positioning
+    void 0; // no-op to satisfy ESLint (no-empty)
   }
 
   return true
