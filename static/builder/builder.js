@@ -602,7 +602,24 @@ function initBuilderSearch(chart) {
           // visual highlight
           highlightCardById(id, { animate: true })
 
-          // attempt to center/zoom the selected person in the chart as a fallback
+          // status message and clear input to mirror viewer UX
+          try {
+            const label = buildPersonLabel(datum)
+            setStatus(`Resultat : ${label}`, 'info')
+          } catch (e) {
+            /* ignore */
+          }
+          try {
+            const input = searchTarget.querySelector('input')
+            if (input) {
+              input.value = ''
+              input.blur()
+            }
+          } catch (e) {
+            /* ignore */
+          }
+
+          // attempt to center/zoom the selected person in the chart as a fallback (without changing mainId)
           try {
             const treeDatum = activeChartInstance?.store?.getTreeDatum?.(id) || null
             const svg = activeChartInstance?.svg || null
