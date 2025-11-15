@@ -137,7 +137,7 @@ export default function calculateTree(data: Data, {
       const children = [...(d.rels.children || [])]
         .map(id => data_stash.find(d0 => d0.id === id))
         .filter((x): x is Datum => !!x)
-      if (sortChildrenFunction) children.sort(sortChildrenFunction)  // first sort by custom function if provided
+      if (sortChildrenFunction) children.sort(sortChildrenFunction)
       sortAddNewChildren(children)  // then put new children at the end
       if (sortSpousesFunction) sortSpousesFunction(d, data_stash)
       sortChildrenWithSpouses(children, d, data_stash)  // then sort by order of spouses

@@ -104,7 +104,7 @@ export function setupSiblings({
 
   function positionSiblings(main: TreeDatum) {
     const sorted_siblings = [main, ...siblings_added]
-    if (sortChildrenFunction) sorted_siblings.sort((a, b) => sortChildrenFunction(a.data, b.data))  // first sort by custom function if provided
+    if (sortChildrenFunction) sorted_siblings.sort((a, b) => sortChildrenFunction(a.data, b.data))
 
     sorted_siblings.sort((a, b) => {
       const a_p1 = main.parents!.find(d => d.data.id === a.data.rels.parents[0])

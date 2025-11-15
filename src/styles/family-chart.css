@@ -106,11 +106,6 @@
   position: relative;
   display: flex;
 }
-
-
-
-
-/* form-info */
 .f3-form input[type="text"],
 .f3-form textarea,
 .f3-form select {
@@ -236,8 +231,6 @@
   display: inline-block;
 }
 
-/* card-html */
-
 .f3 div.card {
   cursor: pointer;
   color: var(--text-color);
@@ -362,7 +355,6 @@
   pointer-events: none;
 }
 
-/* Hide union details in the viewer cards (keeps data available in DOM but not shown) */
 .f3 .card-union,
 .f3 .card-union-item,
 .f3 .card-union-heading,
@@ -372,7 +364,6 @@
 }
 
 .f3 .card.card-has-hidden-relatives {
-  /* Removed green halo */
   box-shadow: none;
 }
 
@@ -386,7 +377,6 @@
 }
 
 .f3 .card.card-has-hidden-relatives .mini-tree:focus-visible {
-  /* Remove green focus outline to avoid strong visual highlight */
   outline: none;
   outline-offset: 0;
 }

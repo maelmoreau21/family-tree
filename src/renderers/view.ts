@@ -38,7 +38,6 @@ export default function(tree: Tree, svg: SVGElement, Card: CardHandler, props: V
   else if (tree_position === 'fit') treeFit({svg, svg_dim: svg.getBoundingClientRect(), tree_dim: tree.dim, transition_time: props.transition_time})
   else if (tree_position === 'main_to_middle') cardToMiddle({datum: tree.data[0], svg, svg_dim: svg.getBoundingClientRect(), scale: props.scale, transition_time: props.transition_time})
   else if (tree_position === 'inherit') {
-    /* intentionally retain current viewport */
   }
 
   return true
