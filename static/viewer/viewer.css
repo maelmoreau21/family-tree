@@ -125,6 +125,11 @@ body {
   grid-column: 2 / 3;
   position: relative;
   padding-left: 0; /* removed left padding to align with request */
+  background: rgba(15, 23, 42, 0.35);
+  border-left: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: 0 25px 45px rgba(2, 6, 23, 0.45);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
 /* Ensure any element with id personDetails has no left padding/margin */
@@ -156,7 +161,7 @@ body.viewer-details-collapsed .canvas {
 }
 
 .search-block {
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(15, 23, 42, 0.35);
   border: 1px solid rgba(148, 163, 184, 0.25);
   border-radius: 10px;
   padding: 0.75rem;
@@ -245,7 +250,7 @@ body.viewer-details-collapsed .canvas {
 }
 
 .info-section {
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(15, 23, 42, 0.4);
   border: 1px solid rgba(148, 163, 184, 0.25);
   border-radius: 10px;
   padding: 0.75rem;
@@ -447,7 +452,7 @@ body.viewer-details-collapsed .canvas {
 }
 
 .details .f3-autocomplete {
-  background: rgba(30, 41, 59, 0.85);
+  background: rgba(30, 41, 59, 0.55);
   border: 1px solid rgba(148, 163, 184, 0.35);
   border-radius: 10px;
   color: inherit;
@@ -473,7 +478,7 @@ body.viewer-details-collapsed .canvas {
 .details .f3-autocomplete-items {
   max-height: 220px;
   overflow-y: auto;
-  background: rgba(15, 23, 42, 0.95);
+  background: rgba(15, 23, 42, 0.65);
   border-top: 1px solid rgba(148, 163, 184, 0.35);
 }
 
@@ -511,7 +516,7 @@ body.viewer-details-collapsed .canvas {
 }
 
 .detail-item {
-  background: rgba(30, 41, 59, 0.85);
+  background: rgba(30, 41, 59, 0.6);
   border: 1px solid rgba(148, 163, 184, 0.25);
   border-radius: 10px;
   padding: 0.75rem;
@@ -649,6 +654,8 @@ body.viewer-details-collapsed .canvas {
     max-height: 40vh;
     /* On narrow screens the details sit below the chart; use a top border instead */
     border-top: 1px solid rgba(148, 163, 184, 0.12);
+    border-left: none;
+    box-shadow: none;
     padding-left: 0; /* remove left padding on small screens as well */
     padding-top: 0.75rem;
     /* hide the divider pseudo-element on stacked layout */
