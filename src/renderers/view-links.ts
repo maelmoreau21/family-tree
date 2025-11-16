@@ -153,10 +153,12 @@ function createPath(
 ) {
   const animated = link as AnimatedLink;
   const sourcePoints = (collapsed ? link._d() : link.d).map(([x, y]) => [x, y] as [number, number]);
+  const isDescendantLink = link.is_ancestry === false && !link.spouse && Array.isArray(link.source)
   const deduped = dedupePoints(sourcePoints);
-  const pointsWithOffset = applySiblingOffset(deduped, animated.__animation, isHorizontal);
-  const points = pointsWithOffset;
-  const fallbackPoints = pointsWithOffset;
+  const oriented = (isDescendantLink && deduped.length > 1) ? deduped.slice().reverse() : deduped
+  const pointsWithOffset = applySiblingOffset(oriented, animated.__animation)
+  const points = pointsWithOffset
+  const fallbackPoints = pointsWithOffset
 
   if (points.length < 2) {
     return buildPolylinePath(fallbackPoints)
@@ -172,7 +174,6 @@ function createPath(
 
   if (style === "smooth") {
     const isAncestorLink = link.is_ancestry === true
-    const isDescendantLink = link.is_ancestry === false && !link.spouse && Array.isArray(link.source)
 
     const smoothCurve = (isAncestorLink || isDescendantLink)
       ? (isHorizontal ? d3.curveMonotoneX : d3.curveMonotoneY)
@@ -272,25 +273,22 @@ function cubicBezierPath(
   }
 }
 
-function applySiblingOffset(points: [number, number][], meta: AnimationMeta | undefined, isHorizontal: boolean): [number, number][] {
+function applySiblingOffset(points: [number, number][], meta: AnimationMeta | undefined): [number, number][] {
   if (!meta?.offset) return points
   const dx = clamp(meta.offset.dx, -18, 18)
   const dy = clamp(meta.offset.dy, -18, 18)
-  const primaryShift = isHorizontal ? dy : dx
-  if (Math.abs(primaryShift) < 0.01) return points
+  if (Math.abs(dx) < 0.01 && Math.abs(dy) < 0.01) return points
 
-  if (points.length <= 2) return points
+  const totalSegments = points.length - 1
+  if (totalSegments <= 1) return points
 
   const adjusted = points.map(([x, y]) => [x, y] as [number, number])
-  const influenceSteps = Math.min(2, points.length - 1)
-  for (let i = 1; i <= influenceSteps; i++) {
-    const falloff = Math.pow(0.55, i - 1)
-    if (!Number.isFinite(falloff)) continue
-    if (isHorizontal) {
-      adjusted[i][1] += dy * falloff
-    } else {
-      adjusted[i][0] += dx * falloff
-    }
+  for (let i = 1; i < totalSegments; i++) {
+    const t = i / totalSegments
+    const weight = Math.sin(Math.PI * t) * 0.6
+    if (!Number.isFinite(weight)) continue
+    if (Math.abs(dx) > 0.01) adjusted[i][0] += dx * weight
+    if (Math.abs(dy) > 0.01) adjusted[i][1] += dy * weight
   }
   return adjusted
 }
