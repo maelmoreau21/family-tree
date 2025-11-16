@@ -232,7 +232,7 @@ function cubicBezierPath(
   const dx = p3.x - p0.x
   const dy = p3.y - p0.y
 
-  if (linkDirection === 'ancestor' || linkDirection === 'descendant') {
+  if (linkDirection === 'ancestor') {
     if (isHorizontal) {
       const axisSign = dx === 0 ? 1 : Math.sign(dx)
       const flow = clamp(Math.abs(dx) * 0.4, 18, 130)
@@ -253,6 +253,9 @@ function cubicBezierPath(
       controls: { c1, c2 }
     }
   }
+
+  // Descendant links now reuse the same perpendicular-vector logic as other links
+  // to ensure they mirror the ascendant visual style.
 
   const span = Math.hypot(dx, dy) || 1
   const base = Math.min(140, Math.max(24, span * 0.18))
