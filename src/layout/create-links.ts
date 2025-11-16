@@ -53,10 +53,19 @@ export function createLinks(d: TreeDatum, is_horizontal: boolean = false) {
 
     const childCount = d.children.length
     d.children.forEach((child) => {
-      const other_parent = otherParent(child, d) || d
-      const anchorX = child.psx ?? other_parent.sx ?? other_parent.x ?? d.x
-      // Prefer child.psy, then other parent anchors (sy then y) before falling back to current node y
-      const anchorY = child.psy ?? other_parent.sy ?? other_parent.y ?? d.y
+      const partner = otherParent(child, d)
+      const other_parent = partner || d
+
+      const coupleMidX = partner && typeof partner.x === 'number'
+        ? (partner.x + d.x) / 2
+        : d.x
+      const coupleMidY = partner && typeof partner.y === 'number'
+        ? (partner.y + d.y) / 2
+        : d.y
+
+      const anchorX = firstNumber(child.psx, partner?.sx, d.sx, coupleMidX, d.x)
+      // Prefer child.psy, then partner anchors, then parent anchor, then fallback to midpoint/current node
+      const anchorY = firstNumber(child.psy, partner?.sy, d.sy, coupleMidY, d.y)
 
       if (typeof anchorX !== 'number' || Number.isNaN(anchorX)) {
         throw new Error('Cannot resolve progeny link anchor X')
@@ -65,10 +74,13 @@ export function createLinks(d: TreeDatum, is_horizontal: boolean = false) {
         throw new Error('Cannot resolve progeny link anchor Y')
       }
 
-      const useParentAnchor = childCount > 1
+      const useSharedAnchor = childCount > 1 || Boolean(partner)
+      const trunkX = useSharedAnchor ? anchorX : (typeof child.psx === 'number' ? child.psx : anchorX)
+      const trunkY = useSharedAnchor ? anchorY : (typeof child.psy === 'number' ? child.psy : anchorY)
+
       const parent_pos: LinkPoint = !is_horizontal
-        ? { x: useParentAnchor ? d.x : anchorX, y: d.y }
-        : { x: d.x, y: useParentAnchor ? d.y : anchorY }
+        ? { x: trunkX, y: d.y }
+        : { x: d.x, y: trunkY }
       const child_pos: LinkPoint = { x: child.x, y: child.y }
       links.push({
         d: Link(parent_pos, child_pos),
@@ -155,6 +167,13 @@ export function createLinks(d: TreeDatum, is_horizontal: boolean = false) {
   function otherParent(child: TreeDatum, p1: TreeDatum) {
     const p2 = (p1.spouses || []).find(d => child.data.rels.parents.includes(d.data.id))
     return p2
+  }
+
+  function firstNumber(...values: Array<number | undefined>) {
+    for (const value of values) {
+      if (typeof value === 'number' && !Number.isNaN(value)) return value
+    }
+    return undefined
   }
 }
 
