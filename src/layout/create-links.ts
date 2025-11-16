@@ -51,6 +51,7 @@ export function createLinks(d: TreeDatum, is_horizontal: boolean = false) {
   function handleProgenySide(d: TreeDatum) {
     if (!d.children || d.children.length === 0) return
 
+    const childCount = d.children.length
     d.children.forEach((child) => {
       const other_parent = otherParent(child, d) || d
       const anchorX = child.psx ?? other_parent.sx ?? other_parent.x ?? d.x
@@ -64,7 +65,10 @@ export function createLinks(d: TreeDatum, is_horizontal: boolean = false) {
         throw new Error('Cannot resolve progeny link anchor Y')
       }
 
-      const parent_pos: LinkPoint = !is_horizontal ? {x: anchorX, y: d.y} : {x: d.x, y: anchorY}
+      const useParentAnchor = childCount > 1
+      const parent_pos: LinkPoint = !is_horizontal
+        ? { x: useParentAnchor ? d.x : anchorX, y: d.y }
+        : { x: d.x, y: useParentAnchor ? d.y : anchorY }
       const child_pos: LinkPoint = { x: child.x, y: child.y }
       links.push({
         d: Link(parent_pos, child_pos),

@@ -299,12 +299,17 @@ function applySiblingOffset(points: [number, number][], meta: AnimationMeta | un
     const nextVertical = Math.abs(nextVec[0]) < 0.001
     const nextHorizontal = Math.abs(nextVec[1]) < 0.001
 
-    // If both prev and next are vertical, avoid modifying the X coordinate
-    if (Math.abs(dx) > 0.01 && !(prevVertical && nextVertical)) {
+    const preserveX = prevVertical || nextVertical
+    const preserveY = prevHorizontal || nextHorizontal
+
+    // Keep vertical segments perfectly aligned when either adjacent segment
+    // is vertical to guarantee a straight shared trunk for descendant links.
+    if (Math.abs(dx) > 0.01 && !preserveX) {
       adjusted[i][0] += dx * weight
     }
-    // If both prev and next are horizontal, avoid modifying the Y coordinate
-    if (Math.abs(dy) > 0.01 && !(prevHorizontal && nextHorizontal)) {
+    // Likewise, keep horizontal segments level when either adjacent segment
+    // is horizontal so the final angle into the card remains a clean 90°.
+    if (Math.abs(dy) > 0.01 && !preserveY) {
       adjusted[i][1] += dy * weight
     }
   }
