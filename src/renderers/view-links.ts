@@ -286,8 +286,27 @@ function applySiblingOffset(points: [number, number][], meta: AnimationMeta | un
     const t = i / totalSegments
     const weight = Math.sin(Math.PI * t) * 0.6
     if (!Number.isFinite(weight)) continue
-    if (Math.abs(dx) > 0.01) adjusted[i][0] += dx * weight
-    if (Math.abs(dy) > 0.01) adjusted[i][1] += dy * weight
+    // Detect direction of incoming and outgoing segments to avoid moving
+    // the coordinate that must stay aligned for a clean right-angle elbow.
+    const prev = points[i - 1]
+    const curr = points[i]
+    const next = points[i + 1]
+    const prevVec: [number, number] = [curr[0] - prev[0], curr[1] - prev[1]]
+    const nextVec: [number, number] = [next[0] - curr[0], next[1] - curr[1]]
+
+    const prevVertical = Math.abs(prevVec[0]) < 0.001
+    const prevHorizontal = Math.abs(prevVec[1]) < 0.001
+    const nextVertical = Math.abs(nextVec[0]) < 0.001
+    const nextHorizontal = Math.abs(nextVec[1]) < 0.001
+
+    // If both prev and next are vertical, avoid modifying the X coordinate
+    if (Math.abs(dx) > 0.01 && !(prevVertical && nextVertical)) {
+      adjusted[i][0] += dx * weight
+    }
+    // If both prev and next are horizontal, avoid modifying the Y coordinate
+    if (Math.abs(dy) > 0.01 && !(prevHorizontal && nextHorizontal)) {
+      adjusted[i][1] += dy * weight
+    }
   }
   return adjusted
 }
