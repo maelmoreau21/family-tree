@@ -155,8 +155,7 @@ function createPath(
   const sourcePoints = (collapsed ? link._d() : link.d).map(([x, y]) => [x, y] as [number, number]);
   const isDescendantLink = link.is_ancestry === false && !link.spouse && Array.isArray(link.source)
   const deduped = dedupePoints(sourcePoints);
-  const oriented = (isDescendantLink && deduped.length > 1) ? deduped.slice().reverse() : deduped
-  const pointsWithOffset = applySiblingOffset(oriented, animated.__animation)
+  const pointsWithOffset = applySiblingOffset(deduped, animated.__animation)
   const points = pointsWithOffset
   const fallbackPoints = pointsWithOffset
 
@@ -233,7 +232,7 @@ function cubicBezierPath(
   const dx = p3.x - p0.x
   const dy = p3.y - p0.y
 
-  if (linkDirection === 'ancestor') {
+  if (linkDirection === 'ancestor' || linkDirection === 'descendant') {
     if (isHorizontal) {
       const axisSign = dx === 0 ? 1 : Math.sign(dx)
       const flow = clamp(Math.abs(dx) * 0.4, 18, 130)

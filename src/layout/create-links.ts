@@ -65,8 +65,9 @@ export function createLinks(d: TreeDatum, is_horizontal: boolean = false) {
       }
 
       const parent_pos: LinkPoint = !is_horizontal ? {x: anchorX, y: d.y} : {x: d.x, y: anchorY}
+      const child_pos: LinkPoint = { x: child.x, y: child.y }
       links.push({
-        d: Link(child, parent_pos),
+        d: Link(parent_pos, child_pos),
         _d: () => Link(parent_pos, {x: _or(parent_pos, 'x'), y: _or(parent_pos, 'y')}),
         curve: true,
         id: linkId(child, d, other_parent),

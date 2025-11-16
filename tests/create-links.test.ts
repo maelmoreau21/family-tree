@@ -52,12 +52,12 @@ describe('createLinks', () => {
 
     const halfwayY = child.y + (parent.y - child.y) / 2;
     const expected = [
-      [child.x, child.y],
-      [child.x, halfwayY],
-      [child.x, halfwayY],
+      [parent.sx!, parent.y],
       [parent.sx!, halfwayY],
       [parent.sx!, halfwayY],
-      [parent.sx!, parent.y]
+      [child.x, halfwayY],
+      [child.x, halfwayY],
+      [child.x, child.y]
     ];
 
     expect(childLink.d).toEqual(expected);
@@ -76,12 +76,12 @@ describe('createLinks', () => {
     const halfwayX = child.x + (parent.x - child.x) / 2;
     const parentSpouseY = parent.sx!;
     const expected = [
-      [child.x, child.y],
-      [halfwayX, child.y],
-      [halfwayX, child.y],
+      [parent.x, parentSpouseY],
       [halfwayX, parentSpouseY],
       [halfwayX, parentSpouseY],
-      [parent.x, parentSpouseY]
+      [halfwayX, child.y],
+      [halfwayX, child.y],
+      [child.x, child.y]
     ];
 
     expect(childLink.d).toEqual(expected);
@@ -102,6 +102,6 @@ describe('createLinks', () => {
     if (!childLink) return;
 
     const lastPoint = childLink.d[childLink.d.length - 1];
-    expect(lastPoint).toEqual([parent.x, parent.y]);
+    expect(lastPoint).toEqual([child.x, child.y]);
   });
 });
