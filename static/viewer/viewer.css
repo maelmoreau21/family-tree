@@ -125,13 +125,6 @@ body {
   grid-column: 2 / 3;
   position: relative;
   padding-left: 0; /* removed left padding to align with request */
-  /* Make the viewer details panel slightly transparent like the builder controls */
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 0 12px 12px 0;
-  padding: 1rem;
-  overflow-y: auto;
-  max-height: calc(100vh - 3.8rem);
 }
 
 /* Ensure any element with id personDetails has no left padding/margin */
