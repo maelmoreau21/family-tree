@@ -10,9 +10,8 @@ export function createNewPerson({data, rels}: {data: Datum['data'], rels?: {pare
     }
 }
 
-export function addNewPerson({data_stash, datum}: {data_stash: Data, datum: Datum}) {
-  data_stash.push(datum)
-}
+// addNewPerson was an internal helper previously exported, but it's not used anywhere
+// and can be removed safely to reduce dead code surface.
 
 function generateUUID() {
   let d = new Date().getTime();

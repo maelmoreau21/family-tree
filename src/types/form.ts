@@ -17,7 +17,6 @@ export interface FormCreatorSetupProps {
   datum: Datum
   store: Store
   fields: Array<Field | RelReferenceFieldCreator | SelectFieldCreator | {id: string; type?: string; label?: string}>
-  fields: Array<Field | RelReferenceFieldCreator | SelectFieldCreator | {id: string; type?: string; label?: string}>
   postSubmitHandler: (props?: Record<string, unknown>) => void
   onCancel: () => void
   editFirst: boolean

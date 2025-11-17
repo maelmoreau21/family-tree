@@ -116,7 +116,7 @@ export function formCreatorSetup({
         try {
           if (d) return formatPersonName(d)
         } catch {
-          
+          void 0
         }
         return 'Profil sans nom'
       }
