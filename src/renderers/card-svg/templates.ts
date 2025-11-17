@@ -109,7 +109,7 @@ export function LinkBreakIcon({x,y,rt,closed}: {x: number, y: number, rt: number
   `)})
 }
 
-export function LinkBreakIconWrapper({d,card_dim}: {d: TreeDatum, card_dim: CardDim}) {
+function LinkBreakIconWrapper({d,card_dim}: {d: TreeDatum, card_dim: CardDim}) {
   let g = ""
   const r = d.data.rels
   const _r: Partial<TreeDatum['data']['rels']> = d.data._rels || {}
