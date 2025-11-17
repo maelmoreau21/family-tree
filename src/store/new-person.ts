@@ -1,4 +1,4 @@
-import { Data, Datum } from "../types/data"
+import { Datum } from "../types/data"
 
 export function createNewPerson({data, rels}: {data: Datum['data'], rels?: {parents?: string[], spouses?: string[], children?: string[]}}) {
   return {
