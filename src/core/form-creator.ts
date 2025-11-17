@@ -131,7 +131,9 @@ export function formCreatorSetup({
       if (!providedGetRelLabel) {
         const warnKey = field.id || '__rel_reference_missing_getRelLabel__'
         if (!warnedRelReferenceGetRelLabel.has(warnKey)) {
-          console.warn('rel_reference field creator did not provide getRelLabel — using default')
+          // Downgrade notification to debug to reduce noise in builder logs. The fallback is safe
+          // and the default getRelLabel uses a readable format for the relative person.
+          console.debug('rel_reference field creator did not provide getRelLabel — using default')
           warnedRelReferenceGetRelLabel.add(warnKey)
         }
       }

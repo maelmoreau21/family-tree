@@ -1429,6 +1429,20 @@ function attachPanelControls({ chart, card }) {
     }
   }
 
+  function stripOriginIfSame(rawUrl) {
+    if (!rawUrl) return ''
+    try {
+      const parsed = new URL(rawUrl, window.location.origin)
+      if (parsed.origin === window.location.origin) {
+        // Keep path, query and hash only when it's same origin
+        return `${parsed.pathname}${parsed.search}${parsed.hash}`
+      }
+      return parsed.toString()
+    } catch (error) {
+      return String(rawUrl)
+    }
+  }
+
   function isSafeAbsoluteUrl(rawUrl) {
     if (!rawUrl) return false
     try {
@@ -1475,14 +1489,16 @@ function attachPanelControls({ chart, card }) {
     if (imageUploaderCurrentForm) {
       const targetInput = imageUploaderCurrentForm.querySelector(`[name="${escapedFieldId}"]`)
       if (targetInput && targetInput instanceof HTMLInputElement) {
-        if (targetInput.value !== absoluteUrl) {
-          targetInput.value = absoluteUrl
+        const storeValue = stripOriginIfSame(absoluteUrl)
+        if (targetInput.value !== storeValue) {
+          targetInput.value = storeValue
           targetInput.dispatchEvent(new Event('input', { bubbles: true }))
         }
         formUpdated = true
       } else if (targetInput && targetInput instanceof HTMLTextAreaElement) {
-        if (targetInput.value !== absoluteUrl) {
-          targetInput.value = absoluteUrl
+        const storeValue = stripOriginIfSame(absoluteUrl)
+        if (targetInput.value !== storeValue) {
+          targetInput.value = storeValue
           targetInput.dispatchEvent(new Event('input', { bubbles: true }))
         }
         formUpdated = true
@@ -1492,8 +1508,9 @@ function attachPanelControls({ chart, card }) {
     const activeDatum = getActiveDatum()
     if (activeDatum) {
       if (!activeDatum.data) activeDatum.data = {}
-      if (activeDatum.data[targetFieldId] !== absoluteUrl) {
-        activeDatum.data[targetFieldId] = absoluteUrl
+      const storeValue = stripOriginIfSame(absoluteUrl)
+      if (activeDatum.data[targetFieldId] !== storeValue) {
+        activeDatum.data[targetFieldId] = storeValue
         datumUpdated = true
       }
     }
@@ -1507,7 +1524,7 @@ function attachPanelControls({ chart, card }) {
       scheduleAutoSave()
     }
 
-    if (manualUrlInput) manualUrlInput.value = absoluteUrl
+    if (manualUrlInput) manualUrlInput.value = stripOriginIfSame(absoluteUrl)
 
     const appliedSomewhere = formUpdated || datumUpdated
     if (origin === 'upload') {

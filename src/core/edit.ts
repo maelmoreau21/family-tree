@@ -380,14 +380,22 @@ export class EditTree {
         const label = FIELD_LABEL_MAP[id] || field
   new_fields.push({type: 'text', label, id})
       } else if (typeof field === 'object' && field !== null) {
-        if (!('id' in field) || typeof field.id !== 'string' || !field.id) {
-          console.error('fields must be an array of objects with id property')
-        } else {
-          const fld = field as {id: string; label?: string; type?: string}
-          const label = fld.label || FIELD_LABEL_MAP[fld.id] || fld.id
-          const type = fld.type || 'text'
-          new_fields.push({id: fld.id, label, type})
-        }
+          if (!('id' in field) || typeof field.id !== 'string' || !field.id) {
+            console.error('fields must be an array of objects with id property')
+          } else {
+            // Preserve RelReferenceFieldCreator and SelectFieldCreator with extra properties
+            const asAny = field as any
+            if (Object.prototype.hasOwnProperty.call(asAny, 'getRelLabel') ||
+                Object.prototype.hasOwnProperty.call(asAny, 'options') ||
+                Object.prototype.hasOwnProperty.call(asAny, 'optionCreator')) {
+              new_fields.push(asAny)
+            } else {
+              const fld = field as {id: string; label?: string; type?: string}
+              const label = fld.label || FIELD_LABEL_MAP[fld.id] || fld.id
+              const type = fld.type || 'text'
+              new_fields.push({id: fld.id, label, type})
+            }
+          }
       } else {
         console.error('fields must be an array of strings or objects')
       }
