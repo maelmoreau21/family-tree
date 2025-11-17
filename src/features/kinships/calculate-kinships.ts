@@ -42,7 +42,7 @@ export function calculateKinships(d_id: Datum['id'], data_stash: Data, kinship_i
       });
     }
     else if (kinship === 'spouse') {
-      
+      void 0
     }
     else if (kinship === 'child') {
       (rels.children || []).forEach(id => loopCheck(id, 'grandchild', depth + 1));

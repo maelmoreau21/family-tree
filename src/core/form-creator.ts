@@ -116,7 +116,7 @@ export function formCreatorSetup({
         try {
           if (d) return formatPersonName(d)
         } catch {
-          
+          void 0
         }
         return 'Profil sans nom'
       }
@@ -131,7 +131,7 @@ export function formCreatorSetup({
       if (!providedGetRelLabel) {
         const warnKey = field.id || '__rel_reference_missing_getRelLabel__'
         if (!warnedRelReferenceGetRelLabel.has(warnKey)) {
-          console.warn('rel_reference field creator did not provide getRelLabel — using default')
+          console.debug('rel_reference field creator did not provide getRelLabel — using default')
           warnedRelReferenceGetRelLabel.add(warnKey)
         }
       }

@@ -486,6 +486,19 @@ function normaliseTreePayload(payload) {
   return { data: [], config: {}, meta: {} }
 }
 
+function stripOriginIfSame(rawUrl) {
+  if (!rawUrl) return ''
+  try {
+    const parsed = new URL(rawUrl, window.location.origin)
+    if (parsed.origin === window.location.origin) {
+      return `${parsed.pathname}${parsed.search}${parsed.hash}`
+    }
+    return parsed.toString()
+  } catch (error) {
+    return String(rawUrl)
+  }
+}
+
 function normaliseChartConfig(rawConfig = {}) {
   if (!rawConfig || typeof rawConfig !== 'object') return {}
 
@@ -1906,6 +1919,22 @@ function renderChart(payload, options = {}) {
     : normaliseTreePayload(payload)
 
   const dataArray = Array.isArray(normalised.data) ? normalised.data : []
+
+  try {
+    const imageKeys = ['avatar', 'photo', 'picture']
+    dataArray.forEach(datum => {
+      if (!datum || !datum.data) return
+      imageKeys.forEach(key => {
+        try {
+          const val = datum.data[key]
+          if (!val) return
+          datum.data[key] = stripOriginIfSame(val)
+        } catch (e) {
+        }
+      })
+    })
+  } catch (error) {
+  }
   const rawConfig = normalised.config || {}
   const isInitialRender = !chartInstance
 
