@@ -109,23 +109,6 @@ export function LinkBreakIcon({x,y,rt,closed}: {x: number, y: number, rt: number
   `)})
 }
 
-function LinkBreakIconWrapper({d,card_dim}: {d: TreeDatum, card_dim: CardDim}) {
-  let g = ""
-  const r = d.data.rels
-  const _r: Partial<TreeDatum['data']['rels']> = d.data._rels || {}
-  const closed = Boolean(d.data.hide_rels)
-  const areParents = (rels: Partial<TreeDatum['data']['rels']>) => Array.isArray(rels.parents) && rels.parents.length > 0
-  const areChildren = (rels: Partial<TreeDatum['data']['rels']>) => Array.isArray(rels.children) && rels.children.length > 0
-  if ((d.is_ancestry || d.data.main) && (areParents(r) || areParents(_r))) {g+=LinkBreakIcon({x:card_dim.w/2,y:0, rt: -45, closed}).template}
-  if (!d.is_ancestry && d.added) {
-    const sp = d.spouse!, sp_r = sp.data.rels, _sp_r = sp.data._rels || {};
-    if ((areChildren(r) || areChildren(_r)) && (areChildren(sp_r) || areChildren(_sp_r))) {
-      g+=LinkBreakIcon({x:d.sx! - d.x + card_dim.w/2 +24.4,y: (d.x !== d.sx ? card_dim.h/2 : card_dim.h)+1, rt: 135, closed}).template
-    }
-  }
-  return {template: g}
-}
-
 export function CardImage({d, image, card_dim, maleIcon, femaleIcon}: {d: TreeDatum, image: string, card_dim: CardDim, maleIcon?: IconRenderer, femaleIcon?: IconRenderer}) {
   return ({template: (`
     <g style="transform: translate(${card_dim.img_x}px,${card_dim.img_y}px);" class="card_image" clip-path="url(#card_image_clip)">
