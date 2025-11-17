@@ -1138,6 +1138,24 @@ function setupChart(payload) {
   }
 
   const { data, config } = normaliseTreePayload(payload)
+  try {
+    if (Array.isArray(data) && data.length) {
+      const imageKeys = ['avatar', 'photo', 'picture']
+      data.forEach(datum => {
+        if (!datum || !datum.data) return
+        imageKeys.forEach(key => {
+          try {
+            const value = datum.data[key]
+            if (!value) return
+            const storeValue = stripOriginIfSame(value)
+            datum.data[key] = storeValue
+          } catch (e) {
+          }
+        })
+      })
+    }
+  } catch (error) {
+  }
   chartConfig = buildChartConfig(normaliseChartConfig(config))
   currentEditableFields = [...chartConfig.editableFields]
   if (!currentEditableFields.length) {

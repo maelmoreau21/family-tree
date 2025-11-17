@@ -1,11 +1,14 @@
 import { Data, Datum } from "../types/data"
 import {createNewPerson} from "./new-person"
 import { normalizeDateValue, shouldNormalizeDateField } from "../utils/date"
+import { stripOriginIfSame, looksLikeHttpUrl } from "../utils/url"
 
 export function submitFormData(datum: Datum, data_stash: Data, form_data: FormData) {
   form_data.forEach((value, key) => {
     if (typeof value === "string" && shouldNormalizeDateField(key)) {
       datum.data[key] = normalizeDateValue(value)
+    } else if (typeof value === 'string' && looksLikeHttpUrl(value)) {
+      datum.data[key] = stripOriginIfSame(value)
     } else {
       datum.data[key] = value
     }
