@@ -21,9 +21,7 @@ export { Card } from './renderers/card-svg/card-svg'
 
 import cardSvg from './core/cards/card-svg'
 import cardHtml from './core/cards/card-html'
-/** @deprecated Use cardSvg instead. This export will be removed in a future version. */
 export const CardSvg = cardSvg
-/** @deprecated Use cardHtml instead. This export will be removed in a future version. */
 export const CardHtml = cardHtml
 export { CardHtml as CardHtmlClass } from './core/cards/card-html'
 export { CardSvg as CardSvgClass } from './core/cards/card-svg'

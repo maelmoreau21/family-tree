@@ -12,7 +12,6 @@ export interface Kinships {
   [key: Datum['id']]: string
 }
 
-// https://support.ancestry.co.uk/s/article/Understanding-Kinship-Terms
 export function calculateKinships(d_id: Datum['id'], data_stash: Data, kinship_info_config: KinshipInfoConfig) {
   const main_datum = data_stash.find(d => d.id === d_id)!
   const kinships: Kinships = {}
@@ -43,7 +42,7 @@ export function calculateKinships(d_id: Datum['id'], data_stash: Data, kinship_i
       });
     }
     else if (kinship === 'spouse') {
-      // nothing
+      
     }
     else if (kinship === 'child') {
       (rels.children || []).forEach(id => loopCheck(id, 'grandchild', depth + 1));

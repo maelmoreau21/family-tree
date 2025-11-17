@@ -35,5 +35,4 @@ export function onZoomSetup(getSvgView: () => HTMLElement, getHtmlView: () => HT
   }
 }
 
-/** @deprecated This export will be removed in a future version. Use htmlContSetup instead. */
 export { createHtmlSvg }

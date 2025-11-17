@@ -387,13 +387,6 @@ function setupTid(tree:TreeDatum[]) {
 }
 
 
-/** 
- * Calculate the tree
- * @param options - The options for the tree
- * @param options.data - The data for the tree
- * @returns The tree
- * @deprecated Use f3.calculateTree instead
- */
 export function CalculateTree(options: CalculateTreeOptions & {data: Data}) {
   return calculateTreeWithV1Data(options.data, options)
 }
@@ -401,14 +394,9 @@ export function CalculateTree(options: CalculateTreeOptions & {data: Data}) {
 import { formatData } from "../store/format-data";
 import { LegacyDatum } from "../store/format-data";
 
-/**
- * Calculate the tree with v1 data
- * @param data - The data for the tree
- * @param options - The options for the tree
- * @returns The tree
- */
-
 export function calculateTreeWithV1Data(data: LegacyDatum[], options: CalculateTreeOptions) {
   const formatted_data = formatData(data);
   return calculateTree(formatted_data, options)
 }
+
+ 

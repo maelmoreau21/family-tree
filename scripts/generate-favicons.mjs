@@ -37,7 +37,7 @@ async function generate() {
       console.log(`[generate-favicons] Wrote ${path.relative(ROOT, outPath)}`)
     }
 
-    // Apple touch icon (180)
+    
     const appleOut = path.join(STATIC_DIR, `apple-touch-icon.png`)
     await sharp(svgBuffer)
       .resize(180, 180, { fit: 'contain' })

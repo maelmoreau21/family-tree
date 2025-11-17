@@ -1,11 +1,7 @@
 import { Datum } from "../types/data"
-
-// formatPersonName creates a display-friendly name using a datum's first and last names.
-// Falls back to the datum id or a placeholder when both names are missing.
 export function formatPersonName(input: Pick<Datum, "id" | "data"> | Datum | null | undefined): string {
   if (!input) return ""
 
-  // Normalize input into an object with `id` and `data` without using `any`.
   const asUnknown = input as unknown
   const datum: Pick<Datum, "id" | "data"> = (asUnknown && typeof (asUnknown as Datum).data === "object")
     ? (asUnknown as Datum)

@@ -34,7 +34,6 @@ const plugins = [
 ]
 
 export default [
-  // UMD build
   {
     input: input,
     external: external,
@@ -48,7 +47,7 @@ export default [
     },
     plugins: plugins
   },
-  // ESM build
+  
   {
     input: input,
     external: external,
@@ -60,7 +59,7 @@ export default [
     },
     plugins: plugins
   },
-  // minified UMD build
+  
   {
     input: input,
     external: external,

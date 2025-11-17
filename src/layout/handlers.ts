@@ -116,7 +116,7 @@ export function setupSiblings({
       if (a_p2 && !b_p2) return 1
       if (!a_p1 && b_p1) return 1
       if (a_p1 && !b_p1) return -1
-      // If both have same parents or both missing same parent, maintain original order
+      
       return 0
     })
 

@@ -27,20 +27,6 @@ export default function createChart(cont: HTMLElement | string, data: Data) {
   return new Chart(cont, data)
 }
 
-/**
- * Main Chart class - The primary class for creating and managing family tree visualizations.
- * 
- * This is the main entry point for the Family Tree library. Use this class to:
- * - Create and configure family tree visualizations
- * - Set up data, styling, and interaction options
- * - Control tree layout, orientation, and display settings
- * - Manage user interactions and updates
- * 
- * @example
- * ```typescript
- * const f3Chart = createChart('#FamilyChart', data)  // returns a Chart instance;
- * ```
- */
 export class Chart {
   cont: HTMLElement
   store: Store
@@ -110,47 +96,22 @@ export class Chart {
     })
   }
 
-  /**
-   * Set the link rendering style
-   * @param link_style - 'legacy' for angular bezier corners or 'smooth' for Catmull-Rom curves
-   */
   setLinkStyle(link_style: ST.LinkStyle) {
     this.linkStyle = link_style
     this.store.state.link_style = link_style
     return this
   }
 
-  /**
-   * Update the tree
-   * @param props - The properties to update the tree with.
-   * @param props.initial - Whether to update the tree initially.
-   * @param props.tree_position - The position of the tree.
-   * - 'fit' to fit the tree to the container,
-   * - 'main_to_middle' to center the tree on the main person,
-   * - 'inherit' to inherit the position from the previous update.
-   * @param props.transition_time - The transition time.
-   * @returns The CreateChart instance
-   */
   updateTree(props: ViewProps = {initial: false}) {
     this.store.updateTree(props)
     return this
   }
 
-  /**
-   * Update the data
-   * @param data - The data to update the tree with.
-   * @returns The CreateChart instance
-   */
   updateData(data: Data) {
     this.store.updateData(data)
     return this
   }
 
-  /**
-   * Set the card y spacing
-   * @param card_y_spacing - The card y spacing between the cards. Level separation.
-   * @returns The CreateChart instance
-   */
   setCardYSpacing(card_y_spacing: ST.LevelSeparation) {
     if (typeof card_y_spacing !== 'number') {
       console.error('card_y_spacing must be a number')
@@ -162,11 +123,6 @@ export class Chart {
     return this
   }
 
-  /**
-   * Set the card x spacing
-   * @param card_x_spacing - The card x spacing between the cards. Node separation.
-   * @returns The CreateChart instance
-   */
   setCardXSpacing(card_x_spacing: ST.NodeSeparation) {
     if (typeof card_x_spacing !== 'number') {
       console.error('card_x_spacing must be a number')
@@ -177,76 +133,39 @@ export class Chart {
     return this
   }
 
-  /**
-   * Set the orientation to vertical
-   * @returns The CreateChart instance
-   */
   setOrientationVertical() {
     this.store.state.is_horizontal = false
     return this
   }
 
-  /**
-   * Set the orientation to horizontal
-   * @returns The CreateChart instance
-   */
   setOrientationHorizontal() {
     this.store.state.is_horizontal = true
     return this
   }
 
-  /**
-   * Set whether to show the siblings of the main person
-   * @param show_siblings_of_main - Whether to show the siblings of the main person.
-   * @returns The CreateChart instance
-   */
   setShowSiblingsOfMain(show_siblings_of_main: ST.ShowSiblingsOfMain) {
     this.store.state.show_siblings_of_main = show_siblings_of_main
   
     return this
   }
 
-  /**
-   * set function that will modify the tree hierarchy. it can be used to delete or add cards in the tree.
-   * @param modifyTreeHierarchy - function that will modify the tree hierarchy.
-   * @returns The CreateChart instance
-   */
   setModifyTreeHierarchy(modifyTreeHierarchy: ST.ModifyTreeHierarchy) {
     this.store.state.modifyTreeHierarchy = modifyTreeHierarchy
     return this
   }
   
-  /**
-   * Set the private cards config
-   * @param private_cards_config - The private cards config.
-   * @param private_cards_config.condition - The condition to check if the card is private.
-   * - Example: (d: Datum) => d.data.living === true
-   * @returns The CreateChart instance
-   */
   setPrivateCardsConfig(private_cards_config: ST.PrivateCardsConfig) {
     this.store.state.private_cards_config = private_cards_config
   
     return this
   }
   
-  /**
-   * Option to set text on spouse links
-   * @param linkSpouseText - The function to set the text on the spouse links.
-   * - Example: (sp1, sp2) => getMarriageDate(sp1, sp2)
-   * @returns The CreateChart instance
-   */
   setLinkSpouseText(linkSpouseText: LinkSpouseText) {
     this.linkSpouseText = linkSpouseText
   
     return this
   }
 
-  /**
-   * Set whether to show the single parent empty card
-   * @param single_parent_empty_card - Whether to show the single parent empty card.
-   * @param label - The label to display for the single parent empty card.
-   * @returns The CreateChart instance
-   */
   setSingleParentEmptyCard(single_parent_empty_card: boolean, {label='Inconnu'} = {}) {
     this.store.state.single_parent_empty_card = single_parent_empty_card
     this.store.state.single_parent_empty_card_label = label
@@ -256,21 +175,12 @@ export class Chart {
     return this
   }
 
-  /**
-   * Set the Card creation function
-   * @param Card - The card function.
-   * @returns The CreateChart instance
-   */
   setCard(card: (cont: HTMLElement, store: Store) => CardHtml | CardSvg) {
     if (card === cardHtml) return this.setCardHtml()
     else if (card === cardSvg) return this.setCardSvg()
     else throw new Error('Card must be an instance of cardHtml or cardSvg')
   }
 
-  /**
-   * Set the Card HTML function
-   * @returns The CardHtml instance
-   */
   setCardHtml() {
     const htmlSvg = this.cont!.querySelector('#htmlSvg') as HTMLElement
     if (!htmlSvg) throw new Error('htmlSvg not found')
@@ -285,10 +195,6 @@ export class Chart {
   }
 
 
-  /**
-   * Set the Card SVG function
-   * @returns The CardSvg instance
-   */
   setCardSvg() {
     const htmlSvg = this.cont!.querySelector('#htmlSvg') as HTMLElement
     if (!htmlSvg) throw new Error('htmlSvg not found')
@@ -302,56 +208,24 @@ export class Chart {
     return card
   }
 
-  /**
-   * Set the transition time
-   * @param transition_time - The transition time in milliseconds
-   * @returns The CreateChart instance
-   */
   setTransitionTime(transition_time: ST.TransitionTime) {
     this.store.state.transition_time = transition_time
 
     return this
   }
 
-  /**
-   * Set the sort children function
-   * @param sortChildrenFunction - The sort children function.
-   * - Example: (a, b) => a.data.birth_date - b.data.birth_date
-   * @returns The CreateChart instance
-   */
   setSortChildrenFunction(sortChildrenFunction: ST.SortChildrenFunction) {
     this.store.state.sortChildrenFunction = sortChildrenFunction
 
     return this
   }
 
-  /**
-   * Set the sort spouses function
-   * @param sortSpousesFunction - The sort spouses function.
-   * - Example: 
-   *   (d, data) => {
-   *     const spouses = d.data.rels.spouses || []
-   *     return spouses.sort((a, b) => {
-   *       const sp1 = data.find(d0 => d0.id === a)
-   *       const sp2 = data.find(d0 => d0.id === b)
-   *       if (!sp1 || !sp2) return 0
-   *       return getMarriageDate(d, sp1) - getMarriageDate(d, sp2)
-   *    })
-   *   })
-   * }
-   * @returns The CreateChart instance
-   */
   setSortSpousesFunction(sortSpousesFunction: ST.SortSpousesFunction) {
     this.store.state.sortSpousesFunction = sortSpousesFunction
 
     return this
   }
 
-  /**
-   * Set how many generations to show in the ancestry
-   * @param ancestry_depth - The number of generations to show in the ancestry.
-   * @returns The CreateChart instance
-   */
   setAncestryDepth(ancestry_depth: ST.AncestryDepth) {
     if (typeof ancestry_depth === 'number' && Number.isFinite(ancestry_depth) && ancestry_depth >= 0) {
       this.store.state.ancestry_depth = ancestry_depth
@@ -362,11 +236,6 @@ export class Chart {
     return this
   }
 
-  /**
-   * Set how many generations to show in the progeny
-   * @param progeny_depth - The number of generations to show in the progeny.
-   * @returns The CreateChart instance
-   */
   setProgenyDepth(progeny_depth: ST.ProgenyDepth) {
     if (typeof progeny_depth === 'number' && Number.isFinite(progeny_depth) && progeny_depth >= 0) {
       this.store.state.progeny_depth = progeny_depth
@@ -377,60 +246,28 @@ export class Chart {
     return this
   }
 
-  /**
-   * Get the max depth of a person in the ancestry and progeny
-   * @param d_id - The id of the person to get the max depth of.
-   * @returns The max depth of the person in the ancestry and progeny. {ancestry: number, progeny: number}
-   */
   getMaxDepth(d_id: Datum['id']): {ancestry: number, progeny: number} {
     return getMaxDepth(d_id, this.store.getData())
   }
 
-  /**
-   * Calculate the kinships of a person
-   * @param d_id - The id of the person to calculate the kinships of.
-   * @param config - The config for the kinships.
-   * @param config.show_in_law - Whether to show in law relations.
-   * @returns The kinships of the person.
-   */
   calculateKinships(d_id: Datum['id'], config: KinshipInfoConfig = {}) {
     return calculateKinships(d_id, this.store.getData(), config)
   }
 
-  /**
-   * Get the kinships data stash with which we can create small family tree with relatives that connects 2 people
-   * @param main_id - The id of the main person.
-   * @param rel_id - The id of the person to get the kinships of.
-   * @returns The kinships data stash.
-   */
   getKinshipsDataStash(main_id: Datum['id'], rel_id: Datum['id']) {
     return getKinshipsDataStash(main_id, rel_id, this.store.getData(), this.calculateKinships(main_id))
   }
 
-  /**
-   * Set whether to show toggable tree branches are duplicated
-   * @param duplicate_branch_toggle - Whether to show toggable tree branches are duplicated.
-   * @returns The CreateChart instance
-   */
   setDuplicateBranchToggle(_duplicateBranchToggle?: boolean) {
     void _duplicateBranchToggle
-    // duplicate branch toggle removed: keep method for compatibility but do not modify state
+    
     return this
   }
 
-  /**
-   * Initialize the edit tree
-   * @returns The edit tree instance.
-   */
   editTree() {
     return this.editTreeInstance = editTree(this.cont, this.store)
   }
 
-  /**
-   * Update the main person
-   * @param d - New main person.
-   * @returns The CreateChart instance
-   */
   updateMain(d: Datum) {
     const datumId = resolveDatumId(d)
     this.store.updateMainId(datumId)
@@ -439,54 +276,26 @@ export class Chart {
     return this
   }
 
-  /**
-   * Update the main person
-   * @param id - New main person id.
-   * @returns The CreateChart instance
-   */
   updateMainId(id: Datum['id']) {
     this.store.updateMainId(id)
 
     return this
   }
 
-  /**
-   * Get the main person
-   * @returns The main person.
-   */
   getMainDatum() {
     return this.store.getMainDatum()
   }
 
-  /**
-   * Set the before update of the tree.
-   * @param fn - The function to call before the update.
-   * @returns The CreateChart instance
-   */
   setBeforeUpdate(fn: (props?: ViewProps) => void) {
     this.beforeUpdate = fn
     return this
   }
 
-  /**
-   * Set the after update of the tree.
-   * @param fn - The function to call after the update.
-   * @returns The CreateChart instance
-   */
   setAfterUpdate(fn: (props?: ViewProps) => void) {
     this.afterUpdate = fn
     return this
   }
 
-  /**
-   * Set the person dropdown
-   * @param getLabel - The function to get the label of the person to show in the dropdown.
-   * @param config - The config for the person dropdown.
-   * @param config.cont - The container to put the dropdown in. Default is the .f3-nav-cont element.
-   * @param config.onSelect - The function to call when a person is selected. Default is setting clicked person as main person and updating the tree.
-  * @param config.placeholder - The placeholder for the search input. Default is 'Rechercher'.
-   * @returns The CreateChart instance
-   */
   setPersonDropdown(
     getLabel: (datum: Datum) => string,
     {
@@ -514,10 +323,6 @@ export class Chart {
     return this
   }
 
-  /**
-   * Unset the person dropdown
-   * @returns The CreateChart instance
-   */
   unSetPersonSearch() {
     if (this.personSearch) {
       this.personSearch.destroy()

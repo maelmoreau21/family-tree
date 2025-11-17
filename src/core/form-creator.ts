@@ -49,7 +49,7 @@ export function formCreatorSetup({
     no_edit: no_edit,
   }
 
-  // Existing datum form creator
+  
   if (!datum._new_rel_data) {
     if (!addRelative) throw new Error('addRelative is required')
     if (!removeRelative) throw new Error('removeRelative is required')
@@ -67,7 +67,7 @@ export function formCreatorSetup({
     }
   }
 
-  // New rel form creator
+  
   else {
     form_creator = {
       ...base_form_creator,
@@ -92,7 +92,7 @@ export function formCreatorSetup({
   const getLabel = (field: FieldInput) => ('label' in field && field.label) ? field.label : field.id
   const getType = (field: FieldInput) => ('type' in field && field.type) ? field.type : 'text'
 
-  // Type guard for RelReferenceFieldCreator
+  
   function isRelReferenceCreator(f: FieldInput): f is RelReferenceFieldCreator {
     return typeof (f as Partial<RelReferenceFieldCreator>).getRelLabel === 'function' || (('type' in f) && ((f as Record<string, unknown>)['type'] === 'rel_reference'))
   }
@@ -107,9 +107,7 @@ export function formCreatorSetup({
     const label = getLabel(field)
 
     if (type === 'rel_reference') {
-      // Provide a safe fallback for getRelLabel so callers (including external
-      // builder scripts) that forget to supply it don't break form creation.
-      // allow previous code to accept external callables without enforcing strict typing
+      
       const providedGetRelLabel = isRelReferenceCreator(field) && typeof field.getRelLabel === 'function'
         ? field.getRelLabel
         : undefined
@@ -118,7 +116,7 @@ export function formCreatorSetup({
         try {
           if (d) return formatPersonName(d)
         } catch {
-          // ignore and fall through
+          
         }
         return 'Profil sans nom'
       }

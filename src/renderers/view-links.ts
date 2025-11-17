@@ -1,4 +1,4 @@
-// Render SVG link paths with smooth transitions and sibling-aware staggering
+ 
 import * as d3 from "d3";
 import { createLinks } from "../layout/create-links";
 import { calculateDelay } from "../handlers/general";
@@ -66,7 +66,7 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
       path.attr("transform", "translate(0,0)")
     }
 
-    // Animate to the final path and fade in in a single transition to avoid conflicts
+    
     path.transition().duration(baseDuration).delay(delay).ease(d3.easeCubicInOut)
       .attr("d", createPath(d, false, linkStyle, tree.is_horizontal))
       .style("opacity", 1)
@@ -80,10 +80,10 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
     const extraDelay = meta ? meta.index * Math.max(40, Math.round(siblingDelayStep * 0.6)) : 0
     const delay = (props.initial ? calculateDelay(tree, d, props.transition_time!) : 0) + extraDelay
 
-    // Ensure transform is reset before applying new animation
+    
     path.interrupt().attr("transform", "translate(0,0)")
 
-    // Use a single transition for both shape and opacity to keep animation smooth
+    
     path.transition().duration(updateDuration).delay(delay).ease(d3.easeCubicInOut)
       .attr("d", createPath(d, false, linkStyle, tree.is_horizontal))
       .style("opacity", 1)
@@ -93,7 +93,7 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
     const path = d3.select(this);
     const meta = (d as AnimatedLink | undefined)?.__animation
     const extraDelay = meta ? (meta.count - meta.index - 1) * Math.max(30, Math.round(siblingDelayStep * 0.35)) : 0
-    // Transition shape back to collapsed (_d) and fade out in one transition, then remove
+    
     path.transition().duration(exitDuration).delay(extraDelay).ease(d3.easeSinInOut)
       .attr("d", createPath(d as Link, true, linkStyle, tree.is_horizontal))
       .style("opacity", 0)
@@ -183,13 +183,11 @@ function createPath(
       .x((d) => d[0])
       .y((d) => d[1])
       .curve(smoothCurve)
-    // If the points only contain a start and end (or simple mid points),
-    // prefer an explicit cubic bezier based on the vector between the end points
-    // to ensure consistent perpendicular offsets and avoid inversion issues.
+    
     if (points && points.length >= 2) {
       const p0 = { x: points[0][0], y: points[0][1] }
       const p3 = { x: points[points.length - 1][0], y: points[points.length - 1][1] }
-      // prefer using explicit cubic bezier for ancestry/descendant links to control offsets
+      
       if ((isAncestorLink || isDescendantLink) && !link.spouse) {
         const linkDirection: CubicDirection = isAncestorLink
           ? 'ancestor'
@@ -254,8 +252,7 @@ function cubicBezierPath(
     }
   }
 
-  // Descendant links now reuse the same perpendicular-vector logic as other links
-  // to ensure they mirror the ascendant visual style.
+  
 
   const span = Math.hypot(dx, dy) || 1
   const base = Math.min(140, Math.max(24, span * 0.18))
@@ -286,8 +283,7 @@ function applySiblingOffset(points: [number, number][], meta: AnimationMeta | un
     const t = i / totalSegments
     const weight = Math.sin(Math.PI * t) * 0.6
     if (!Number.isFinite(weight)) continue
-    // Detect direction of incoming and outgoing segments to avoid moving
-    // the coordinate that must stay aligned for a clean right-angle elbow.
+    
     const prev = points[i - 1]
     const curr = points[i]
     const next = points[i + 1]
@@ -302,13 +298,11 @@ function applySiblingOffset(points: [number, number][], meta: AnimationMeta | un
     const preserveX = prevVertical || nextVertical
     const preserveY = prevHorizontal || nextHorizontal
 
-    // Keep vertical segments perfectly aligned when either adjacent segment
-    // is vertical to guarantee a straight shared trunk for descendant links.
+    
     if (Math.abs(dx) > 0.01 && !preserveX) {
       adjusted[i][0] += dx * weight
     }
-    // Likewise, keep horizontal segments level when either adjacent segment
-    // is horizontal so the final angle into the card remains a clean 90°.
+    
     if (Math.abs(dy) > 0.01 && !preserveY) {
       adjusted[i][1] += dy * weight
     }

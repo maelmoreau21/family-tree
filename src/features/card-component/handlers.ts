@@ -74,16 +74,13 @@ export function getCardsViewFake(getHtmlSvg: () => HTMLElement) {
 }
 
 
-/** @deprecated This export will be removed in a future version. Use setupReactiveTreeData instead. */
 export function setupHtmlSvg(getHtmlSvg: () => HTMLElement) {
   d3.select(getHtmlSvg()).append("div").attr("class", "cards_view_fake").style('display', 'none')  // important for handling data
 }
 
-/** @deprecated This export will be removed in a future version. Use setupReactiveTreeData instead. */
 const _setupReactiveTreeData = setupReactiveTreeData
 export { _setupReactiveTreeData as setupReactiveTreeData }
 
-/** @deprecated This export will be removed in a future version. Use setupReactiveTreeData instead. */
 export function getUniqueId(d: TreeDatumComponent | { unique_id?: string }) {
   return d.unique_id
 }

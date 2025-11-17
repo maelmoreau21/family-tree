@@ -12,7 +12,6 @@ interface NewDatum extends Datum {
 }
 
 export function updateGendersForNewRelatives(_updatedDatum: Datum, data: Data) {
-  // if gender on main datum is changed, we need to switch mother/father ids for new children
   data.forEach(d => {
     const rd = d._new_rel_data
     if (!rd) return

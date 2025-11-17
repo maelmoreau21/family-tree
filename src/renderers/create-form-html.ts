@@ -251,13 +251,13 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
   function sanitizeRelLabel(label?: string) {
     if (!label) return ''
     const cleaned = label
-      // remove any parenthesised suffixes such as "(31.02.1949)" or notes
+      
       .replace(/\s*\([^)]*\)/g, ' ')
-      // remove standalone date-like fragments e.g. "31.02.1949" or "31/02/1949"
+      
   .replace(/\b\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b/g, ' ')
-      // remove trailing year-only fragments
+      
       .replace(/\b\d{4}\b/g, ' ')
-      // collapse multiple spaces
+      
       .replace(/\s{2,}/g, ' ')
       .trim()
     return cleaned

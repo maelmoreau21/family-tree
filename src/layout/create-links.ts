@@ -16,8 +16,7 @@ type LinkPoint = {x: number, y: number, _x?: number, _y?: number}
 
 export function createLinks(d: TreeDatum, is_horizontal: boolean = false) {
   const links: Link[] = [];
-  // d.spouses is always added to non-ancestry side for main blodline nodes
-  // d.coparent is added to ancestry side
+  
   if (d.spouses || d.coparent) handleSpouse(d)
   handleAncestrySide(d)
   handleProgenySide(d)
@@ -64,7 +63,7 @@ export function createLinks(d: TreeDatum, is_horizontal: boolean = false) {
         : d.y
 
       const anchorX = firstNumber(child.psx, partner?.sx, d.sx, coupleMidX, d.x)
-      // Prefer child.psy, then partner anchors, then parent anchor, then fallback to midpoint/current node
+      
       const anchorY = firstNumber(child.psy, partner?.sy, d.sy, coupleMidY, d.y)
 
       if (typeof anchorX !== 'number' || Number.isNaN(anchorX)) {
@@ -107,7 +106,7 @@ export function createLinks(d: TreeDatum, is_horizontal: boolean = false) {
       return {
         d: [[d.x, d.y], [spouse.x, spouse.y]],
         _d: () => [
-          d.is_ancestry ? [_or(d, 'x')-.0001, _or(d, 'y')] : [d.x, d.y], // add -.0001 to line to have some length if d.x === spouse.x
+          d.is_ancestry ? [_or(d, 'x')-.0001, _or(d, 'y')] : [d.x, d.y],
           d.is_ancestry ? [_or(spouse, 'x'), _or(spouse, 'y')] : [d.x-.0001, d.y]
         ],
         curve: false, 
@@ -161,7 +160,7 @@ export function createLinks(d: TreeDatum, is_horizontal: boolean = false) {
   }
 
   function linkId(...args: TreeDatum[]) {
-    return args.map(d => d.tid).sort().join(", ")  // make unique id
+    return args.map(d => d.tid).sort().join(", ")
   }
 
   function otherParent(child: TreeDatum, p1: TreeDatum) {

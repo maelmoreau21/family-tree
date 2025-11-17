@@ -2,13 +2,13 @@ import { CardDim } from "./templates"
 
 export default function setupCardSvgDefs(svg: SVGElement, card_dim: CardDim) {
   if (svg.querySelector("defs#f3CardDef")) return
-  // Coerce numeric values to safe integers to avoid accidental injection
+  
   const safeW = Number.isFinite(Number(card_dim.w)) ? Math.max(0, Math.floor(Number(card_dim.w))) : 0
   const safeH = Number.isFinite(Number(card_dim.h)) ? Math.max(0, Math.floor(Number(card_dim.h))) : 0
   const safeImgW = Number.isFinite(Number(card_dim.img_w)) ? Math.max(0, Math.floor(Number(card_dim.img_w))) : 0
   const safeImgH = Number.isFinite(Number(card_dim.img_h)) ? Math.max(0, Math.floor(Number(card_dim.img_h))) : 0
 
-  // Build SVG defs using DOM APIs to avoid string injection
+  
   const svgns = 'http://www.w3.org/2000/svg'
   const defs = document.createElementNS(svgns, 'defs')
   defs.setAttribute('id', 'f3CardDef')

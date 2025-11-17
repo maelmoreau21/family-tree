@@ -115,8 +115,6 @@ export function clearElement(target: Element | null): void {
   target.replaceChildren()
 }
 
-// Accept any D3 Selection shape here — callers may use different parent types
-// and the helper performs runtime DOM-safe operations only.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function updateSelectionHtml(selection: Selection<any, any, any, any>, html: string, context?: string): void {
   if (!selection) return

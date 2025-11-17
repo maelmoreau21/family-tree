@@ -163,7 +163,7 @@ async function applyMigrations(client) {
     return
   }
 
-  // Placeholder for future migrations when SCHEMA_VERSION increases.
+  
   await setVersion(SCHEMA_VERSION)
 }
 

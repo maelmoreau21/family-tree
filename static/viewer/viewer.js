@@ -62,7 +62,6 @@ function setViewerPref(key, value) {
     if (value === true || value === false) storage.setItem(`family-tree:viewer:${key}`, value ? '1' : '0')
     else storage.setItem(`family-tree:viewer:${key}`, String(value))
   } catch (e) {
-    // ignore storage errors
   }
 }
 
@@ -86,7 +85,6 @@ function writePanelCollapsedState(collapsed) {
       storage.removeItem(VIEWER_PANEL_STATE_KEY)
     }
   } catch (error) {
-    // silently ignore storage errors
   }
 }
 
@@ -193,7 +191,6 @@ function cloneForCache(value) {
       return structuredClone(value)
     }
   } catch (error) {
-    // structuredClone may throw on unsupported data types; fall back to JSON
   }
   try {
     return JSON.parse(JSON.stringify(value))
@@ -361,7 +358,7 @@ const DETAIL_FIELD_ORDER = [
   'bio'
 ]
 
-// Fields to hide from the viewer details and from search/meta indexing.
+ 
 const HIDDEN_FIELD_KEYS = new Set([
   'phone',
   'email',
@@ -423,7 +420,7 @@ const DEFAULT_CHART_CONFIG = Object.freeze({
   cardDisplay: DEFAULT_CARD_DISPLAY.map(row => [...row]),
   mainId: null
   ,
-  // When true, selecting a profile recenters the chart on the main person automatically
+  
   autoCenter: true
 })
 
@@ -744,7 +741,7 @@ function buildSearchOption(person) {
     if (typeof rawValue !== 'string') return
     const trimmed = rawValue.trim()
     if (!trimmed) return
-    // Hide configured fields from search/meta tokens
+    
     const rkey = normalizeFieldKey(rawKey)
     if (HIDDEN_FIELD_KEYS.has(rkey)) return
     addToken(trimmed)
@@ -990,8 +987,8 @@ function updateDatasetMeta() {
   pendingMetaFrame = schedule(() => {
     pendingMetaFrame = null
     const visible = chartInstance?.store?.getTree?.()?.data?.length ?? 0
-    // Compute branchCount robustly: prefer server-provided meta.returned when available,
-    // otherwise compute from the chart store (deduplicated), and finally fall back to visible.
+    
+    
     let branchCount = Number.isFinite(latestMeta.returned) ? latestMeta.returned : undefined
     if (branchCount === undefined) {
       try {
@@ -1104,11 +1101,11 @@ function attachPerformanceHandlers() {
     const previous = viewerConfig.autoCenter !== false
     if (enabled === previous) return
     viewerConfig = { ...viewerConfig, autoCenter: enabled }
-    // If enabling auto-center, immediately recenter on the main person
+    
     if (enabled && chartInstance) {
       chartInstance.updateTree({ tree_position: 'main_to_middle' })
     }
-    // persist preference
+    
     setViewerPref('autoCenter', enabled)
   })
 
@@ -1141,7 +1138,7 @@ function describeDepthValue(value) {
 function buildDepthSummary(config) {
   const ancestry = describeDepthValue(config.ancestryDepth)
   const progeny = describeDepthValue(config.progenyDepth)
-  // Clarify that these are configured depths (or modes) rather than counts
+  
   return `Profondeur — Ancêtres: ${ancestry}, Descendants: ${progeny}`
 }
 
@@ -1504,39 +1501,39 @@ function hasContent(value) {
 function buildDetailEntries(person = {}) {
   const normalizedPerson = person || {}
 
-  // Helper to find a person's field value ignoring key case/formatting.
+  
   function findValueForKey(rawKey) {
     const desired = normalizeFieldKey(rawKey)
     const desiredCanonical = canonicalFieldKey(rawKey)
-    // direct match first
+    
     if (Object.prototype.hasOwnProperty.call(normalizedPerson, rawKey)) {
       return normalizedPerson[rawKey]
     }
-    // try normalized keys (case-insensitive)
+    
     for (const k of Object.keys(normalizedPerson)) {
       if (normalizeFieldKey(k) === desired) return normalizedPerson[k]
     }
-    // try canonical keys (ignore spaces/underscores)
+    
     for (const k of Object.keys(normalizedPerson)) {
       if (canonicalFieldKey(k) === desiredCanonical) return normalizedPerson[k]
     }
     return undefined
   }
 
-  // Build entries for the ordered (mandatory) fields, resolving values case-insensitively
+  
   const entries = DETAIL_FIELD_ORDER.map(field => ({
     field,
     value: findValueForKey(field),
     mandatory: true
   }))
 
-  // Track normalized keys already included so we don't duplicate when iterating remaining fields
+  
   const seen = new Set(DETAIL_FIELD_ORDER.map(canonicalFieldKey))
 
   Object.entries(normalizedPerson).forEach(([field, value]) => {
     if (isUnionReferenceKey(field)) return
     const key = canonicalFieldKey(field)
-    // Skip hidden fields entirely
+    
     if (HIDDEN_FIELD_KEYS.has(key)) return
     if (seen.has(key)) return
     if (!hasContent(value)) return
@@ -1578,8 +1575,8 @@ function collectSpouseUnionDetails(datum) {
     if (!storeDatum && !hasUnionInfo) {
       return
     }
-    // For union entries we prefer to show the spouse's name without birthdate suffix
-    // (birthdates are shown elsewhere). Build a short label (first + last) when possible.
+    
+    
     let name = `Profil ${id}`
     if (storeDatum) {
       const pd = storeDatum.data || {}
@@ -1803,7 +1800,7 @@ function handlePersonSelection(datum, source = 'card') {
 
   if (chartInstance) {
     chartInstance.updateMainId(datum.id)
-    // Preserve existing config, but if autoCenter is enabled we'll request a recenter when fetching subtree
+    
     applyViewerConfig({ treePosition: 'inherit', initial: false })
   }
 
@@ -1954,7 +1951,7 @@ function renderChart(payload, options = {}) {
   viewerConfig = { ...mergedConfig }
   viewerConfig.mainId = mergedConfig.mainId
 
-  // Apply persisted preferences (autoCenter) if present in storage
+  
   const persistedAutoCenter = getViewerPref('autoCenter', viewerConfig.autoCenter)
   viewerConfig.autoCenter = persistedAutoCenter === undefined ? viewerConfig.autoCenter : persistedAutoCenter
 
@@ -2059,7 +2056,7 @@ function renderChart(payload, options = {}) {
 
   updateDatasetMeta()
 
-  // Robust branch count: prefer server meta.returned; otherwise compute unique ids from the returned data array
+  
   let branchCount = Number.isFinite(latestMeta.returned) ? latestMeta.returned : undefined
   if (!Number.isFinite(branchCount)) {
     try {
@@ -2085,7 +2082,7 @@ function renderChart(payload, options = {}) {
       : 'Branche'
   const branchLabel = branchCount === 1 ? 'profil' : 'profils'
   const totalLabel = totalCount === 1 ? 'profil' : 'profils'
-  // Affiche les informations principales sans mentionner les profondeurs (souvent inexactes)
+  
   setStatus(`${prefix} : ${name} — ${branchCount} ${branchLabel} dans la branche / ${totalCount} ${totalLabel} au total`, 'success')
 
   lastSelectionContext = { source: options.source || prefix.toLowerCase(), label: name }

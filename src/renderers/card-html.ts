@@ -133,8 +133,7 @@ export default function CardHtml(props: {
   if (d.data.to_add) return `<div>${escapeHtml(props.empty_card_label || 'À AJOUTER')}</div>`
   if (d.data.unknown) return `<div>${escapeHtml(props.unknown_card_label || 'INCONNU')}</div>`
   const baseRows = props.card_display.map(display => `<div>${escapeHtml(display(d.data))}</div>`).join('')
-  // Ne pas afficher les unions sur la carte elle-même — elles restent visibles
-  // uniquement dans le panneau "Informations complémentaires".
+  
     return baseRows
   }
 

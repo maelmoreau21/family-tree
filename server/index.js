@@ -158,9 +158,7 @@ const uploadMiddleware = multer({
   storage: uploadStorage,
   limits: { fileSize: MAX_UPLOAD_SIZE },
   fileFilter: (req, file, cb) => {
-    // Disallow non-image uploads and specifically disallow SVG uploads
-    // because SVG can contain embedded scripts and pose an XSS risk when
-    // later rendered or inlined. Prefer raster formats (jpg/png/webp).
+    
     if (!file.mimetype || !file.mimetype.startsWith('image/')) {
       const error = new Error('UNSUPPORTED_FILE_TYPE')
       error.code = 'UNSUPPORTED_FILE_TYPE'
@@ -855,7 +853,7 @@ function createTreeApi({ canWrite }) {
       }
     })
 
-    // Admin endpoints (write-enabled only). These are intended for the builder/admin app.
+    
     router.post('/admin/import', ensureAdminAuth, jsonParser, async (req, res) => {
       try {
         const body = req.body
@@ -874,7 +872,7 @@ function createTreeApi({ canWrite }) {
           dropIndexes = parseBooleanParam(req.query.dropIndexes, true)
         }
 
-        // fastImport: when true, the DB layer may relax synchronous pragma to speed up bulk inserts.
+        
         let fastImport = false
         if (hasPayloadField && Object.prototype.hasOwnProperty.call(body, 'fastImport')) {
           fastImport = parseBooleanParam(body.fastImport, false)
@@ -901,7 +899,7 @@ function createTreeApi({ canWrite }) {
     })
 
     router.post('/admin/reset-to-seed', ensureAdminAuth, async (req, res) => {
-      // Protect this endpoint behind an explicit confirm flag to avoid accidental wipes.
+    
       const confirm = req.query.confirm === '1' || req.query.confirm === 'true'
       if (!confirm) {
         res.status(400).json({ message: 'Missing confirm=1 query param to reset database to seed' })
@@ -928,7 +926,7 @@ function createStaticApp(staticFolder, { canWrite }) {
   const staticOptions = { setHeaders: setStaticCacheHeaders }
   app.use('/lib', express.static(DIST_DIR, staticOptions))
   app.use('/assets', express.static(path.resolve(ROOT_DIR, 'src', 'styles'), staticOptions))
-  // Serve the top-level static directory (contains logo.svg) at /static so pages can reference /static/logo.svg
+  
   app.use('/static', express.static(STATIC_DIR, staticOptions))
   app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '1d' }))
   app.use('/api', createTreeApi({ canWrite }))

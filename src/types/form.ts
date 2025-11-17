@@ -16,9 +16,7 @@ export interface LinkExistingRelative {
 export interface FormCreatorSetupProps {
   datum: Datum
   store: Store
-  // fields can be either final Field (used by internal code) or a field "creator"
-  // object used to describe what fields to create for the form. Creator types
-  // don't require `initial_value` because that is taken from the datum.
+  fields: Array<Field | RelReferenceFieldCreator | SelectFieldCreator | {id: string; type?: string; label?: string}>
   fields: Array<Field | RelReferenceFieldCreator | SelectFieldCreator | {id: string; type?: string; label?: string}>
   postSubmitHandler: (props?: Record<string, unknown>) => void
   onCancel: () => void

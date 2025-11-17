@@ -30,10 +30,10 @@ async function checkFile(file) {
     return
   }
 
-  // Skip known safe helper
+  
   if (file.endsWith('src\\utils\\safe-html.ts') || file.endsWith('src/utils/safe-html.ts')) return
 
-  // Dangerous DOM writes
+  
   const innerHtmlMatches = content.match(/\.innerHTML\b/g)
   const insertAdjacent = content.match(/insertAdjacentHTML\b/g)
   const jqueryHtml = content.match(/\.html\(/g)
@@ -43,7 +43,7 @@ async function checkFile(file) {
     WARNINGS.push({ file, reason: 'Use of raw HTML insertion (innerHTML / insertAdjacentHTML / .html() / document.write)' })
   }
 
-  // target=_blank without rel
+  
   if (ext === '.html') {
     const re = /<[^>]*target\s*=\s*['"]_blank['"][^>]*>/gi
     let m
@@ -54,7 +54,7 @@ async function checkFile(file) {
       }
     }
   } else {
-    // check JS/TS for setAttribute('target', '_blank') without rel set nearby (best-effort)
+    
     const setAttrMatches = content.match(/setAttribute\(\s*['\"]target['\"]\s*,\s*['\"]_blank['\"]\s*\)/g)
     if (setAttrMatches) {
       WARNINGS.push({ file, reason: "Setting target='_blank' via setAttribute - ensure rel='noopener' is set" })

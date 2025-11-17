@@ -353,7 +353,6 @@ function writeCollapsedState(collapsed) {
       storage.removeItem(CONTROL_PANEL_STATE_KEY)
     }
   } catch (error) {
-    // storage errors can be ignored silently
   }
 }
 
@@ -407,7 +406,6 @@ const DISPLAY_FIELD_LABELS = new Map([
   ['maiden name', 'Nom de naissance']
 ])
 
-// Fields that should be hidden from the builder/editor UI
 const HIDDEN_FIELD_KEYS = new Set([
   'phone',
   'email',
@@ -677,8 +675,8 @@ function initBuilderSearch(chart) {
           scrollCard: true
         })
 
-        // Don't use the global status bar for search results to avoid overwriting
-        // the persistent editor status located at the bottom of the panel.
+        
+        
 
         try {
           const input = searchTarget.querySelector('input')
@@ -869,7 +867,7 @@ function setStatus(message, type = 'info') {
   if (!statusEl) return
   try {
     if (typeof message === 'string') {
-      // support explicit newlines in messages -> render as line breaks
+      
       statusEl.innerHTML = message.replace(/\n/g, '<br>')
     } else if (Array.isArray(message)) {
       statusEl.innerHTML = message.map(m => String(m)).join('<br>')
@@ -877,7 +875,7 @@ function setStatus(message, type = 'info') {
       statusEl.textContent = String(message)
     }
   } catch (e) {
-    // fallback to plain text
+    
     statusEl.textContent = String(message)
   }
   statusEl.dataset.status = type
@@ -1182,10 +1180,10 @@ function setupChart(payload) {
       }
     })
 
-  // When clicking a card in the builder:
-  // - open the editor for that person
-  // - highlight the clicked person
-  // - populate and focus the builder search input so the UX mirrors the viewer
+  
+  
+  
+  
   try {
     if (typeof card.setOnCardClick === 'function') {
       card.setOnCardClick((event, treeDatum) => {
@@ -1589,7 +1587,7 @@ function attachPanelControls({ chart, card }) {
     }
 
     try {
-      // helpful debug output when a form is created by the chart
+      
       console.debug('builder: handleFormCreation form_creator.editable=', form_creator?.editable, 'datum_id=', form_creator?.datum_id)
       console.debug('builder: form_creator.fields', form_creator?.fields)
     } catch (e) {
@@ -1608,13 +1606,13 @@ function attachPanelControls({ chart, card }) {
     imageUploaderCurrentDatumId = form_creator?.datum_id || null
     populateUploaderFromDatum()
 
-    // Set example placeholder for date-like inputs in builder forms
+    
     try {
       const datePlaceholder = 'ex : 30.12.2000'
       const inputs = [...form.querySelectorAll('input[name], textarea[name]')]
       inputs.forEach(el => {
         const name = (el.getAttribute('name') || '').toLowerCase()
-        // try to find a nearby label text
+        
         let labelText = ''
         try {
           const id = el.getAttribute('id')
@@ -1627,7 +1625,7 @@ function attachPanelControls({ chart, card }) {
         }
 
         const combined = `${name} ${labelText}`
-        // match common date-like keys/labels
+        
         if (/\b(birth|birthday|death|union|marri|wedding|anniv|date)\b/.test(combined)) {
           if (!el.getAttribute('placeholder') || el.getAttribute('placeholder').trim() === '') {
             el.setAttribute('placeholder', datePlaceholder)
@@ -1755,7 +1753,7 @@ function attachPanelControls({ chart, card }) {
           const payload = await response.json()
           if (payload?.message) message = payload.message
         } catch (error) {
-          // ignore JSON parse errors
+          
         }
         throw new Error(message)
       }
@@ -1922,9 +1920,9 @@ function attachPanelControls({ chart, card }) {
       preferred.push(configMain)
     }
 
-    // Only fall back to the current store main when we do not yet have a
-    // persisted main profile available. This keeps card navigation/search
-    // interactions from implicitly changing the "profil par défaut".
+    
+    
+    
     if (!preferred.length) {
       const storeMainId = chart.store && typeof chart.store.getMainId === 'function' ? chart.store.getMainId() : ''
       if (storeMainId && availableIds.has(storeMainId)) {
@@ -2043,8 +2041,8 @@ function attachPanelControls({ chart, card }) {
 
     const shouldUpdateMainId = chart && typeof chart.updateMainId === 'function'
     let recenterAlreadyScheduled = false
-    // Only update the chart main id when we persist the main profile in config
-    // or when a caller explicitly requests this via `persistConfig`.
+    
+    
     if (persistConfig && shouldUpdateMainId && storeMainBefore !== id) {
       chart.updateMainId(id)
       chart.updateTree({ initial: false, tree_position: 'main_to_middle' })
@@ -2061,8 +2059,8 @@ function attachPanelControls({ chart, card }) {
     } else {
       updateMainProfileDisplay(chartConfig.mainId || null)
     }
-    // Ensure the chart recenters on the selected person (match viewer behaviour).
-    // If the main id was already set, callers may still expect a recenter.
+    
+    
     try {
       if (!recenterAlreadyScheduled && chart && typeof chart.updateTree === 'function') {
         chart.updateTree({ initial: false, tree_position: 'main_to_middle' })

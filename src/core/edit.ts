@@ -25,8 +25,7 @@ const FIELD_LABEL_MAP: Record<string, string> = {
   'first name': 'Prénom',
   'first names': 'Prénoms',
   'last name': 'Nom',
-  // Note: several fields (phone, email, notes, occupation, location, residence, nickname)
-  // were intentionally removed from this map to keep the editor UI focused on core fields.
+  
   'maiden name': 'Nom de jeune fille',
   'birthday': 'Date de naissance',
   'death': 'Date de décès',
@@ -40,37 +39,10 @@ const FIELD_LABEL_MAP: Record<string, string> = {
 
 
 export default (cont: HTMLElement, store: Store) => new EditTree(cont, store)
-
-/**
- * EditTree class - Provides comprehensive editing capabilities for family tree data.
- * 
- * This class handles all editing operations for family tree data, including:
- * - Adding new family members and relationships
- * - Editing existing person information
- * - Removing family members and relationships
- * - Form management and validation
- * - History tracking and undo/redo functionality
- * - Modal dialogs and user interactions
- * 
- * @example
- * ```typescript
- * import * as f3 from 'family-tree'
- * const f3Chart = f3.createChart('#FamilyChart', data)
- * const f3EditTree = f3Chart.editTree()  // returns an EditTree instance
- *   .setFields(["first name","last name","birthday"])
- *   .setOnChange(() => {
- *      const updated_data = f3EditTree.exportData()
- *      // do something with the updated data
- *   })
- * ```
- */
 export class EditTree {
   cont: HTMLElement
   store: Store
-  // fields holds field *definitions* used to create form fields. These objects
-  // don't include the `initial_value` (that's added when the form is built
-  // from the datum). They can be either a simple descriptor or a specialized
-  // creator (select / rel_reference).
+  
   fields: Array<{type?: string; label?: string; id: string} | RelReferenceFieldCreator | SelectFieldCreator>
   formCont: {
     el?: HTMLElement,
@@ -135,10 +107,6 @@ export class EditTree {
     return this 
   }
 
-  /**
-   * Open the edit form
-   * @param datum - The datum to edit
-   */
   open(datum: Datum) {
     if (!datum.rels) datum = datum.data as unknown as Datum  // if TreeDatum is used, it will be converted to Datum. will be removed in a future version.
     const handleAddRelative = (self: EditTree) => {
@@ -234,10 +202,6 @@ export class EditTree {
     return {...history, controls}
   }
   
-  /**
-   * Open the edit form without canceling the add relative or remove relative view
-   * @param datum - The datum to edit
-   */
   openWithoutRelCancel(datum: Datum) {
     this.cardEditForm(datum)
   }
@@ -433,10 +397,6 @@ export class EditTree {
     return this
   }
   
-  /**
-   * Set the onChange function to be called when the data changes via editing, adding, or removing a relative
-   * @param fn - The onChange function
-   */
   setOnChange(fn: EditTree['onChange']) {
     this.onChange = fn
   
@@ -517,19 +477,11 @@ export class EditTree {
     return data
   }
 
-  /**
-   * deprecated: use exportData instead. This function will be removed in a future version.
-  * Export the data
-  * @returns family tree data
-   */
   getStoreDataCopy() {
     return this.exportData()
   }
 
 
-  /**
-  * @returns family tree data
-   */
   exportData() {
     let data = this._getStoreDataCopy()
     data = formatDataForExport(data, this.store.state.legacy_format)

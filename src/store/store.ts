@@ -108,7 +108,7 @@ export default function createStore(initial_state: StoreState): Store {
     if (state.main_id) {
       const mainExists = state.data.find(d => d.id === state.main_id);
       if (!mainExists && state.data.length > 0) {
-        // Set first datum as main if current main doesn't exist
+      
         updateMainId(state.data[0].id)
       }
     } else {
@@ -118,7 +118,7 @@ export default function createStore(initial_state: StoreState): Store {
     }
   }
 
-  // if main_id is deleted, get the last available main_id
+  
   function getLastAvailableMainDatum(): Datum {
     let main_id = state.main_id_history!.slice(0).reverse().find(id => getDatum(id));
     if (!main_id && state.data.length > 0) main_id = state.data[0].id;

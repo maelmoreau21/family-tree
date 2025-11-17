@@ -21,7 +21,7 @@ async function ensureFile(filePath, size) {
     const stats = await fs.stat(filePath)
     if (stats.size === size) return
   } catch (e) {
-    // create
+    
   }
   const fd = await fs.open(filePath, 'w')
   await fd.truncate(size)
@@ -31,7 +31,7 @@ async function ensureFile(filePath, size) {
 async function doUpload(filePath) {
   const buffer = await fs.readFile(filePath)
   const form = new FormData()
-  // Create a Blob from the buffer so Node's FormData accepts it
+  
   const blob = new Blob([buffer], { type: 'image/png' })
   form.append('file', blob, path.basename(filePath))
 

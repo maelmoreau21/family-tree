@@ -18,9 +18,9 @@ export function isSafeImageSrc(url?: unknown): boolean {
   if (!url) return false
   try {
     const s = String(url).trim()
-    // allow only http(s) and data: URIs
+    
     if (s.startsWith('http://') || s.startsWith('https://') || s.startsWith('data:')) return true
-    // relative urls are acceptable (no protocol)
+    
     if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(s)) return true
     return false
   } catch {
