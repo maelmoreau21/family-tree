@@ -44,7 +44,7 @@ export default function updateCardsComponent(svg: SVGElement, tree: Tree, Card: 
   function cardUpdate(this: HTMLDivElement, d: TreeDatum) {
     const card_element = d3.select(Card(d))
     const delay = props.initial ? calculateDelay(tree, d, props.transition_time!) : 0;
-    card_element.transition().duration(props.transition_time!).delay(delay).style("transform", `translate(${d.x}px, ${d.y}px)`).style("opacity", 1)
+    card_element.transition().duration(props.transition_time!).delay(delay).ease(d3.easeCubicInOut).style("transform", `translate(${d.x}px, ${d.y}px)`).style("opacity", 1)
   }
 
   function cardExit(this: HTMLDivElement, d: TreeDatum) {

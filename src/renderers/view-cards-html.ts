@@ -37,7 +37,7 @@ export default function updateCardsHtml(svg: SVGElement, tree: Tree, Card: HtmlC
   function cardUpdate(this: HTMLDivElement, d: TreeDatum) {
     Card.call(this, d)
     const delay = props.initial ? calculateDelay(tree, d, props.transition_time!) : 0;
-    d3.select(this).transition().duration(props.transition_time!).delay(delay).style("transform", `translate(${d.x}px, ${d.y}px)`).style("opacity", 1)
+    d3.select(this).transition().duration(props.transition_time!).delay(delay).ease(d3.easeCubicInOut).style("transform", `translate(${d.x}px, ${d.y}px)`).style("opacity", 1)
   }
 
   function cardExit(this: HTMLDivElement, d: unknown | TreeDatum) {
