@@ -105,7 +105,6 @@ body {
 .canvas {
   flex: 1 1 auto;
   display: grid;
-  /* chart takes full width; details will overlay on right (see .details below) */
   grid-template-columns: 1fr;
   column-gap: var(--viewer-column-gap);
   padding: 0;
@@ -123,19 +122,16 @@ body {
   min-height: 0;
   margin: 0;
   padding-block: 1rem;
-  /* overlay the panel on top of the chart so it shows through */
   position: absolute;
   right: 0;
   top: 0;
   bottom: 0;
   width: var(--viewer-details-width);
   padding-left: 0;
-  /* more transparent: user requested the big menu be transparent (no blur on panel itself) */
   background: rgba(15, 23, 42, 0.08);
   border: none;
   border-radius: 0;
   box-shadow: none;
-  /* no backdrop-filter here — blur will be applied only to the rounded sections */
   z-index: 10;
 }
 
@@ -164,7 +160,6 @@ body.viewer-details-collapsed .canvas {
 }
 
 .search-block {
-  /* rounded area: enable a blurred translucent background like builder */
   background: rgba(15, 23, 42, 0.45);
   border: 1px solid rgba(148, 163, 184, 0.25);
   backdrop-filter: blur(12px);
@@ -256,7 +251,6 @@ body.viewer-details-collapsed .canvas {
 }
 
 .info-section {
-  /* rounded area: enable a blurred translucent background like builder */
   background: rgba(15, 23, 42, 0.45);
   border: 1px solid rgba(148, 163, 184, 0.25);
   backdrop-filter: blur(12px);
@@ -281,7 +275,6 @@ body.viewer-details-collapsed .canvas {
 
 .performance-controls {
   position: relative;
-  /* allow a little translucency and apply blur to match the panel visual */
   background: rgba(15, 23, 42, 0.65);
   border: 1px solid rgba(148, 163, 184, 0.35);
   backdrop-filter: blur(12px);
@@ -306,10 +299,10 @@ body.viewer-details-collapsed .canvas {
   text-transform: uppercase;
   color: #cbd5f5;
   user-select: none;
-  /* match the small rounded blocks (search) transparency */
-  background: rgba(15, 23, 42, 0.45);
-  /* match search-block border and radius for consistent look */
-  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.45) !important;
+  display: block;
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.25) !important;
   border-radius: 10px;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -340,7 +333,6 @@ body.viewer-details-collapsed .canvas {
   top: calc(100% + 0.35rem);
   left: 0;
   right: 0;
-  /* less transparent dropdown (almost opaque) per user request */
   background: rgba(15, 23, 42, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -375,10 +367,9 @@ body.viewer-details-collapsed .canvas {
 }
 
 .performance-controls summary:focus {
-  /* Remove the browser blue focus rectangle; replace with a subtle rounded highlight */
   outline: none;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
-  border-radius: 8px; /* match the rounded corners */
+  border-radius: 8px;
 }
 
 .performance-grid {
@@ -662,7 +653,6 @@ body.viewer-details-collapsed .canvas {
 
 @media (max-width: 900px) {
   .canvas {
-    /* keep stacked layout on small screens (no overlay) */
     flex-direction: column;
     height: 100%;
     min-height: 0;
@@ -674,7 +664,6 @@ body.viewer-details-collapsed .canvas {
   }
 
   .details {
-    /* restore static flow on small screens */
     position: static;
     flex: 1 1 auto;
     width: 100%;
