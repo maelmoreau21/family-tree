@@ -67,7 +67,7 @@ body {
   display: flex;
   gap: 0.75rem;
   flex: 0 0 auto;
-  z-index: 10;
+  z-index: 12;
   pointer-events: none;
 }
 
@@ -105,7 +105,8 @@ body {
 .canvas {
   flex: 1 1 auto;
   display: grid;
-  grid-template-columns: 1fr minmax(0, var(--viewer-details-width));
+  /* chart takes full width; details will overlay on right (see .details below) */
+  grid-template-columns: 1fr;
   column-gap: var(--viewer-column-gap);
   padding: 0;
   align-items: stretch;
@@ -122,8 +123,12 @@ body {
   min-height: 0;
   margin: 0;
   padding-block: 1rem;
-  grid-column: 2 / 3;
-  position: relative;
+  /* overlay the panel on top of the chart so it shows through */
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--viewer-details-width);
   padding-left: 0;
   /* more transparent: user requested the big menu be transparent */
   background: rgba(15, 23, 42, 0.08);
@@ -132,6 +137,7 @@ body {
   box-shadow: none;
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
+  z-index: 10;
 }
 
 #personDetails {
@@ -155,7 +161,7 @@ body.viewer-details-collapsed .details {
 }
 
 body.viewer-details-collapsed .canvas {
-  grid-template-columns: 1fr 0;
+  grid-template-columns: 1fr;
 }
 
 .search-block {
@@ -333,7 +339,7 @@ body.viewer-details-collapsed .canvas {
   max-height: clamp(220px, 45vh, 360px);
   overflow-y: auto;
   scrollbar-width: thin;
-  z-index: 10;
+  z-index: 13;
 }
 
 .performance-controls[open] .performance-body {
@@ -639,6 +645,7 @@ body.viewer-details-collapsed .canvas {
 
 @media (max-width: 900px) {
   .canvas {
+    /* keep stacked layout on small screens (no overlay) */
     flex-direction: column;
     height: 100%;
     min-height: 0;
@@ -650,6 +657,8 @@ body.viewer-details-collapsed .canvas {
   }
 
   .details {
+    /* restore static flow on small screens */
+    position: static;
     flex: 1 1 auto;
     width: 100%;
     height: auto;
