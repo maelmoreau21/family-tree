@@ -6,6 +6,7 @@ import { ViewProps } from "./view";
 import { Tree } from "../layout/calculate-tree";
 import { Link } from "../layout/create-links";
 import { LinkStyle } from "../types/store";
+import { getTransitionConfig, applyTransition } from "../utils/transition";
 
 type AnimationMeta = {
   index: number
@@ -67,7 +68,8 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
     }
 
     
-    path.transition().duration(baseDuration).delay(delay).ease(d3.easeCubicInOut)
+    const config = getTransitionConfig(baseDuration, delay)
+    applyTransition(path, config)
       .attr("d", createPath(d, false, linkStyle, tree.is_horizontal))
       .style("opacity", 1)
       .attr("transform", "translate(0,0)")
@@ -83,8 +85,8 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
     
     path.interrupt().attr("transform", "translate(0,0)")
 
-    
-    path.transition().duration(updateDuration).delay(delay).ease(d3.easeCubicInOut)
+    const config = getTransitionConfig(updateDuration, delay)
+    applyTransition(path, config)
       .attr("d", createPath(d, false, linkStyle, tree.is_horizontal))
       .style("opacity", 1)
   }
@@ -94,7 +96,8 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
     const meta = (d as AnimatedLink | undefined)?.__animation
     const extraDelay = meta ? (meta.count - meta.index - 1) * Math.max(30, Math.round(siblingDelayStep * 0.35)) : 0
     
-    path.transition().duration(exitDuration).delay(extraDelay).ease(d3.easeSinInOut)
+    const config = getTransitionConfig(exitDuration, extraDelay)
+    applyTransition(path, config)
       .attr("d", createPath(d as Link, true, linkStyle, tree.is_horizontal))
       .style("opacity", 0)
       .attr("transform", "translate(0,0)")

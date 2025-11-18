@@ -4,6 +4,7 @@ import {calculateDelay} from "../handlers/general"
 import { Tree } from "../layout/calculate-tree"
 import { ViewProps } from "./view"
 import { TreeDatum } from "../types/treeData"
+import { getTransitionConfig, applyTransition } from "../utils/transition"
 
 type SvgCardRenderer = (this: SVGGElement, datum: TreeDatum) => void
 
@@ -38,7 +39,10 @@ export default function updateCardsSvg(svg: SVGElement, tree: Tree, Card: SvgCar
   function cardUpdate(this: SVGGElement, d: TreeDatum) {
     Card.call(this, d)
     const delay = props.initial ? calculateDelay(tree, d, props.transition_time!) : 0;
-    d3.select(this).transition().duration(props.transition_time!).delay(delay).ease(d3.easeCubicInOut).attr("transform", `translate(${d.x}, ${d.y})`).style("opacity", 1)
+    const config = getTransitionConfig(props.transition_time!, delay)
+    applyTransition(d3.select(this), config)
+      .attr("transform", `translate(${d.x}, ${d.y})`)
+      .style("opacity", 1)
   }
 
   function cardExit(this: SVGGElement, d: unknown | TreeDatum) {

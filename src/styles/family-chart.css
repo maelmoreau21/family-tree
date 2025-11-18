@@ -885,3 +885,22 @@
   margin-top: 5px;
   margin-bottom: 5px;
 }
+
+.f3.f3-light {
+  --background-color: #ffffff;
+  --text-color: #333333;
+  --female-color: #e57373;
+  --male-color: #64b5f6;
+  --genderless-color: #e0e0e0;
+}
+
+.f3.f3-light .f3-btn {
+  background-color: var(--text-color);
+  color: var(--background-color);
+}
+
+.f3.f3-light .f3-btn:hover, .f3.f3-light .f3-btn:focus {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  border: 1px solid var(--text-color);
+}
