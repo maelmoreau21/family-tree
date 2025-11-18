@@ -124,7 +124,7 @@ body {
   padding-block: 1rem;
   grid-column: 2 / 3;
   position: relative;
-  padding-left: 0; /* removed left padding to align with request */
+  padding-left: 0;
   background: rgba(15, 23, 42, 0.2);
   border: none;
   border-radius: 0;
@@ -133,13 +133,11 @@ body {
   -webkit-backdrop-filter: blur(18px);
 }
 
-/* Ensure any element with id personDetails has no left padding/margin */
 #personDetails {
   margin-left: 0;
   padding-left: 0;
 }
 
-/* Render the divider centered inside the column gap so it visually sits between the tree and panel */
 .details::before {
   content: "";
   position: absolute;
@@ -147,8 +145,6 @@ body {
   bottom: 0;
   left: calc(-1 * var(--viewer-column-gap) / 2);
   width: 1px;
-  /* Divider removed per request: keep pseudo-element but hide it
-     so the panel no longer shows the faint separator line */
   display: none;
   pointer-events: none;
 }
@@ -653,15 +649,13 @@ body.viewer-details-collapsed .canvas {
     width: 100%;
     height: auto;
     max-height: 40vh;
-    /* On narrow screens the details sit below the chart; use a top border instead */
     border: none;
     border-top: 1px solid rgba(148, 163, 184, 0.12);
     box-shadow: none;
-    padding-left: 0; /* remove left padding on small screens as well */
+    padding-left: 0; 
     padding-top: 0.75rem;
-    /* hide the divider pseudo-element on stacked layout */
     --hide-divider: 1;
-    border-radius: 0; /* full width panel: no corner rounding */
+    border-radius: 0; 
   }
 
   .details::before { display: none; }

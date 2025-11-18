@@ -685,7 +685,6 @@ function initBuilderSearch(chart) {
             input.blur()
           }
         } catch (e) {
-          /* ignore */
         }
       }
     }
@@ -1167,7 +1166,6 @@ function setupChart(payload) {
   try {
     console.debug('builder: initialFieldDescriptors', initialFieldDescriptors)
   } catch (e) {
-    /* ignore */
   }
 
   const chart = f3.createChart(chartSelector, data)
@@ -1452,7 +1450,6 @@ function attachPanelControls({ chart, card }) {
     try {
       const parsed = new URL(rawUrl, window.location.origin)
       if (parsed.origin === window.location.origin) {
-        // Keep path, query and hash only when it's same origin
         return `${parsed.pathname}${parsed.search}${parsed.hash}`
       }
       return parsed.toString()
@@ -1626,7 +1623,6 @@ function attachPanelControls({ chart, card }) {
       console.debug('builder: handleFormCreation form_creator.editable=', form_creator?.editable, 'datum_id=', form_creator?.datum_id)
       console.debug('builder: form_creator.fields', form_creator?.fields)
     } catch (e) {
-      /* ignore */
     }
 
     const isEditable = form_creator?.editable !== false && !form_creator?.no_edit
@@ -1668,7 +1664,6 @@ function attachPanelControls({ chart, card }) {
         }
       })
     } catch (e) {
-      /* ignore placeholder errors */
     }
   }
 

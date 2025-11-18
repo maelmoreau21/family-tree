@@ -4,7 +4,6 @@
   --scrollbar-track: rgba(15, 23, 42, 0.65);
   --scrollbar-thumb: rgba(59, 130, 246, 0.55);
   --scrollbar-thumb-hover: rgba(148, 163, 184, 0.75);
-  /* Spacing tokens used across the builder controls */
   --space-xs: 0.35rem;
   --space-sm: 0.5rem;
   --space: 0.75rem;
@@ -133,7 +132,6 @@ body.controls-collapsed .controls > * {
   display: none;
 }
 
-/* When the controls are collapsed, put the toggle back to the top-left */
 body.controls-collapsed .panel-toggle {
   left: 0.85rem;
 }
@@ -158,7 +156,6 @@ body.controls-collapsed .panel-toggle {
   background: rgba(15, 23, 42, 0.8);
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 0 12px 12px 0;
-  /* reduce top padding so first child (search-panel) aligns with other panels */
   padding: var(--space-lg) 1rem var(--space);
   overflow-y: auto;
   max-height: calc(100vh - 3.8rem);
@@ -229,8 +226,6 @@ body.controls-collapsed .panel-toggle {
   width: auto;
   font-size: 0.95rem;
   padding: 0.65rem 1rem;
-  /* add a small top margin and slightly larger bottom margin so the
-     status block is visually separated and won't overlap the toggle */
   margin: var(--space-xs) 0 var(--space-lg) 0;
   border-radius: 10px;
   background: rgba(15, 23, 42, 0.85);
@@ -245,26 +240,23 @@ body.controls-collapsed .panel-toggle {
 #status[data-status="error"] { color: #f87171; }
 #status[data-status="success"] { color: #34d399; }
 
-/* Viewer-like selection outline for cards */
 #FamilyChart .card .card-inner {
   outline: 0px solid rgba(255, 255, 255, 1);
   transition: outline 0.25s ease-in-out;
-  outline-offset: 0; /* ensure outline hugs the element */
+  outline-offset: 0; 
 }
 
 #FamilyChart .card.card-main .card-inner,
 #FamilyChart .card:focus-visible .card-inner,
 #FamilyChart .card-main-active .card-inner {
   outline: 4px solid rgba(220, 220, 220, 1);
-  outline-offset: 0; /* remove offset so no visible gap */
+  outline-offset: 0; 
 }
 
 #FamilyChart .card-inner.f3-path-to-main {
   outline: 4px solid rgba(255, 255, 255, 1);
 }
 
-/* Remove any parent-level outline offset that creates a gap
-   and prefer the inner .card-inner outline for the white contour */
 #FamilyChart .card-main-active {
   outline: none !important;
   box-shadow: none !important;
@@ -477,10 +469,7 @@ body.controls-collapsed .panel-toggle {
   padding-top: 0.25rem;
 }
 
-/* .section-divider removed — no longer used in builder markup */
-
 .panel-body fieldset {
-  /* remove the pale frame around detail groups in the builder */
   border: none;
   border-radius: 0;
   padding: 0;
@@ -767,15 +756,12 @@ body.controls-collapsed .panel-toggle {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  /* remove per-item boxed background to make list items visually inline with panel */
   background: transparent;
   border: none;
   border-radius: 0;
   padding: 0.25rem 0;
 }
 
-/* Remove any unexpected white contour/border that appears when items
-   or fieldsets get focused — prefer no outline and no elevated box-shadow */
 .editable-item,
 .display-item,
 .editable-item *,
@@ -787,7 +773,6 @@ body.controls-collapsed .panel-toggle {
   box-shadow: none !important;
 }
 
-/* Also remove focus outlines coming from internal controls */
 .editable-item:focus,
 .display-item:focus,
 .editable-item:focus-within,
@@ -971,8 +956,6 @@ body.controls-collapsed .panel-toggle {
   text-decoration: underline;
 }
 
-/* removed duplicate full-width status block (kept single compact style earlier in file) */
-
 @media (max-width: 1100px) {
   .controls {
     max-height: none;
@@ -985,7 +968,6 @@ body.controls-collapsed .panel-toggle {
   }
 }
 
-/* Ensure person details panel in builder has no left padding/margin */
 #personDetails {
   margin-left: 0;
   padding-left: 0;
