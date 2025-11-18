@@ -130,13 +130,12 @@ body {
   bottom: 0;
   width: var(--viewer-details-width);
   padding-left: 0;
-  /* more transparent: user requested the big menu be transparent */
+  /* more transparent: user requested the big menu be transparent (no blur on panel itself) */
   background: rgba(15, 23, 42, 0.08);
   border: none;
   border-radius: 0;
   box-shadow: none;
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  /* no backdrop-filter here — blur will be applied only to the rounded sections */
   z-index: 10;
 }
 
@@ -165,9 +164,11 @@ body.viewer-details-collapsed .canvas {
 }
 
 .search-block {
-  /* allow the parent panel (`.details`) transparency to show through */
-  background: transparent;
-  border: 1px solid rgba(148, 163, 184, 0.12);
+  /* rounded area: enable a blurred translucent background like builder */
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-radius: 10px;
   padding: 0.75rem;
   display: flex;
@@ -255,9 +256,11 @@ body.viewer-details-collapsed .canvas {
 }
 
 .info-section {
-  /* make the informational section transparent so the panel transparency applies to the whole panel */
-  background: transparent;
-  border: 1px solid rgba(148, 163, 184, 0.12);
+  /* rounded area: enable a blurred translucent background like builder */
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-radius: 10px;
   padding: 0.75rem;
   display: flex;
@@ -278,9 +281,11 @@ body.viewer-details-collapsed .canvas {
 
 .performance-controls {
   position: relative;
-  /* make Paramètres non-transparent (solid background) per user's request */
-  background: rgba(15, 23, 42, 1);
+  /* allow a little translucency and apply blur to match the panel visual */
+  background: rgba(15, 23, 42, 0.65);
   border: 1px solid rgba(148, 163, 184, 0.35);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-radius: 10px;
   padding: 0;
   flex: 0 0 auto;
@@ -327,8 +332,10 @@ body.viewer-details-collapsed .canvas {
   top: calc(100% + 0.35rem);
   left: 0;
   right: 0;
-  /* keep the dropdown non-transparent as well (solid background) */
-  background: rgba(15, 23, 42, 1);
+  /* semi-transparent dropdown to allow blur */
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-radius: 10px;
   border: 1px solid rgba(148, 163, 184, 0.35);
   box-shadow: 0 18px 36px rgba(15, 23, 42, 0.45);
@@ -360,8 +367,10 @@ body.viewer-details-collapsed .canvas {
 }
 
 .performance-controls summary:focus {
-  outline: 2px solid rgba(59, 130, 246, 0.5);
-  outline-offset: 2px;
+  /* Remove the browser blue focus rectangle; replace with a subtle rounded highlight */
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
+  border-radius: 8px; /* match the rounded corners */
 }
 
 .performance-grid {
