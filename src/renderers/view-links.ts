@@ -59,7 +59,8 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
 
     const meta = (d as AnimatedLink).__animation
     const extraDelay = meta ? meta.index * siblingDelayStep : 0
-    const delay = (props.initial ? calculateDelay(tree, d, props.transition_time!) : 0) + extraDelay
+    const baseDelay = props.transition_time ? 100 : 0
+    const delay = (props.initial ? calculateDelay(tree, d, props.transition_time!) : 0) + extraDelay + baseDelay
   const offset = computeEntryOffset(meta, tree.is_horizontal)
     if (offset) {
       path.attr("transform", `translate(${formatNumber(offset[0])},${formatNumber(offset[1])})`)
@@ -80,7 +81,8 @@ export default function updateLinks(svg: SVGElement, tree: Tree, props: ViewProp
     const path = d3.select(this);
     const meta = (d as AnimatedLink).__animation
     const extraDelay = meta ? meta.index * Math.max(40, Math.round(siblingDelayStep * 0.6)) : 0
-    const delay = (props.initial ? calculateDelay(tree, d, props.transition_time!) : 0) + extraDelay
+    const baseDelay = props.transition_time ? 100 : 0
+    const delay = (props.initial ? calculateDelay(tree, d, props.transition_time!) : 0) + extraDelay + baseDelay
 
     
     path.interrupt().attr("transform", "translate(0,0)")

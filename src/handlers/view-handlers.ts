@@ -15,7 +15,8 @@ function positionTree({t, svg, transition_time=2000}: {t: {k: number, x: number,
   const zoomObj = el_listener.__zoomObj
 
   const sel = d3.select(el_listener)
-  const config = getTransitionConfig(transition_time ?? 0, 0)
+  const delay = transition_time ? 100 : 0
+  const config = getTransitionConfig(transition_time ?? 0, delay)
   const tr = applyTransition(sel, config)
   const targetTransform = d3.zoomIdentity.scale(t.k).translate(t.x, t.y)
   zoomObj.transform(tr as unknown as Transition<Element, unknown, null, undefined>, targetTransform)
@@ -102,7 +103,8 @@ export function manualZoom({amount, svg, transition_time=500}: ManualZoomProps) 
   const zoomObj = el_listener.__zoomObj
   if (!zoomObj) throw new Error('Zoom object not found')
   const sel = d3.select(el_listener)
-  const config = getTransitionConfig(transition_time ?? 0, 0)
+  const delay = transition_time ? 100 : 0
+  const config = getTransitionConfig(transition_time ?? 0, delay)
   const tr = applyTransition(sel, config)
   zoomObj.scaleBy(tr as unknown as Transition<Element, unknown, null, undefined>, amount)
 }

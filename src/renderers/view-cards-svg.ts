@@ -38,7 +38,8 @@ export default function updateCardsSvg(svg: SVGElement, tree: Tree, Card: SvgCar
 
   function cardUpdate(this: SVGGElement, d: TreeDatum) {
     Card.call(this, d)
-    const delay = props.initial ? calculateDelay(tree, d, props.transition_time!) : 0;
+    const baseDelay = props.transition_time ? 100 : 0;
+    const delay = (props.initial ? calculateDelay(tree, d, props.transition_time!) : 0) + baseDelay;
     const config = getTransitionConfig(props.transition_time!, delay)
     applyTransition(d3.select(this), config)
       .attr("transform", `translate(${d.x}, ${d.y})`)
