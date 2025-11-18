@@ -306,6 +306,12 @@ body.viewer-details-collapsed .canvas {
   text-transform: uppercase;
   color: #cbd5f5;
   user-select: none;
+  /* match the small rounded blocks (search) transparency */
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 8px;
+  box-sizing: border-box;
 }
 
 .performance-controls summary::-webkit-details-marker {
@@ -332,12 +338,12 @@ body.viewer-details-collapsed .canvas {
   top: calc(100% + 0.35rem);
   left: 0;
   right: 0;
-  /* semi-transparent dropdown to allow blur */
-  background: rgba(15, 23, 42, 0.75);
+  /* less transparent dropdown (almost opaque) per user request */
+  background: rgba(15, 23, 42, 0.95);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-radius: 10px;
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  border: 1px solid rgba(148, 163, 184, 0.45);
   box-shadow: 0 18px 36px rgba(15, 23, 42, 0.45);
   padding: 0.65rem 0.75rem 0.75rem;
   display: flex;
