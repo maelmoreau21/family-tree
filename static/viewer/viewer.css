@@ -299,7 +299,7 @@ body.viewer-details-collapsed .canvas {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding: 0.65rem 0.75rem;
+  padding: 0.75rem;
   font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -308,9 +308,11 @@ body.viewer-details-collapsed .canvas {
   user-select: none;
   /* match the small rounded blocks (search) transparency */
   background: rgba(15, 23, 42, 0.45);
+  /* match search-block border and radius for consistent look */
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 10px;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-radius: 8px;
   box-sizing: border-box;
 }
 
@@ -339,7 +341,7 @@ body.viewer-details-collapsed .canvas {
   left: 0;
   right: 0;
   /* less transparent dropdown (almost opaque) per user request */
-  background: rgba(15, 23, 42, 0.95);
+  background: rgba(15, 23, 42, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-radius: 10px;
