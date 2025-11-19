@@ -212,6 +212,7 @@ body.controls-collapsed .panel-toggle {
   -webkit-backdrop-filter: blur(var(--backdrop-blur));
   border: 1px solid var(--panel-border);
   border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25);
 }
 
 .breadcrumb-trail {
@@ -478,6 +479,7 @@ body.controls-collapsed .panel-toggle {
   background: var(--panel-popup-bg);
   backdrop-filter: blur(var(--backdrop-blur));
   -webkit-backdrop-filter: blur(var(--backdrop-blur));
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.45);
   display: flex;
   flex-direction: column;
   gap: var(--space);
@@ -589,8 +591,8 @@ body.controls-collapsed .panel-toggle {
   flex-direction: column;
   gap: var(--space-sm);
   padding: var(--space-sm) var(--space);
-  background: rgba(30, 41, 59, 0.55);
-  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.35);
   border-radius: 8px;
 }
 
@@ -670,8 +672,8 @@ body.controls-collapsed .panel-toggle {
   margin-top: var(--space-lg);
   padding: var(--space) 1rem;
   border-radius: 10px;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.85);
   display: flex;
   flex-direction: column;
   gap: var(--space);
@@ -686,8 +688,8 @@ body.controls-collapsed .panel-toggle {
 .f3-union-entry {
   padding: var(--space-sm) var(--space);
   border-radius: 8px;
-  background: rgba(30, 41, 59, 0.55);
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.35);
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
