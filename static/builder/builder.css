@@ -8,6 +8,10 @@
   --space-sm: 0.5rem;
   --space: 0.75rem;
   --space-lg: 1.25rem;
+  --backdrop-blur: 12px;
+  --panel-bg: rgba(15, 23, 42, 0.45);
+  --panel-border: rgba(148, 163, 184, 0.35);
+  --panel-popup-bg: rgba(15, 23, 42, 0.85);
 }
 
 body {
@@ -59,7 +63,7 @@ button {
   padding: 0.55rem 1.2rem;
   border-radius: 8px;
   border: 1px solid rgba(148, 163, 184, 0.35);
-  background: rgba(30, 64, 175, 0.2);
+  background: rgba(30, 64, 175, 0.85);
   color: inherit;
   cursor: pointer;
   transition: background 0.2s ease, border 0.2s ease;
@@ -153,8 +157,10 @@ body.controls-collapsed .panel-toggle {
   display: flex;
   flex-direction: column;
   gap: var(--space);
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: var(--panel-bg);
+  backdrop-filter: blur(var(--backdrop-blur));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur));
+  border: 1px solid var(--panel-border);
   border-radius: 0 12px 12px 0;
   padding: var(--space-lg) 1rem var(--space);
   overflow-y: auto;
@@ -201,8 +207,10 @@ body.controls-collapsed .panel-toggle {
   gap: var(--space);
   margin-bottom: var(--space);
   padding: 0.5rem 0.75rem;
-  background: rgba(15, 23, 42, 0.55);
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: var(--panel-bg);
+  backdrop-filter: blur(var(--backdrop-blur));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur));
+  border: 1px solid var(--panel-border);
   border-radius: 10px;
 }
 
@@ -229,7 +237,7 @@ body.controls-collapsed .panel-toggle {
   margin: var(--space-xs) 0 var(--space-lg) 0;
   border-radius: 10px;
   background: rgba(15, 23, 42, 0.85);
-  border: 1px solid rgba(148, 163, 184, 0.25);
+  border: 1px solid rgba(148, 163, 184, 0.35);
   white-space: normal;
   word-break: break-word;
   line-height: 1.35;
@@ -333,8 +341,10 @@ body.controls-collapsed .panel-toggle {
 }
 
 .search-panel {
-  background: rgba(15, 23, 42, 0.55);
-  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: var(--panel-bg);
+  backdrop-filter: blur(var(--backdrop-blur));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur));
+  border: 1px solid var(--panel-border);
   border-radius: 10px;
   padding: var(--space-sm);
   display: flex;
@@ -344,8 +354,8 @@ body.controls-collapsed .panel-toggle {
 }
 
 .search-panel.is-focused {
-  border-color: rgba(59, 130, 246, 0.55);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+  border-color: rgba(59, 130, 246, 0.85);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35);
 }
 
 .search-panel.is-flashing {
@@ -421,8 +431,10 @@ body.controls-collapsed .panel-toggle {
 }
 
 .panel {
-  background: rgba(15, 23, 42, 0.55);
-  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: var(--panel-bg);
+  backdrop-filter: blur(var(--backdrop-blur));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur));
+  border: 1px solid var(--panel-border);
   border-radius: 10px;
   padding: var(--space-sm) var(--space) var(--space);
   margin: var(--space) 0;
@@ -463,6 +475,9 @@ body.controls-collapsed .panel-toggle {
 }
 
 .panel-body {
+  background: var(--panel-popup-bg);
+  backdrop-filter: blur(var(--backdrop-blur));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur));
   display: flex;
   flex-direction: column;
   gap: var(--space);
@@ -514,7 +529,7 @@ body.controls-collapsed .panel-toggle {
   height: 1.1rem;
   border-radius: 4px;
   border: 1px solid rgba(148, 163, 184, 0.35);
-  background: rgba(30, 41, 59, 0.65);
+  background: rgba(30, 41, 59, 0.85);
   display: grid;
   place-items: center;
   transition: background 0.2s ease, border 0.2s ease;
