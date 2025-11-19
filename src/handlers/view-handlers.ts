@@ -5,6 +5,8 @@ import type { ZoomBehavior, D3ZoomEvent } from "d3-zoom"
 import type { TreeDimensions } from "../layout/calculate-tree"
 import { TreeDatum } from "../types/treeData"
 
+import { getTransitionConfig, applyTransition } from "../utils/transition"
+
 type ZoomHost = Element & { __zoomObj?: ZoomBehavior<Element, unknown> }
 type ZoomListener = ZoomHost & { __zoomObj: ZoomBehavior<Element, unknown> }
 
@@ -13,7 +15,9 @@ function positionTree({t, svg, transition_time=2000}: {t: {k: number, x: number,
   const zoomObj = el_listener.__zoomObj
 
   const sel = d3.select(el_listener)
-  const tr = sel.transition().duration(transition_time ?? 0).delay(transition_time ? 100 : 0)  // delay 100 because of weird error of undefined something in d3 zoom
+  const delay = transition_time ? 100 : 0
+  const config = getTransitionConfig(transition_time ?? 0, delay)
+  const tr = applyTransition(sel, config)
   const targetTransform = d3.zoomIdentity.scale(t.k).translate(t.x, t.y)
   zoomObj.transform(tr as unknown as Transition<Element, unknown, null, undefined>, targetTransform)
 }
@@ -99,7 +103,9 @@ export function manualZoom({amount, svg, transition_time=500}: ManualZoomProps) 
   const zoomObj = el_listener.__zoomObj
   if (!zoomObj) throw new Error('Zoom object not found')
   const sel = d3.select(el_listener)
-  const tr = sel.transition().duration(transition_time ?? 0).delay(transition_time ? 100 : 0)  // delay 100 because of weird error of undefined something in d3 zoom
+  const delay = transition_time ? 100 : 0
+  const config = getTransitionConfig(transition_time ?? 0, delay)
+  const tr = applyTransition(sel, config)
   zoomObj.scaleBy(tr as unknown as Transition<Element, unknown, null, undefined>, amount)
 }
 

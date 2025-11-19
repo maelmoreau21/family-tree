@@ -5,6 +5,7 @@ import { Tree } from "../layout/calculate-tree"
 import { ViewProps } from "./view"
 import { TreeDatum } from "../types/treeData"
 import { CardHtmlSelection } from "../types/view"
+import { getTransitionConfig, applyTransition } from "../utils/transition"
 
 type HtmlCardRenderer = (this: HTMLDivElement, datum: TreeDatum) => void
 
@@ -36,8 +37,12 @@ export default function updateCardsHtml(svg: SVGElement, tree: Tree, Card: HtmlC
 
   function cardUpdate(this: HTMLDivElement, d: TreeDatum) {
     Card.call(this, d)
-    const delay = props.initial ? calculateDelay(tree, d, props.transition_time!) : 0;
-    d3.select(this).transition().duration(props.transition_time!).delay(delay).style("transform", `translate(${d.x}px, ${d.y}px)`).style("opacity", 1)
+    const baseDelay = props.transition_time ? 100 : 0;
+    const delay = (props.initial ? calculateDelay(tree, d, props.transition_time!) : 0) + baseDelay;
+    const config = getTransitionConfig(props.transition_time!, delay)
+    applyTransition(d3.select(this), config)
+      .style("transform", `translate(${d.x}px, ${d.y}px)`)
+      .style("opacity", 1)
   }
 
   function cardExit(this: HTMLDivElement, d: unknown | TreeDatum) {

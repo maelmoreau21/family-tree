@@ -9,6 +9,7 @@ import autocomplete from "../features/autocomplete"
 import { getMaxDepth } from "../layout/handlers"
 import { calculateKinships } from "../features/kinships/calculate-kinships"
 import { getKinshipsDataStash } from "../features/kinships/kinships-data"
+import { treeFit } from "../handlers/view-handlers"
 
 import { Data, Datum } from "../types/data"
 import { Store } from "../types/store"
@@ -60,6 +61,8 @@ export class Chart {
     const {svg} = htmlContSetup(this.cont)
     this.svg = svg
     createNavCont(this.cont)
+    this.setFitToScreenButton()
+    this.setThemeToggleButton()
     const main_id = data && data.length > 0 ? data[0].id : ''
     this.store = this.createStore(data, main_id)
     if (!this.store.state.link_style) this.store.state.link_style = 'legacy'
@@ -320,6 +323,81 @@ export class Chart {
       this.updateMainId(d_id)
       this.updateTree({initial: false})
     }
+    return this
+  }
+
+  setFitToScreenButton({
+    cont = this.cont!.querySelector('.f3-nav-cont') as HTMLElement,
+    label = 'Fit to Screen'
+  }: {
+    cont?: HTMLElement,
+    label?: string
+  } = {}) {
+    const button = d3.select(cont).append('button')
+      .attr('class', 'f3-btn f3-fit-to-screen-btn')
+      .style('margin-left', '10px')
+      .style('display', 'flex')
+      .style('align-items', 'center')
+      .style('justify-content', 'center')
+      .html(`
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 3 21 3 21 9"></polyline>
+          <polyline points="9 21 3 21 3 15"></polyline>
+          <line x1="21" y1="3" x2="14" y2="10"></line>
+          <line x1="3" y1="21" x2="10" y2="14"></line>
+        </svg>
+      `)
+      .attr('title', label)
+      .on('click', () => {
+        const tree = this.store.getTree()
+        if (!tree) return
+        treeFit({
+          svg: this.svg,
+          svg_dim: this.svg.getBoundingClientRect(),
+          tree_dim: tree.dim,
+          transition_time: this.store.state.transition_time
+        })
+      })
+    return this
+  }
+
+  toggleTheme() {
+    const cont = d3.select(this.cont).select('.f3')
+    const isLight = cont.classed('f3-light')
+    cont.classed('f3-light', !isLight)
+    return this
+  }
+
+  setThemeToggleButton({
+    cont = this.cont!.querySelector('.f3-nav-cont') as HTMLElement,
+    label = 'Toggle Theme'
+  }: {
+    cont?: HTMLElement,
+    label?: string
+  } = {}) {
+    const button = d3.select(cont).append('button')
+      .attr('class', 'f3-btn f3-theme-toggle-btn')
+      .style('margin-left', '10px')
+      .style('display', 'flex')
+      .style('align-items', 'center')
+      .style('justify-content', 'center')
+      .html(`
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+      `)
+      .attr('title', label)
+      .on('click', () => {
+        this.toggleTheme()
+      })
     return this
   }
 
