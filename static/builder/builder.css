@@ -121,6 +121,14 @@ button.primary:hover {
   background: rgba(59, 130, 246, 0.35);
 }
 
+/* Hide theme and fit-to-screen buttons in builder - viewer uses its own CSS */
+.f3-btn.f3-fit-to-screen-btn,
+.f3-btn.f3-theme-toggle-btn {
+  display: none !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
 body.controls-collapsed .controls {
   padding: 0;
   border: 0;

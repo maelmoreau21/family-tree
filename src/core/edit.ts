@@ -1,6 +1,6 @@
 import * as d3 from "d3"
 import { formCreatorSetup } from "./form-creator"
-import { createHistory, createHistoryControls, HistoryWithControls } from "../features/history"
+import { createHistory, History } from "../features/history"
 import { createFormEdit, createFormNew } from "../renderers/create-form"
 import addRelative from "./add-relative"
 import { deletePerson, cleanupDataJson } from "../store/edit"
@@ -60,7 +60,7 @@ export class EditTree {
 
   addRelativeInstance: AddRelative
   removeRelativeInstance: RemoveRelative
-  history: HistoryWithControls | null
+  history: History | null
   modal: Modal
 
   createFormEdit: ((form_creator: FormCreator, closeCallback: () => void) => HTMLElement) | null
@@ -194,12 +194,8 @@ export class EditTree {
 
     const nav_cont = this.cont.querySelector('.f3-nav-cont') as HTMLElement
     if (!nav_cont) throw new Error("Nav cont not found")
-    const controls = createHistoryControls(nav_cont, history)
-
     history.changed()
-    controls.updateButtons()
-
-    return {...history, controls}
+    return history
   }
   
   openWithoutRelCancel(datum: Datum) {
@@ -504,7 +500,6 @@ export class EditTree {
     const history = this.history
     if (history) {
       history.changed()
-      history.controls.updateButtons()
     }
   
     if (this.onChange) this.onChange()

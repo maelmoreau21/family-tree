@@ -76,39 +76,4 @@ export function createHistory(store: Store, getStoreDataCopy: () => Data, onUpda
   }
 }
 
-export function createHistoryControls(cont: HTMLElement, history: History): HistoryControls {
-  const history_controls = d3.select(cont).append("div").attr("class", "f3-history-controls")
-  cont.insertBefore(history_controls.node()!, cont.firstChild)
-  const back_btn = history_controls.append("button").attr("class", "f3-back-button").on("click", () => {
-    history.back()
-    updateButtons()
-  })
-  const forward_btn = history_controls.append("button").attr("class", "f3-forward-button").on("click", () => {
-    history.forward()
-    updateButtons()
-  })
-
-  updateSelectionHtml(back_btn, icons.historyBackSvgIcon(), 'History back icon')
-  updateSelectionHtml(forward_btn, icons.historyForwardSvgIcon(), 'History forward icon')
-
-  return {
-    back_btn: back_btn.node()!,
-    forward_btn: forward_btn.node()!,
-    updateButtons,
-    destroy
-  }
-
-  function updateButtons() {
-    back_btn.classed("disabled", !history.canBack())
-    forward_btn.classed("disabled", !history.canForward())
-    if (!history.canBack() && !history.canForward()) {
-      history_controls.style("opacity", 0).style("pointer-events", "none")
-    } else {
-      history_controls.style("opacity", 1).style("pointer-events", "auto")
-    }
-  }
-
-  function destroy() {
-    d3.select(cont).select('.f3-history-controls').remove()
-  }
-}
+// createHistoryControls removed: history UI controls have been removed from the codebase
