@@ -11,7 +11,7 @@
   --backdrop-blur: 12px;
   --panel-bg: rgba(15, 23, 42, 0.45);
   --panel-border: rgba(148, 163, 184, 0.35);
-  --panel-popup-bg: rgba(15, 23, 42, 0.85);
+  --panel-popup-bg: rgba(15, 23, 42, 0.65);
 }
 
 body {
@@ -432,7 +432,7 @@ body.controls-collapsed .panel-toggle {
 }
 
 .panel {
-  background: var(--panel-bg);
+  background: rgba(15, 23, 42, 0.25);
   backdrop-filter: blur(var(--backdrop-blur));
   -webkit-backdrop-filter: blur(var(--backdrop-blur));
   border: 1px solid var(--panel-border);

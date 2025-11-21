@@ -376,7 +376,7 @@ const FIELD_LABELS = {
   'first_names': 'Prénoms',
   'last name': 'Nom',
   'nickname': 'Surnom',
-  'maiden name': 'Nom de jeune fille',
+  'maiden name': 'Nom de naissance',
   'birthday': 'Date de naissance',
   'death': 'Date de Décès',
   'gender': 'Genre',
