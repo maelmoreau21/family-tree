@@ -579,6 +579,201 @@ legend {
   padding-right: 0;
 }
 
+background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+border: none;
+color: white;
+font-weight: 500;
+box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+button.primary:hover {
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.5);
+  transform: translateY(-1px);
+}
+
+button.ghost {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 0.25rem 0.5rem;
+}
+
+button.ghost:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.button-group {
+  display: flex;
+  gap: 1px;
+  background: var(--panel-border);
+  padding: 1px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.button-group button {
+  flex: 1;
+  border-radius: 0;
+  border: none;
+  background: var(--input-bg);
+  font-size: 0.8rem;
+}
+
+.button-group button.active {
+  background: var(--accent-primary);
+  color: white;
+}
+
+/* Fieldsets */
+fieldset {
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm);
+  margin: 0;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+legend {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  padding: 0 4px;
+  font-weight: 600;
+}
+
+/* Hints */
+.hint,
+.group-hint {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Status */
+.builder-status {
+  font-size: 0.8rem;
+  padding: var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--panel-border);
+  min-height: 1rem;
+  margin-top: auto;
+}
+
+/* Upload Area */
+.media-tools .upload-result {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px dashed var(--panel-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm);
+}
+
+.upload-url {
+  display: block;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--accent-secondary);
+  margin: 4px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Depth Grid */
+.depth-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
+}
+
+/* Dimension Grid */
+.dimension-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
+}
+
+/* Resources */
+.resources ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.resources a {
+  color: var(--accent-secondary);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.resources a:hover {
+  text-decoration: underline;
+}
+
+/* Chart Loading */
+.chart-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--panel-bg);
+  padding: 1rem 2rem;
+  border-radius: 99px;
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--panel-border);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  z-index: 50;
+}
+
+.loading-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--accent-primary);
+  border-radius: 50%;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+}
+
+/* Hide unwanted library controls */
+.f3-nav-cont,
+.f3-history-controls,
+.f3-zoom-control,
+.f3-fullscreen-control,
+[title="Zoom in"],
+[title="Zoom out"],
+[title="Toggle theme"],
+[title="Luminosité"],
+[title="Agrandissement"] {
+  display: none !important;
+}
+
+/* Search Bar Fixes */
+.search-panel .f3-autocomplete-input-cont {
+  width: 100%;
+  padding-right: 0;
+}
+
 .search-panel .f3-autocomplete-input-cont input {
   width: 100% !important;
   box-sizing: border-box;
@@ -590,11 +785,22 @@ legend {
 
 /* Status Bar Fixes */
 #status {
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  white-space: nowrap !important;
+  display: block !important;
   max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  padding: 0.5rem 1rem;
+}
+
+/* Adjust Search Bar Width */
+.search-panel .f3-autocomplete-input-cont {
+  padding-right: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.search-panel .f3-autocomplete-input-cont input {
+  width: 96% !important;
+  margin: 0 auto;
 }

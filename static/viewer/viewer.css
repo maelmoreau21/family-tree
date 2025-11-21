@@ -716,3 +716,20 @@ body.viewer-details-collapsed .details {
 [title="Agrandissement"] {
   display: none !important;
 }
+
+/* Hide "Add Relative" circle button in Viewer */
+.f3 .card_add_relative {
+  display: none !important;
+}
+
+/* Adjust Search Bar Width */
+.search-block .f3-autocomplete-input-cont {
+  padding-right: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.search-block .f3-autocomplete-input-cont input {
+  width: 96% !important;
+  margin: 0 auto;
+}
