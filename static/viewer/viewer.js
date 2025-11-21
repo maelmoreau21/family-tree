@@ -96,7 +96,12 @@ function applyPanelCollapsedState(collapsed) {
   }
   if (panelToggleBtn) {
     panelToggleBtn.setAttribute('aria-expanded', String(!collapsed))
-    panelToggleBtn.textContent = collapsed ? 'Afficher le panneau' : 'Replier le panneau'
+    const span = panelToggleBtn.querySelector('span')
+    if (span) {
+      span.textContent = collapsed ? 'Afficher' : 'Masquer'
+    } else {
+      panelToggleBtn.title = collapsed ? 'Afficher le panneau' : 'Masquer le panneau'
+    }
   }
   if (detailsPanel) {
     if (collapsed) {
@@ -358,7 +363,7 @@ const DETAIL_FIELD_ORDER = [
   'bio'
 ]
 
- 
+
 const HIDDEN_FIELD_KEYS = new Set([
   'phone',
   'email',
@@ -420,7 +425,7 @@ const DEFAULT_CHART_CONFIG = Object.freeze({
   cardDisplay: DEFAULT_CARD_DISPLAY.map(row => [...row]),
   mainId: null
   ,
-  
+
   autoCenter: true
 })
 
@@ -587,7 +592,7 @@ function normaliseChartConfig(rawConfig = {}) {
     config.linkStyle = rawLinkStyle
   }
 
-  
+
 
   return config
 }
@@ -633,7 +638,7 @@ function applyConfigToChart(chart, rawConfig) {
     chart.setProgenyDepth(null)
   }
 
-  
+
 
   return config
 }
@@ -754,7 +759,7 @@ function buildSearchOption(person) {
     if (typeof rawValue !== 'string') return
     const trimmed = rawValue.trim()
     if (!trimmed) return
-    
+
     const rkey = normalizeFieldKey(rawKey)
     if (HIDDEN_FIELD_KEYS.has(rkey)) return
     addToken(trimmed)
@@ -991,7 +996,7 @@ function updatePerformanceControlsUI(config) {
   if (progenyDepthControl) progenyDepthControl.value = depthToSelectValue(config.progenyDepth, DEFAULT_CHART_CONFIG.progenyDepth)
   if (miniTreeToggle) miniTreeToggle.checked = config.miniTree !== false
   if (autoCenterToggle) autoCenterToggle.checked = config.autoCenter !== false
-  
+
 }
 
 function updateDatasetMeta() {
@@ -1000,8 +1005,8 @@ function updateDatasetMeta() {
   pendingMetaFrame = schedule(() => {
     pendingMetaFrame = null
     const visible = chartInstance?.store?.getTree?.()?.data?.length ?? 0
-    
-    
+
+
     let branchCount = Number.isFinite(latestMeta.returned) ? latestMeta.returned : undefined
     if (branchCount === undefined) {
       try {
@@ -1025,8 +1030,8 @@ function updateDatasetMeta() {
     lastMetaSnapshot.branch = branchCount
     lastMetaSnapshot.total = totalPersons
 
-  if (visibleCountEl) visibleCountEl.textContent = String(visible)
-  if (branchCountEl) branchCountEl.textContent = String(branchCount)
+    if (visibleCountEl) visibleCountEl.textContent = String(visible)
+    if (branchCountEl) branchCountEl.textContent = String(branchCount)
     if (totalCountEl) totalCountEl.textContent = String(totalPersons)
     if (datasetMeta) {
       datasetMeta.dataset.visible = String(visible)
@@ -1050,7 +1055,7 @@ function applyViewerConfig({ treePosition = 'inherit', initial = false } = {}) {
     chartInstance.setProgenyDepth(null)
   }
 
-  
+
 
   if (cardInstance && typeof cardInstance.setMiniTree === 'function') {
     cardInstance.setMiniTree(viewerConfig.miniTree !== false)
@@ -1114,15 +1119,15 @@ function attachPerformanceHandlers() {
     const previous = viewerConfig.autoCenter !== false
     if (enabled === previous) return
     viewerConfig = { ...viewerConfig, autoCenter: enabled }
-    
+
     if (enabled && chartInstance) {
       chartInstance.updateTree({ tree_position: 'main_to_middle' })
     }
-    
+
     setViewerPref('autoCenter', enabled)
   })
 
-  
+
 }
 
 attachPerformanceHandlers()
@@ -1151,7 +1156,7 @@ function describeDepthValue(value) {
 function buildDepthSummary(config) {
   const ancestry = describeDepthValue(config.ancestryDepth)
   const progeny = describeDepthValue(config.progenyDepth)
-  
+
   return `Profondeur — Ancêtres: ${ancestry}, Descendants: ${progeny}`
 }
 
@@ -1522,39 +1527,39 @@ function hasContent(value) {
 function buildDetailEntries(person = {}) {
   const normalizedPerson = person || {}
 
-  
+
   function findValueForKey(rawKey) {
     const desired = normalizeFieldKey(rawKey)
     const desiredCanonical = canonicalFieldKey(rawKey)
-    
+
     if (Object.prototype.hasOwnProperty.call(normalizedPerson, rawKey)) {
       return normalizedPerson[rawKey]
     }
-    
+
     for (const k of Object.keys(normalizedPerson)) {
       if (normalizeFieldKey(k) === desired) return normalizedPerson[k]
     }
-    
+
     for (const k of Object.keys(normalizedPerson)) {
       if (canonicalFieldKey(k) === desiredCanonical) return normalizedPerson[k]
     }
     return undefined
   }
 
-  
+
   const entries = DETAIL_FIELD_ORDER.map(field => ({
     field,
     value: findValueForKey(field),
     mandatory: true
   }))
 
-  
+
   const seen = new Set(DETAIL_FIELD_ORDER.map(canonicalFieldKey))
 
   Object.entries(normalizedPerson).forEach(([field, value]) => {
     if (isUnionReferenceKey(field)) return
     const key = canonicalFieldKey(field)
-    
+
     if (HIDDEN_FIELD_KEYS.has(key)) return
     if (seen.has(key)) return
     if (!hasContent(value)) return
@@ -1596,8 +1601,8 @@ function collectSpouseUnionDetails(datum) {
     if (!storeDatum && !hasUnionInfo) {
       return
     }
-    
-    
+
+
     let name = `Profil ${id}`
     if (storeDatum) {
       const pd = storeDatum.data || {}
@@ -1821,7 +1826,7 @@ function handlePersonSelection(datum, source = 'card') {
 
   if (chartInstance) {
     chartInstance.updateMainId(datum.id)
-    
+
     applyViewerConfig({ treePosition: 'inherit', initial: false })
   }
 
@@ -1865,7 +1870,7 @@ function setupSearch(chart) {
     return extras.length ? `${name} (${extras.join(' · ')})` : name
   }, {
     cont: searchContainer,
-  placeholder: 'Rechercher (nom, date, lieu, etc.)',
+    placeholder: 'Rechercher (nom, date, lieu, etc.)',
     onSelect: (id) => {
       const selected = chart.store?.getDatum?.(id)
       if (selected) {
@@ -1913,7 +1918,7 @@ function setupSearch(chart) {
   updateSearchOptionsForChart(chart)
   ensurePeopleSummary().then(() => {
     updateSearchOptionsForChart(chart)
-  }).catch(() => {})
+  }).catch(() => { })
 }
 
 function renderChart(payload, options = {}) {
@@ -1966,7 +1971,7 @@ function renderChart(payload, options = {}) {
     mainId: options.mainId || baseConfig.mainId || viewerConfig.mainId || null,
     ancestryDepth: serverQueryState.ancestryDepth,
     progenyDepth: serverQueryState.progenyDepth,
-  
+
     miniTree: options.preservePreferences && viewerConfig ? viewerConfig.miniTree !== false : baseConfig.miniTree !== false,
     cardDisplay: baseConfig.cardDisplay && baseConfig.cardDisplay.length
       ? baseConfig.cardDisplay.map(row => [...row])
@@ -1988,7 +1993,7 @@ function renderChart(payload, options = {}) {
   viewerConfig = { ...mergedConfig }
   viewerConfig.mainId = mergedConfig.mainId
 
-  
+
   const persistedAutoCenter = getViewerPref('autoCenter', viewerConfig.autoCenter)
   viewerConfig.autoCenter = persistedAutoCenter === undefined ? viewerConfig.autoCenter : persistedAutoCenter
 
@@ -2049,7 +2054,7 @@ function renderChart(payload, options = {}) {
     })
   }
 
-  
+
 
   isApplyingViewerConfig = true
   updatePerformanceControlsUI(viewerConfig)
@@ -2093,7 +2098,7 @@ function renderChart(payload, options = {}) {
 
   updateDatasetMeta()
 
-  
+
   let branchCount = Number.isFinite(latestMeta.returned) ? latestMeta.returned : undefined
   if (!Number.isFinite(branchCount)) {
     try {
@@ -2119,14 +2124,14 @@ function renderChart(payload, options = {}) {
       : 'Branche'
   const branchLabel = branchCount === 1 ? 'profil' : 'profils'
   const totalLabel = totalCount === 1 ? 'profil' : 'profils'
-  
+
   setStatus(`${prefix} : ${name} — ${branchCount} ${branchLabel} dans la branche / ${totalCount} ${totalLabel} au total`, 'success')
 
   lastSelectionContext = { source: options.source || prefix.toLowerCase(), label: name }
 
   ensurePeopleSummary().then(() => {
     updateSearchOptionsForChart(chart)
-  }).catch(() => {})
+  }).catch(() => { })
 }
 
 fetchFullTree({ preservePreferences: false, source: 'system' }).catch(() => {

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -26,11 +27,18 @@
     }
   </script>
 </head>
+
 <body>
   <main class="layout">
     <header class="viewer-toolbar">
-      <button type="button" class="panel-toggle" data-action="toggle-panel" aria-expanded="true" aria-controls="personDetails">
-        Replier le panneau
+      <button type="button" class="panel-toggle" data-action="toggle-panel" aria-expanded="true"
+        aria-controls="personDetails" aria-label="Basculer le panneau">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="15" y1="3" x2="15" y2="21"></line>
+        </svg>
+        <span>Panneau</span>
       </button>
     </header>
     <section class="canvas">
@@ -48,7 +56,7 @@
             <summary>Paramètres</summary>
             <div class="performance-body">
               <div class="performance-grid">
-                
+
               </div>
               <label class="toggle-row" for="viewerMiniTree">
                 <input type="checkbox" id="viewerMiniTree" checked>
@@ -59,7 +67,8 @@
                 <span>Recentrage automatique</span>
               </label>
               <p class="viewer-github-link">
-                <a href="https://github.com/maelmoreau21/family-tree" target="_blank" rel="noopener">Dépôt GitHub du projet</a>
+                <a href="https://github.com/maelmoreau21/family-tree" target="_blank" rel="noopener">Dépôt GitHub du
+                  projet</a>
               </p>
               <p class="dataset-meta" data-role="dataset-meta">
                 <strong data-role="visible-count">0</strong> cartes visibles ·
@@ -91,4 +100,5 @@
     })
   </script>
 </body>
+
 </html>
