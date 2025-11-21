@@ -974,16 +974,195 @@ legend {
 
 
 /* Adjust Search Bar Width */
-.search-panel .f3-autocomplete-input-cont {
-  padding-right: 0;
+.search-panel .f3-autocomplete-input-cont {}
+
+.button-group {
   display: flex;
-  justify-content: center;
+  gap: 1px;
+  background: var(--panel-border);
+  padding: 1px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.button-group button {
+  flex: 1;
+  border-radius: 0;
+  border: none;
+  background: var(--input-bg);
+  font-size: 0.8rem;
+}
+
+.button-group button.active {
+  background: var(--accent-primary);
+  color: white;
+}
+
+/* Fieldsets */
+fieldset {
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm);
+  margin: 0;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+legend {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  padding: 0 4px;
+  font-weight: 600;
+}
+
+/* Hints */
+.hint,
+.group-hint {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Status */
+.builder-status {
+  font-size: 0.8rem;
+  padding: var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--panel-border);
+  min-height: 1rem;
+  margin-top: auto;
+}
+
+/* Upload Area */
+.media-tools .upload-result {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px dashed var(--panel-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm);
+}
+
+.upload-url {
+  display: block;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--accent-secondary);
+  margin: 4px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Depth Grid */
+.depth-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
+}
+
+/* Dimension Grid */
+.dimension-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
+}
+
+/* Resources */
+.resources ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.resources a {
+  color: var(--accent-secondary);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.resources a:hover {
+  text-decoration: underline;
+}
+
+/* Chart Loading */
+.chart-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--panel-bg);
+  padding: 1rem 2rem;
+  border-radius: 99px;
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--panel-border);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  z-index: 50;
+}
+
+.loading-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--accent-primary);
+  border-radius: 50%;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+}
+
+/* Hide unwanted library controls */
+.f3-nav-cont,
+.f3-history-controls,
+.f3-zoom-control,
+.f3-fullscreen-control,
+[title="Zoom in"],
+[title="Zoom out"],
+[title="Toggle theme"],
+[title="Luminosité"],
+[title="Agrandissement"] {
+  display: none !important;
+}
+
+/* Search Bar Fixes */
+.search-panel .f3-autocomplete-input-cont {
+  width: 100%;
+  padding-right: 0;
 }
 
 .search-panel .f3-autocomplete-input-cont input {
-  width: 98% !important;
-  margin: 0 auto;
-  display: block;
+  width: 100% !important;
+  box-sizing: border-box;
+}
+
+.search-panel .empty {
+  display: none !important;
+}
+
+/* Status Bar Fixes */
+#status {
+  white-space: nowrap !important;
+  display: block !important;
+  max-width: 100%;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 
 .button-group {
@@ -1303,6 +1482,15 @@ legend {
   left: auto !important;
   /* Reset left */
   font-size: 1.5rem !important;
+  background: var(--panel-bg) !important;
+  border-radius: 50% !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+  z-index: 100 !important;
 }
 
 .f3-close-btn:hover {

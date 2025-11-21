@@ -1327,7 +1327,7 @@ function setupChart(payload) {
   const totalPersons = dataArray.length
   setStatus(
     totalPersons > 0
-      ? `Éditeur prêt ✅ –\n${totalPersons} personne(s) chargée(s)`
+      ? `Éditeur prêt ✅ – ${totalPersons} personne(s) chargée(s)`
       : 'Fichier de données vide',
     totalPersons > 0 ? 'success' : 'error'
   )
