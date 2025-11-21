@@ -376,7 +376,7 @@ const FIELD_LABELS = {
   'first_names': 'Prénoms',
   'last name': 'Nom',
   'nickname': 'Surnom',
-  'maiden name': 'Nom de jeune fille',
+  'maiden name': 'Nom de naissance',
   'birthday': 'Date de naissance',
   'death': 'Date de Décès',
   'gender': 'Genre',
@@ -1424,6 +1424,14 @@ function fetchFullTree(context = {}) {
 
       if (resolvedMainId) {
         serverQueryState = { ...serverQueryState, mainId: resolvedMainId }
+      }
+
+      const config = normaliseChartConfig(normalised.config)
+      if (config.ancestryDepth !== undefined) {
+        serverQueryState.ancestryDepth = config.ancestryDepth
+      }
+      if (config.progenyDepth !== undefined) {
+        serverQueryState.progenyDepth = config.progenyDepth
       }
 
       lastSuccessfulQuery = null
