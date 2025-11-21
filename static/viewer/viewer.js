@@ -1426,6 +1426,14 @@ function fetchFullTree(context = {}) {
         serverQueryState = { ...serverQueryState, mainId: resolvedMainId }
       }
 
+      const config = normaliseChartConfig(normalised.config)
+      if (config.ancestryDepth !== undefined) {
+        serverQueryState.ancestryDepth = config.ancestryDepth
+      }
+      if (config.progenyDepth !== undefined) {
+        serverQueryState.progenyDepth = config.progenyDepth
+      }
+
       lastSuccessfulQuery = null
 
       renderChart({
