@@ -559,3 +559,42 @@ legend {
     opacity: 0.5;
   }
 }
+
+/* Hide unwanted library controls */
+.f3-nav-cont,
+.f3-history-controls,
+.f3-zoom-control,
+.f3-fullscreen-control,
+[title="Zoom in"],
+[title="Zoom out"],
+[title="Toggle theme"],
+[title="Luminosité"],
+[title="Agrandissement"] {
+  display: none !important;
+}
+
+/* Search Bar Fixes */
+.search-panel .f3-autocomplete-input-cont {
+  width: 100%;
+  padding-right: 0;
+}
+
+.search-panel .f3-autocomplete-input-cont input {
+  width: 100% !important;
+  box-sizing: border-box;
+}
+
+.search-panel .empty {
+  display: none !important;
+}
+
+/* Status Bar Fixes */
+#status {
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
