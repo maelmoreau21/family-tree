@@ -496,6 +496,17 @@ body.controls-collapsed .panel-toggle {
   background: transparent;
 }
 
+/* Make the editable-fields fieldset match the viewer details panel blur/background */
+fieldset[data-role="editable-fields"],
+.panel-body fieldset[data-role="editable-fields"] {
+  background: var(--panel-bg);
+  backdrop-filter: blur(var(--backdrop-blur));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur));
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 0.65rem;
+}
+
 .depth-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));

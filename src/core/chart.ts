@@ -333,7 +333,7 @@ export class Chart {
     cont?: HTMLElement,
     label?: string
   } = {}) {
-    const button = d3.select(cont).append('button')
+    d3.select(cont).append('button')
       .attr('class', 'f3-btn f3-fit-to-screen-btn')
       .style('margin-left', '10px')
       .style('display', 'flex')
@@ -375,7 +375,7 @@ export class Chart {
     cont?: HTMLElement,
     label?: string
   } = {}) {
-    const button = d3.select(cont).append('button')
+    d3.select(cont).append('button')
       .attr('class', 'f3-btn f3-theme-toggle-btn')
       .style('margin-left', '10px')
       .style('display', 'flex')

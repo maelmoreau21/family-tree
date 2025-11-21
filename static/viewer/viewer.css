@@ -335,8 +335,8 @@ body.viewer-details-collapsed .canvas {
   left: -1px;
   right: -1px;
   background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-radius: 0 0 10px 10px;
   border: 1px solid rgba(148, 163, 184, 0.35);
   border-top: none;
