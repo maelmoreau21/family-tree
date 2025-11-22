@@ -1574,7 +1574,7 @@ legend {
   .f3-form label {
     color: var(--text-muted) !important;
     font-size: 0.8rem !important;
-    margin-bottom: 0px !important;
+    margin-bottom: 0.15rem !important;
     padding-bottom: 0px !important;
     display: block !important;
   }
@@ -1769,7 +1769,7 @@ legend {
   .f3-form label {
     color: var(--text-muted) !important;
     font-size: 0.8rem !important;
-    margin-bottom: 0px !important;
+    margin-bottom: 0.15rem !important;
     padding-bottom: 0px !important;
     display: block !important;
   }
