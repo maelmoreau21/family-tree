@@ -1639,15 +1639,10 @@ body.viewer-details-collapsed .details {
     color: var(--text-main) !important;
     background: rgba(255, 255, 255, 0.1) !important;
   }
+}
 
-  /* Search Bar Width Fixes - Only target input */
-  .search-block .f3-autocomplete-input-cont input {
-    width: 100% !important;
-    box-sizing: border-box;
-  }
-
-  /* Hide empty autocomplete dropdowns */
-  .f3-autocomplete-items.is-empty,
-  .f3-autocomplete-items:empty {
-    display: none !important;
-  }}
+/* Hide empty autocomplete dropdowns */
+.f3-autocomplete-items.is-empty,
+.f3-autocomplete-items:empty {
+  display: none !important;
+}
