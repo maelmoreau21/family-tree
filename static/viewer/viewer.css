@@ -1,3 +1,21 @@
+#personSearch svg circle,
+.search-block svg circle {
+  display: none !important;
+}
+
+/* Make sure long text in the viewer search doesn't overflow */
+#personSearch .f3-autocomplete-input-cont,
+.search-block .f3-autocomplete-input-cont {
+  overflow: hidden !important;
+  min-width: 0 !important;
+}
+
+#personSearch .f3-autocomplete-input-cont input,
+.search-block .f3-autocomplete-input-cont input {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
 :root {
   color-scheme: dark;
   font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;

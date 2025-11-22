@@ -1850,8 +1850,20 @@ legend {
   }
 
   /* Hide circle in search panel */
-  .search-panel circle {
+  .search-panel circle,
+  .search-widget svg circle {
     display: none !important;
+  }
+
+  /* Prevent input text from overflowing the search container */
+  .search-panel .f3-autocomplete-input-cont {
+    overflow: hidden !important;
+  }
+
+  .search-panel .f3-autocomplete-input-cont input {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
   }
 }
 
