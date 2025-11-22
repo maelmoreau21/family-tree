@@ -1455,12 +1455,29 @@ legend {
     width: 100% !important;
     padding-right: 0;
     max-width: none !important;
+    display: block !important;
+    box-sizing: border-box !important;
+    background: var(--input-bg) !important;
+    border: 1px solid var(--input-border) !important;
+    border-radius: var(--radius-sm) !important;
+    padding: 0.15rem !important;
   }
 
   .search-panel .f3-autocomplete-input-cont input {
     width: 100% !important;
-    box-sizing: border-box;
+    box-sizing: border-box !important;
     max-width: none !important;
+    background: transparent !important;
+    border: none !important;
+    color: var(--text-main) !important;
+    padding: 0.5rem !important;
+    border-radius: calc(var(--radius-sm) - 2px) !important;
+  }
+
+  /* Make the search widget container visually match the panel */
+  .search-widget,
+  .search-panel {
+    border-radius: var(--radius-md) !important;
   }
 
   .search-widget {

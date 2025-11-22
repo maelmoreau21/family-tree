@@ -1646,3 +1646,31 @@ body.viewer-details-collapsed .details {
 .f3-autocomplete-items:empty {
   display: none !important;
 }
+
+/* Ensure search input container fills the panel and has rounded border */
+#personSearch,
+.search-block,
+.search-block .f3-autocomplete-input-cont {
+  width: 100% !important;
+  max-width: none !important;
+  display: block !important;
+  box-sizing: border-box !important;
+}
+
+#personSearch .f3-autocomplete-input-cont,
+.search-block .f3-autocomplete-input-cont {
+  background: var(--input-bg) !important;
+  border: 1px solid var(--input-border) !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 0.15rem !important;
+}
+
+#personSearch .f3-autocomplete-input-cont input,
+.search-block .f3-autocomplete-input-cont input {
+  width: 100% !important;
+  background: transparent !important;
+  border: none !important;
+  color: var(--text-main) !important;
+  padding: 0.5rem !important;
+  border-radius: calc(var(--radius-sm) - 2px) !important;
+}
