@@ -875,28 +875,6 @@ body.viewer-details-collapsed .details {
 [title="Zoom in"],
 [title="Zoom out"],
 [title="Toggle theme"],
-[title="Luminosité"],
-[title="Agrandissement"] {
-  display: none !important;
-}
-
-/* Adjust Search Bar Width */
-.search-block .f3-autocomplete-input-cont {
-  padding-right: 0;
-  display: flex;
-  justify-content: center;
-}
-
-.search-block .f3-autocomplete-input-cont input {
-  width: 100% !important;
-  margin: 0 auto;
-  display: block;
-}
-
-/* Hide "Add Relative" circle button in Viewer */
-.f3 .card_add_relative {
-  display: none !important;
-}
 
 .f3 .card_add_relative circle {
   display: none !important;
