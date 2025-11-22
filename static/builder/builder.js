@@ -2638,6 +2638,54 @@ function attachPanelControls({ chart, card }) {
       successMessage: 'Image appliquée et URL copiée ✅',
       errorMessage: 'Impossible de copier ce lien.'
     })
+    copyToClipboard(value, {
+      successMessage: 'Image appliquée et URL copiée ✅',
+      errorMessage: 'Impossible de copier ce lien.'
+    })
+  })
+
+  // GEDCOM Import Handler
+  const gedcomUploadInput = document.getElementById('gedcomUpload')
+  gedcomUploadInput?.addEventListener('change', async (event) => {
+    const file = event.target.files && event.target.files[0]
+    if (!file) return
+
+    if (!confirm('Attention : L\'import GEDCOM va REMPLACER toutes les données actuelles. Voulez-vous continuer ?')) {
+      event.target.value = ''
+      return
+    }
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    setChartLoading(true, 'Import du GEDCOM en cours...')
+    setStatus('Import du GEDCOM...', 'info')
+
+    try {
+      const token = localStorage.getItem('family_tree_token')
+      const headers = {}
+      if (token) headers['Authorization'] = `Bearer ${token}`
+
+      const response = await fetch('/api/import/gedcom', {
+        method: 'POST',
+        headers,
+        body: formData
+      })
+
+      if (!response.ok) throw new Error('Erreur lors de l\'import')
+
+      const result = await response.json()
+      setStatus(`Import réussi : ${result.count} individus importés.`, 'success')
+
+      // Reload tree
+      await initialise()
+    } catch (error) {
+      console.error(error)
+      setStatus('Erreur lors de l\'import GEDCOM', 'error')
+      setChartLoading(false)
+    } finally {
+      event.target.value = ''
+    }
   })
 
   const previousApplyingState = isApplyingConfig

@@ -1,0 +1,34 @@
+0 HEAD
+1 SOUR FamilyTreeApp
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 CHAR UTF-8
+0 @I1@ INDI
+1 NAME John /Doe/
+1 SEX M
+1 BIRT
+2 DATE 10 JAN 1980
+2 PLAC Paris, France
+1 OCCU Developer
+1 FAMS @F1@
+0 @I2@ INDI
+1 NAME Jane /Smith/
+1 SEX F
+1 BIRT
+2 DATE 15 MAR 1982
+2 PLAC Lyon, France
+1 OCCU Designer
+1 FAMS @F1@
+0 @I3@ INDI
+1 NAME Baby /Doe/
+1 SEX M
+1 BIRT
+2 DATE 01 JAN 2010
+2 PLAC Bordeaux, France
+1 FAMC @F1@
+0 @F1@ FAM
+1 HUSB @I1@
+1 WIFE @I2@
+1 CHIL @I3@
+0 TRLR
