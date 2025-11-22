@@ -451,6 +451,8 @@ const EDITABLE_DEFAULTS = [
   { value: 'deathplace', label: 'Lieu de Décès', checked: true },
   { value: 'avatar', label: 'Avatar', checked: true },
   { value: 'gender', label: 'Genre', checked: true },
+  { value: 'metiers', label: 'Métiers', checked: false },
+  { value: 'nationality', label: 'Nationalité', checked: false },
   { value: 'bio', label: 'Biographie', checked: false }
 ]
 
@@ -467,7 +469,7 @@ const DEFAULT_EDITABLE_FIELDS = sanitizeFieldValues(
     .map(def => def.value)
 )
 
-const TEXTAREA_FIELD_KEYS = new Set(['bio', 'notes', 'biographie', 'description', 'union paragraph'])
+const TEXTAREA_FIELD_KEYS = new Set(['bio', 'notes', 'biographie', 'description'])
 const UNION_FIELD_SPECS = [
   { key: 'union date', kind: 'date' },
   { key: 'union place', kind: 'place' }
