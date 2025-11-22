@@ -694,38 +694,6 @@ body.viewer-details-collapsed .details {
   border-bottom: none;
 }
 
-.f3-autocomplete-item:hover,
-.f3-autocomplete-item.f3-selected {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.f3-autocomplete-meta {
-  font-size: 0.75rem;
-  color: var(--text-dim);
-}
-
-/* Hide unwanted library controls */
-.f3-nav-cont,
-.f3-history-controls,
-.f3-zoom-control,
-.f3-fullscreen-control,
-[title="Zoom in"],
-[title="Zoom out"],
-[title="Toggle theme"],
-[title="Luminosité"],
-[title="Agrandissement"] {
-  display: none !important;
-}
-
-/* Hide "Add Relative" circle button in Viewer */
-.f3 .card_add_relative {
-  display: none !important;
-}
-
-/* Adjust Search Bar Width */
-.search-block .f3-autocomplete-input-cont {}
-
-/* Unions */
 .union-entry {
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid var(--panel-border);
@@ -898,6 +866,7 @@ body.viewer-details-collapsed .details {
   color: var(--text-dim);
 }
 
+
 /* Hide unwanted library controls */
 .f3-nav-cont,
 .f3-history-controls,
@@ -911,215 +880,56 @@ body.viewer-details-collapsed .details {
   display: none !important;
 }
 
+/* Adjust Search Bar Width */
+.search-block .f3-autocomplete-input-cont {
+  padding-right: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.search-block .f3-autocomplete-input-cont input {
+  width: 100% !important;
+  margin: 0 auto;
+  display: block;
+}
+
 /* Hide "Add Relative" circle button in Viewer */
 .f3 .card_add_relative {
   display: none !important;
 }
 
-/* Adjust Search Bar Width */
-.search-block .f3-autocomplete-input-cont {
-  .search-block .f3-autocomplete-input-cont {}
+.f3 .card_add_relative circle {
+  display: none !important;
+}
 
-  /* Unions */
-  .union-entry {
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--panel-border);
-    border-radius: var(--radius-sm);
-    padding: var(--space-sm);
-    margin-top: var(--space-xs);
-  }
+/* Close Button Styling */
+.f3-close-btn {
+  color: var(--text-muted) !important;
+  top: var(--space-md) !important;
+  right: var(--space-md) !important;
+  background: var(--panel-bg) !important;
+  border-radius: 50% !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+  z-index: 100 !important;
+  cursor: pointer !important;
+}
 
-  .union-name {
-    font-weight: 600;
-    color: var(--accent-secondary);
-    margin-bottom: 0.25rem;
-  }
+.f3-close-btn:hover {
+  color: var(--text-main) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
 
-  .union-row {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-  }
-
-  /* Avatar Preview */
-  .avatar-preview {
-    display: flex;
-    align-items: center;
-    gap: var(--space-md);
-    margin-bottom: var(--space-sm);
-  }
-
-  .avatar-preview img {
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid var(--panel-border);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  }
-
-  .avatar-preview a {
-    color: var(--accent-primary);
-    text-decoration: none;
-    font-weight: 500;
-  }
-
-  .avatar-preview a:hover {
-    text-decoration: underline;
-  }
-
-  /* Toggle Row (Checkbox) */
-  .toggle-row {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-    cursor: pointer;
-    padding: 0.25rem 0;
-  }
-
-  .toggle-row input[type="checkbox"] {
-    appearance: none;
-    width: 1.2rem;
-    height: 1.2rem;
-    background: var(--input-bg);
-    border: 1px solid var(--input-border);
-    border-radius: 4px;
-    position: relative;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .toggle-row input[type="checkbox"]:checked {
-    background: var(--accent-primary);
-    border-color: var(--accent-primary);
-  }
-
-  .toggle-row input[type="checkbox"]:checked::after {
-    content: '✓';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: white;
-    font-size: 0.8rem;
-  }
-
-  /* Dataset Meta */
-  .dataset-meta {
-    font-size: 0.75rem;
-    color: var(--text-dim);
-    margin-top: var(--space-sm);
-    border-top: 1px solid var(--panel-border);
-    padding-top: var(--space-sm);
-  }
-
-  .dataset-meta strong {
-    color: var(--accent-secondary);
-  }
-
-  /* Status Footer */
-  #status {
-    position: fixed;
-    bottom: var(--space-md);
-    left: var(--space-md);
-    z-index: 90;
-    max-width: 400px;
-    background: var(--panel-bg);
-    backdrop-filter: blur(var(--backdrop-blur));
-    border: 1px solid var(--panel-border);
-    padding: 0.5rem 1rem;
-    border-radius: var(--radius-sm);
-    font-size: 0.85rem;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-
-  #status:not(:empty) {
-    opacity: 1;
-  }
-
-  /* Mobile Responsiveness */
-  @media (max-width: 768px) {
-    .details {
-      position: fixed;
-      top: auto;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      width: 100%;
-      height: 60vh;
-      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-      border-bottom: none;
-    }
-
-    body.viewer-details-collapsed .details {
-      transform: translateY(100%);
-    }
-
-    .viewer-toolbar {
-      top: var(--space-md);
-      left: var(--space-md);
-    }
-  }
-
-  /* Autocomplete Dropdown */
-  .f3-autocomplete-items {
-    background: var(--bg-root);
-    border: 1px solid var(--panel-border);
-    border-radius: var(--radius-sm);
-    margin-top: 4px;
-    max-height: 200px;
-    overflow-y: auto;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-  }
-
-  .f3-autocomplete-item {
-    padding: 0.5rem 0.75rem;
-    cursor: pointer;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  }
-
-  .f3-autocomplete-item:last-child {
-    border-bottom: none;
-  }
-
-  .f3-autocomplete-item:hover,
-  .f3-autocomplete-item.f3-selected {
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  .f3-autocomplete-meta {
-    font-size: 0.75rem;
-    color: var(--text-dim);
-  }
-
-  /* Hide unwanted library controls */
-  .f3-nav-cont,
-  .f3-history-controls,
-  .f3-zoom-control,
-  .f3-fullscreen-control,
-  [title="Zoom in"],
-  [title="Zoom out"],
-  [title="Toggle theme"],
-  [title="Luminosité"],
-  [title="Agrandissement"] {
-    display: none !important;
-  }
-
-  /* Hide "Add Relative" circle button in Viewer */
-  .f3 .card_add_relative {
-    display: none !important;
-  }
-
-  /* Adjust Search Bar Width */
-  .search-block .f3-autocomplete-input-cont {
-    padding-right: 0;
-    display: flex;
-    justify-content: center;
-  }
-
-  .search-block .f3-autocomplete-input-cont input {
-    width: 100% !important;
-    margin: 0 auto;
-    display: block;
-  }
+/* Constrain Image Width in Details */
+.details-content img {
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: var(--radius-sm);
+  box-sizing: border-box;
+  display: block;
+  margin: var(--space-sm) 0;
+}
