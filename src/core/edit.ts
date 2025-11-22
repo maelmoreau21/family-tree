@@ -25,14 +25,16 @@ const FIELD_LABEL_MAP: Record<string, string> = {
   'first name': 'Prénom',
   'first names': 'Prénoms',
   'last name': 'Nom',
-  
-  'maiden name': 'Nom de jeune fille',
+  'maiden name': 'Nom de naissance',
   'birthday': 'Date de naissance',
   'death': 'Date de décès',
   'gender': 'Genre',
   'birthplace': 'Lieu de naissance',
   'deathplace': 'Lieu de décès',
   'bio': 'Biographie',
+  'metiers': 'Métiers',
+  'nationality': 'Nationalité',
+  'occupation': 'Profession',
   'avatar': 'Avatar',
   'union paragraph': 'Paragraphe d’union'
 }

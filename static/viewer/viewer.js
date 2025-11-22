@@ -390,6 +390,8 @@ const FIELD_LABELS = {
   'deathplace': 'Lieu de décès',
   'occupation': 'Profession',
   'bio': 'Biographie',
+  'metiers': 'Métiers',
+  'nationality': 'Nationalité',
   'notes': 'Notes',
   'email': 'Email',
   'phone': 'Téléphone',
