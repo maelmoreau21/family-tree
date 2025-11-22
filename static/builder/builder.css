@@ -474,7 +474,23 @@ legend {
   padding: var(--space-sm);
 }
 
-.upload-url { display: block; background: rgba(0, 0, 0, 0.5); padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 0.8rem; color: var(--accent-secondary); margin: 4px 0; /* Allow vertical wrapping */ white-space: normal !important; word-break: break-all !important; overflow-wrap: anywhere !important; max-width: 100% !important; box-sizing: border-box; height: auto !important; }
+.upload-url {
+  display: block;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--accent-secondary);
+  margin: 4px 0;
+  /* Allow vertical wrapping */
+  white-space: normal !important;
+  word-break: break-all !important;
+  overflow-wrap: anywhere !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+  height: auto !important;
+}
 
 /* Depth Grid */
 .depth-grid {
@@ -642,7 +658,23 @@ legend {
   padding: var(--space-sm);
 }
 
-.upload-url { display: block; background: rgba(0, 0, 0, 0.5); padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 0.8rem; color: var(--accent-secondary); margin: 4px 0; /* Allow vertical wrapping */ white-space: normal !important; word-break: break-all !important; overflow-wrap: anywhere !important; max-width: 100% !important; box-sizing: border-box; height: auto !important; }
+.upload-url {
+  display: block;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--accent-secondary);
+  margin: 4px 0;
+  /* Allow vertical wrapping */
+  white-space: normal !important;
+  word-break: break-all !important;
+  overflow-wrap: anywhere !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+  height: auto !important;
+}
 
 /* Depth Grid */
 .depth-grid {
@@ -826,7 +858,23 @@ legend {
   padding: var(--space-sm);
 }
 
-.upload-url { display: block; background: rgba(0, 0, 0, 0.5); padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 0.8rem; color: var(--accent-secondary); margin: 4px 0; /* Allow vertical wrapping */ white-space: normal !important; word-break: break-all !important; overflow-wrap: anywhere !important; max-width: 100% !important; box-sizing: border-box; height: auto !important; }
+.upload-url {
+  display: block;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--accent-secondary);
+  margin: 4px 0;
+  /* Allow vertical wrapping */
+  white-space: normal !important;
+  word-break: break-all !important;
+  overflow-wrap: anywhere !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+  height: auto !important;
+}
 
 /* Depth Grid */
 .depth-grid {
@@ -1009,7 +1057,23 @@ legend {
   padding: var(--space-sm);
 }
 
-.upload-url { display: block; background: rgba(0, 0, 0, 0.5); padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 0.8rem; color: var(--accent-secondary); margin: 4px 0; /* Allow vertical wrapping */ white-space: normal !important; word-break: break-all !important; overflow-wrap: anywhere !important; max-width: 100% !important; box-sizing: border-box; height: auto !important; }
+.upload-url {
+  display: block;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--accent-secondary);
+  margin: 4px 0;
+  /* Allow vertical wrapping */
+  white-space: normal !important;
+  word-break: break-all !important;
+  overflow-wrap: anywhere !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+  height: auto !important;
+}
 
 /* Depth Grid */
 .depth-grid {
@@ -1187,7 +1251,23 @@ legend {
   padding: var(--space-sm);
 }
 
-.upload-url { display: block; background: rgba(0, 0, 0, 0.5); padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 0.8rem; color: var(--accent-secondary); margin: 4px 0; /* Allow vertical wrapping */ white-space: normal !important; word-break: break-all !important; overflow-wrap: anywhere !important; max-width: 100% !important; box-sizing: border-box; height: auto !important; }
+.upload-url {
+  display: block;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--accent-secondary);
+  margin: 4px 0;
+  /* Allow vertical wrapping */
+  white-space: normal !important;
+  word-break: break-all !important;
+  overflow-wrap: anywhere !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+  height: auto !important;
+}
 
 /* Depth Grid */
 .depth-grid {
@@ -1383,6 +1463,16 @@ legend {
     max-width: none !important;
   }
 
+  .search-widget {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  .search-panel {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
   .search-panel .empty {
     display: none !important;
   }
@@ -1401,6 +1491,9 @@ legend {
   /* Edit Form Refinements */
 
   /* Hide the pencil icon in the form header */
+  /* Hide the pencil icon in the form header - GLOBAL FIX */
+  .f3-edit-btn,
+  span.f3-edit-btn,
   .f3-form .f3-edit-btn {
     display: none !important;
   }
@@ -1477,10 +1570,12 @@ legend {
   }
 
   /* Labels */
+  /* Labels */
   .f3-form label {
     color: var(--text-muted) !important;
     font-size: 0.8rem !important;
-    margin-bottom: 0.25rem !important;
+    margin-bottom: 0px !important;
+    padding-bottom: 0px !important;
     display: block !important;
   }
 
