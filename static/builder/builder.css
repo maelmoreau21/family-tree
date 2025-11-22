@@ -1872,3 +1872,12 @@ legend {
 .f3-autocomplete-items:empty {
   display: none !important;
 }
+ / *   H i d e   t h e   b a c k g r o u n d   c i r c l e   i n   c h e v r o n   i c o n s   * / 
+ g [ d a t a - i c o n = ' c h e v r o n - d o w n ' ]   c i r c l e , 
+ g [ d a t a - i c o n = ' c h e v r o n - u p ' ]   c i r c l e   { 
+     d i s p l a y :   n o n e   ! i m p o r t a n t ; 
+     o p a c i t y :   0   ! i m p o r t a n t ; 
+     v i s i b i l i t y :   h i d d e n   ! i m p o r t a n t ; 
+ } 
+  
+ 
