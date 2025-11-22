@@ -28,7 +28,6 @@ export function getHtmlEdit(form_creator: EditDatumFormCreator) {
       ${closeBtn()}
       <div style="text-align: right; display: 'block'">
         ${!form_creator.no_edit ? addRelativeBtn(form_creator) : ''}
-        ${form_creator.no_edit ? spaceDiv() : editBtn(form_creator)}
       </div>
 
       ${fields(form_creator)}
@@ -47,7 +46,7 @@ export function getHtmlEdit(form_creator: EditDatumFormCreator) {
     </form>
   `)
 
-  
+
 }
 
 function deleteBtn(form_creator: EditDatumFormCreator) {
@@ -78,13 +77,7 @@ function addRelativeBtn(form_creator: EditDatumFormCreator) {
   `)
 }
 
-function editBtn(form_creator: EditDatumFormCreator) {
-  return (`
-    <span class="f3-edit-btn">
-      ${form_creator.editable ? icons.pencilOffSvgIcon() : icons.pencilSvgIcon()}
-    </span>
-  `)
-}
+
 
 function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
   if (!form_creator.editable) return infoField()
@@ -113,10 +106,6 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
 
   orderedFields.forEach(field => {
     fields_html += renderFormField(field)
-    if (!unionInserted && field.id === 'bio' && unionSectionHtml) {
-      fields_html += unionSectionHtml
-      unionInserted = true
-    }
   })
 
   if (!unionInserted && unionSectionHtml) {
@@ -129,15 +118,15 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
     let fields_html = ''
     form_creator.fields.forEach(field => {
       if (field.type === 'rel_reference') {
-          const rf = field as RelReferenceField
-          if (!rf.initial_value) return
-          const relLabelSanitized = sanitizeRelLabel(rf.rel_label)
-          fields_html += `
+        const rf = field as RelReferenceField
+        if (!rf.initial_value) return
+        const relLabelSanitized = sanitizeRelLabel(rf.rel_label)
+        fields_html += `
           <div class="f3-info-field">
             <span class="f3-info-field-label">${rf.label} - <i>${relLabelSanitized}</i></span>
             <span class="f3-info-field-value">${rf.initial_value || ''}</span>
           </div>`
-        } else if (field.type === 'select') {
+      } else if (field.type === 'select') {
         const select_field = field as SelectField
         if (!field.initial_value) return
         fields_html += `
@@ -251,13 +240,13 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
   function sanitizeRelLabel(label?: string) {
     if (!label) return ''
     const cleaned = label
-      
+
       .replace(/\s*\([^)]*\)/g, ' ')
-      
-  .replace(/\b\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b/g, ' ')
-      
+
+      .replace(/\b\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b/g, ' ')
+
       .replace(/\b\d{4}\b/g, ' ')
-      
+
       .replace(/\s{2,}/g, ' ')
       .trim()
     return cleaned
@@ -309,6 +298,4 @@ function closeBtn() {
   `)
 }
 
-function spaceDiv() {
-  return `<div style="height: 24px;"></div>`
-}
+

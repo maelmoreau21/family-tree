@@ -365,7 +365,13 @@ function applyControlsCollapsedState(collapsed) {
 
   if (panelToggleBtn) {
     panelToggleBtn.setAttribute('aria-expanded', String(!collapsed))
-    panelToggleBtn.textContent = collapsed ? 'Afficher le panneau' : 'Replier le panneau'
+    const span = panelToggleBtn.querySelector('span')
+    if (span) {
+      span.textContent = collapsed ? 'Afficher' : 'Masquer'
+    } else {
+      // Fallback if span is missing (though we added it)
+      panelToggleBtn.title = collapsed ? 'Afficher le panneau' : 'Masquer le panneau'
+    }
   }
 }
 
@@ -394,6 +400,8 @@ const DISPLAY_FIELD_LABELS = new Map([
   ['photo', 'Photo'],
   ['picture', 'Portrait'],
   ['bio', 'Biographie'],
+  ['metiers', 'Métiers'],
+  ['nationality', 'Nationalité'],
   ['occupation', 'Profession'],
   ['location', 'Lieu de résidence'],
   ['birthplace', 'Lieu de naissance'],
@@ -443,8 +451,9 @@ const EDITABLE_DEFAULTS = [
   { value: 'deathplace', label: 'Lieu de Décès', checked: true },
   { value: 'avatar', label: 'Avatar', checked: true },
   { value: 'gender', label: 'Genre', checked: true },
+  { value: 'metiers', label: 'Métiers', checked: false },
+  { value: 'nationality', label: 'Nationalité', checked: false },
   { value: 'bio', label: 'Biographie', checked: false }
-  ,{ value: 'union paragraph', label: "Paragraphe d'union", checked: true }
 ]
 
 const DEFAULT_CARD_DISPLAY = [
@@ -460,7 +469,7 @@ const DEFAULT_EDITABLE_FIELDS = sanitizeFieldValues(
     .map(def => def.value)
 )
 
-const TEXTAREA_FIELD_KEYS = new Set(['bio', 'notes', 'biographie', 'description', 'union paragraph'])
+const TEXTAREA_FIELD_KEYS = new Set(['bio', 'notes', 'biographie', 'description'])
 const UNION_FIELD_SPECS = [
   { key: 'union date', kind: 'date' },
   { key: 'union place', kind: 'place' }
@@ -662,7 +671,7 @@ function initBuilderSearch(chart) {
     (datum) => buildPersonLabel(datum),
     {
       cont: searchTarget,
-  placeholder: 'Rechercher (nom, date, lieu, etc.)',
+      placeholder: 'Rechercher (nom, date, lieu, etc.)',
       onSelect: (id) => {
         if (!id) return
         const datum = editTreeInstance?.store?.getDatum?.(id)
@@ -675,8 +684,8 @@ function initBuilderSearch(chart) {
           scrollCard: true
         })
 
-        
-        
+
+
 
         try {
           const input = searchTarget.querySelector('input')
@@ -776,7 +785,7 @@ function buildChartConfig(overrides = {}) {
     progenyDepth: DEFAULT_CHART_CONFIG.progenyDepth,
     miniTree: DEFAULT_CHART_CONFIG.miniTree,
     linkStyle: DEFAULT_CHART_CONFIG.linkStyle,
-  
+
     editableFields: [...DEFAULT_EDITABLE_FIELDS],
     cardDisplay: cloneCardDisplay(DEFAULT_CARD_DISPLAY),
     mainId: DEFAULT_CHART_CONFIG.mainId
@@ -866,7 +875,7 @@ function setStatus(message, type = 'info') {
   if (!statusEl) return
   try {
     if (typeof message === 'string') {
-      
+
       statusEl.innerHTML = message.replace(/\n/g, '<br>')
     } else if (Array.isArray(message)) {
       statusEl.innerHTML = message.map(m => String(m)).join('<br>')
@@ -874,7 +883,7 @@ function setStatus(message, type = 'info') {
       statusEl.textContent = String(message)
     }
   } catch (e) {
-    
+
     statusEl.textContent = String(message)
   }
   statusEl.dataset.status = type
@@ -982,7 +991,7 @@ function normaliseChartConfig(rawConfig = {}) {
     config.miniTree = rawMiniTree
   }
 
-  
+
 
   return config
 }
@@ -1020,7 +1029,7 @@ function applyChartConfigToChart(chart) {
     chart.setProgenyDepth(null)
   }
 
-  
+
 }
 
 async function loadTree() {
@@ -1196,10 +1205,10 @@ function setupChart(payload) {
       }
     })
 
-  
-  
-  
-  
+
+
+
+
   try {
     if (typeof card.setOnCardClick === 'function') {
       card.setOnCardClick((event, treeDatum) => {
@@ -1261,10 +1270,10 @@ function setupChart(payload) {
     })
 
   panelControlAPI = attachPanelControls({ chart, card }) || {
-    refreshMainProfileOptions: () => {},
-    syncMainProfileSelection: () => {},
-    handleFormCreation: () => {},
-    teardown: () => {}
+    refreshMainProfileOptions: () => { },
+    syncMainProfileSelection: () => { },
+    handleFormCreation: () => { },
+    teardown: () => { }
   }
 
   searchControlAPI = initBuilderSearch(chart)
@@ -1321,7 +1330,7 @@ function setupChart(payload) {
   const totalPersons = dataArray.length
   setStatus(
     totalPersons > 0
-      ? `Éditeur prêt ✅ –\n${totalPersons} personne(s) chargée(s)`
+      ? `Éditeur prêt ✅ – ${totalPersons} personne(s) chargée(s)`
       : 'Fichier de données vide',
     totalPersons > 0 ? 'success' : 'error'
   )
@@ -1361,10 +1370,10 @@ function setupChart(payload) {
 function attachPanelControls({ chart, card }) {
   if (!panel) {
     return {
-      refreshMainProfileOptions: () => {},
-      syncMainProfileSelection: () => {},
-      handleFormCreation: () => {},
-      teardown: () => {}
+      refreshMainProfileOptions: () => { },
+      syncMainProfileSelection: () => { },
+      handleFormCreation: () => { },
+      teardown: () => { }
     }
   }
 
@@ -1619,7 +1628,7 @@ function attachPanelControls({ chart, card }) {
     }
 
     try {
-      
+
       console.debug('builder: handleFormCreation form_creator.editable=', form_creator?.editable, 'datum_id=', form_creator?.datum_id)
       console.debug('builder: form_creator.fields', form_creator?.fields)
     } catch (e) {
@@ -1637,13 +1646,13 @@ function attachPanelControls({ chart, card }) {
     imageUploaderCurrentDatumId = form_creator?.datum_id || null
     populateUploaderFromDatum()
 
-    
+
     try {
       const datePlaceholder = 'ex : 30.12.2000'
       const inputs = [...form.querySelectorAll('input[name], textarea[name]')]
       inputs.forEach(el => {
         const name = (el.getAttribute('name') || '').toLowerCase()
-        
+
         let labelText = ''
         try {
           const id = el.getAttribute('id')
@@ -1656,7 +1665,7 @@ function attachPanelControls({ chart, card }) {
         }
 
         const combined = `${name} ${labelText}`
-        
+
         if (/\b(birth|birthday|death|union|marri|wedding|anniv|date)\b/.test(combined)) {
           if (!el.getAttribute('placeholder') || el.getAttribute('placeholder').trim() === '') {
             el.setAttribute('placeholder', datePlaceholder)
@@ -1783,7 +1792,7 @@ function attachPanelControls({ chart, card }) {
           const payload = await response.json()
           if (payload?.message) message = payload.message
         } catch (error) {
-          
+
         }
         throw new Error(message)
       }
@@ -1826,8 +1835,8 @@ function attachPanelControls({ chart, card }) {
     }
     if (ancestryDepthSelect) ancestryDepthSelect.value = depthToSelectValue(chartConfig.ancestryDepth, DEFAULT_CHART_CONFIG.ancestryDepth)
     if (progenyDepthSelect) progenyDepthSelect.value = depthToSelectValue(chartConfig.progenyDepth, DEFAULT_CHART_CONFIG.progenyDepth)
-  if (miniTreeToggle) miniTreeToggle.checked = chartConfig.miniTree !== false
-  
+    if (miniTreeToggle) miniTreeToggle.checked = chartConfig.miniTree !== false
+
     setOrientationButtonsState(chartConfig.orientation || DEFAULT_CHART_CONFIG.orientation)
   }
 
@@ -1950,9 +1959,9 @@ function attachPanelControls({ chart, card }) {
       preferred.push(configMain)
     }
 
-    
-    
-    
+
+
+
     if (!preferred.length) {
       const storeMainId = chart.store && typeof chart.store.getMainId === 'function' ? chart.store.getMainId() : ''
       if (storeMainId && availableIds.has(storeMainId)) {
@@ -2071,8 +2080,8 @@ function attachPanelControls({ chart, card }) {
 
     const shouldUpdateMainId = chart && typeof chart.updateMainId === 'function'
     let recenterAlreadyScheduled = false
-    
-    
+
+
     if (persistConfig && shouldUpdateMainId && storeMainBefore !== id) {
       chart.updateMainId(id)
       chart.updateTree({ initial: false, tree_position: 'main_to_middle' })
@@ -2089,8 +2098,8 @@ function attachPanelControls({ chart, card }) {
     } else {
       updateMainProfileDisplay(chartConfig.mainId || null)
     }
-    
-    
+
+
     try {
       if (!recenterAlreadyScheduled && chart && typeof chart.updateTree === 'function') {
         chart.updateTree({ initial: false, tree_position: 'main_to_middle' })
@@ -2174,7 +2183,7 @@ function attachPanelControls({ chart, card }) {
     if (!Array.isArray(chartConfig.editableFields)) return
     chartConfig.editableFields.forEach(field => {
       const key = normalizeFieldKey(field)
-  if (getUnionFieldKind(key)) return
+      if (getUnionFieldKind(key)) return
       if (!key) return
       const label = ensureFieldLabel(field, fieldLabelStore.get(key))
       const selector = `[data-field-key="${escapeSelector(key)}"]`
@@ -2212,7 +2221,7 @@ function attachPanelControls({ chart, card }) {
   function createDisplayItem(group, { value, label, defaultChecked = false, removable = false }) {
     const list = group.querySelector('.field-list')
     if (!list) return { item: null, isNew: false }
-  const key = normalizeFieldKey(value)
+    const key = normalizeFieldKey(value)
     if (HIDDEN_FIELD_KEYS.has(key)) return { item: null, isNew: false }
     const selector = `[data-field-key="${escapeSelector(key)}"]`
     const displayLabel = ensureFieldLabel(value, label)
@@ -2390,8 +2399,8 @@ function attachPanelControls({ chart, card }) {
     const values = [...editableList.querySelectorAll('input[type="checkbox"]')]
       .filter(input => input.checked)
       .map(input => input.value)
-  let applied = values.length ? values : (chartConfig.editableFields.length ? [...chartConfig.editableFields] : ['first name'])
-  applied = sanitizeFieldValues(applied)
+    let applied = values.length ? values : (chartConfig.editableFields.length ? [...chartConfig.editableFields] : ['first name'])
+    applied = sanitizeFieldValues(applied)
     if (!applied.length) {
       const fallbackField = DEFAULT_EDITABLE_FIELDS[0] || 'first name'
       applied = [fallbackField]
@@ -2402,7 +2411,7 @@ function attachPanelControls({ chart, card }) {
         if (fallbackInput) fallbackInput.checked = true
       }
     }
-  currentEditableFields = [...applied]
+    currentEditableFields = [...applied]
     const fieldDescriptors = createFieldDescriptors(applied)
     editTreeInstance.setFields(fieldDescriptors)
 
@@ -2430,7 +2439,7 @@ function attachPanelControls({ chart, card }) {
     const value = rawValue.trim()
     if (!value) return null
 
-  const key = normalizeFieldKey(value)
+    const key = normalizeFieldKey(value)
     const suggestedLabel = fieldLabelStore.get(key) || value
     const labelInput = prompt('Libellé affiché pour ce champ ?', suggestedLabel)
     const displayLabel = (labelInput ?? suggestedLabel).trim() || value
@@ -2442,7 +2451,7 @@ function attachPanelControls({ chart, card }) {
     const definition = requestFieldDefinition()
     if (!definition) return
     const { value, label, key } = definition
-  const isDefault = EDITABLE_DEFAULTS.some(def => normalizeFieldKey(def.value) === key)
+    const isDefault = EDITABLE_DEFAULTS.some(def => normalizeFieldKey(def.value) === key)
 
     createEditableItem({
       value,
@@ -2544,7 +2553,7 @@ function attachPanelControls({ chart, card }) {
     commitConfigUpdate({ miniTree: enabled })
   })
 
-  
+
 
   emptyLabel?.addEventListener('change', () => {
     if (isApplyingConfig) return
