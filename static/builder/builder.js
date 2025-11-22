@@ -634,35 +634,23 @@ gedcomUploadInput?.addEventListener('change', async (event) => {
 
   const formData = new FormData()
   formData.append('file', file)
+  body: formData
+})
 
-  setChartLoading(true, 'Import du GEDCOM en cours...')
-  setStatus('Import du GEDCOM...', 'info')
+if (!response.ok) throw new Error('Erreur lors de l\'import')
 
-  try {
-    const token = localStorage.getItem('family_tree_token')
-    const headers = {}
-    if (token) headers['Authorization'] = `Bearer ${token}`
+const result = await response.json()
+setStatus(`Import réussi : ${result.count} individus importés.`, 'success')
 
-    const response = await fetch('/api/import/gedcom', {
-      method: 'POST',
-      headers,
-      body: formData
-    })
-
-    if (!response.ok) throw new Error('Erreur lors de l\'import')
-
-    const result = await response.json()
-    setStatus(`Import réussi : ${result.count} individus importés.`, 'success')
-
-    // Reload tree
-    await initialise()
+// Reload tree
+await initialise()
   } catch (error) {
-    console.error(error)
-    setStatus('Erreur lors de l\'import GEDCOM', 'error')
-    setChartLoading(false)
-  } finally {
-    event.target.value = ''
-  }
+  console.error(error)
+  setStatus('Erreur lors de l\'import GEDCOM', 'error')
+  setChartLoading(false)
+} finally {
+  event.target.value = ''
+}
 })
 
 const previousApplyingState = isApplyingConfig
