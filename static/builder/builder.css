@@ -474,18 +474,7 @@ legend {
   padding: var(--space-sm);
 }
 
-.upload-url {
-  display: block;
-  background: rgba(0, 0, 0, 0.5);
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-family: monospace;
-  font-size: 0.8rem;
-  color: var(--accent-secondary);
-  margin: 4px 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+.upload-url { display: block; background: rgba(0, 0, 0, 0.5); padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 0.8rem; color: var(--accent-secondary); margin: 4px 0; /* Allow vertical wrapping */ white-space: normal !important; word-break: break-all !important; overflow-wrap: anywhere !important; max-width: 100% !important; box-sizing: border-box; height: auto !important; }
 
 /* Depth Grid */
 .depth-grid {
@@ -653,18 +642,7 @@ legend {
   padding: var(--space-sm);
 }
 
-.upload-url {
-  display: block;
-  background: rgba(0, 0, 0, 0.5);
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-family: monospace;
-  font-size: 0.8rem;
-  color: var(--accent-secondary);
-  margin: 4px 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+.upload-url { display: block; background: rgba(0, 0, 0, 0.5); padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 0.8rem; color: var(--accent-secondary); margin: 4px 0; /* Allow vertical wrapping */ white-space: normal !important; word-break: break-all !important; overflow-wrap: anywhere !important; max-width: 100% !important; box-sizing: border-box; height: auto !important; }
 
 /* Depth Grid */
 .depth-grid {
@@ -848,18 +826,7 @@ legend {
   padding: var(--space-sm);
 }
 
-.upload-url {
-  display: block;
-  background: rgba(0, 0, 0, 0.5);
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-family: monospace;
-  font-size: 0.8rem;
-  color: var(--accent-secondary);
-  margin: 4px 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+.upload-url { display: block; background: rgba(0, 0, 0, 0.5); padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 0.8rem; color: var(--accent-secondary); margin: 4px 0; /* Allow vertical wrapping */ white-space: normal !important; word-break: break-all !important; overflow-wrap: anywhere !important; max-width: 100% !important; box-sizing: border-box; height: auto !important; }
 
 /* Depth Grid */
 .depth-grid {
@@ -1042,18 +1009,7 @@ legend {
   padding: var(--space-sm);
 }
 
-.upload-url {
-  display: block;
-  background: rgba(0, 0, 0, 0.5);
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-family: monospace;
-  font-size: 0.8rem;
-  color: var(--accent-secondary);
-  margin: 4px 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+.upload-url { display: block; background: rgba(0, 0, 0, 0.5); padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 0.8rem; color: var(--accent-secondary); margin: 4px 0; /* Allow vertical wrapping */ white-space: normal !important; word-break: break-all !important; overflow-wrap: anywhere !important; max-width: 100% !important; box-sizing: border-box; height: auto !important; }
 
 /* Depth Grid */
 .depth-grid {
@@ -1231,18 +1187,7 @@ legend {
   padding: var(--space-sm);
 }
 
-.upload-url {
-  display: block;
-  background: rgba(0, 0, 0, 0.5);
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-family: monospace;
-  font-size: 0.8rem;
-  color: var(--accent-secondary);
-  margin: 4px 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+.upload-url { display: block; background: rgba(0, 0, 0, 0.5); padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 0.8rem; color: var(--accent-secondary); margin: 4px 0; /* Allow vertical wrapping */ white-space: normal !important; word-break: break-all !important; overflow-wrap: anywhere !important; max-width: 100% !important; box-sizing: border-box; height: auto !important; }
 
 /* Depth Grid */
 .depth-grid {
@@ -1295,17 +1240,127 @@ legend {
 .loading-dot {
   width: 8px;
   height: 8px;
-  background: var(--accent-primary);
-  border-radius: 50%;
-  animation: pulse 1s infinite;
+  background: var(--panel-border);
+  padding: 1px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
 }
 
-@keyframes pulse {
-  0% {
-    transform: scale(0.8);
-    opacity: 0.5;
+.button-group button {
+  flex: 1;
+  border-radius: 0;
+  border: none;
+  background: var(--input-bg);
+  font-size: 0.8rem;
+}
+
+.button-group button.active {
+  background: var(--accent-primary);
+  color: white;
+}
+
+/* Fieldsets */
+fieldset {
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm);
+  margin: 0;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+legend {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  padding: 0 4px;
+  font-weight: 600;
+}
+
+/* Hints */
+.hint,
+.group-hint {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Status */
+.builder-status {
+  font-size: 0.8rem;
+  padding: var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.3);
+
+  /* Dimension Grid */
+  .dimension-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-sm);
   }
 
+  /* Resources */
+  .resources ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .resources a {
+    color: var(--accent-secondary);
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+
+  .resources a:hover {
+    text-decoration: underline;
+  }
+
+  /* Chart Loading */
+  .chart-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--panel-bg);
+    padding: 1rem 2rem;
+    border-radius: 99px;
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--panel-border);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    z-index: 50;
+  }
+
+  .loading-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--accent-primary);
+    border-radius: 50%;
+    animation: pulse 1s infinite;
+  }
+
+  @keyframes pulse {
+    0% {
+      transform: scale(0.8);
+      opacity: 0.5;
+    }
+
+    50% {
+      transform: scale(1.2);
+      opacity: 1;
+    }
+
+    100% {
+      transform: scale(0.8);
+      opacity: 0.5;
+    }
+  }
+
+  /* Hide unwanted library controls */
+  .f3-nav-cont,
+  .f3-history-controls,
+  .f3-zoom-control,
   .f3-fullscreen-control,
   [title="Zoom in"],
   [title="Zoom out"],
@@ -1343,326 +1398,152 @@ legend {
     padding: 0.5rem 1rem;
   }
 
-  .button-group {
+  /* Edit Form Refinements */
+
+  /* Hide the pencil icon in the form header */
+  .f3-form .f3-edit-btn {
+    display: none !important;
+  }
+
+  /* Form Container - Glassmorphism & Layout */
+  .f3-form-cont {
+    background: rgba(20, 20, 30, 0.85) !important;
+    /* Semi-transparent background */
+    backdrop-filter: blur(var(--backdrop-blur)) !important;
+    border-left: 1px solid var(--panel-border) !important;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3) !important;
+    width: 350px !important;
+    /* Fixed width or clamp */
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    right: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    height: 100vh !important;
+    padding: 0 !important;
+  }
+
+  /* Form Inner Layout */
+  .f3-form {
+    padding: var(--space-md) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
     display: flex;
-    gap: 1px;
-    background: var(--panel-border);
-    padding: 1px;
-    border-radius: var(--radius-sm);
-    overflow: hidden;
+    flex-direction: column;
+    gap: var(--space-sm);
+    padding-top: 60px !important;
+    /* Space for header buttons */
   }
 
-  .button-group button {
-    flex: 1;
-    border-radius: 0;
-    border: none;
-    background: var(--input-bg);
-    font-size: 0.8rem;
+  /* Form Inputs */
+  .f3-form input[type="text"],
+  .f3-form textarea,
+  .f3-form select {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    background: var(--input-bg) !important;
+    border: 1px solid var(--input-border) !important;
+    color: var(--text-main) !important;
+    border-radius: var(--radius-sm) !important;
+    padding: 0.5rem !important;
+    font-family: inherit !important;
+    font-size: 0.9rem !important;
+    margin: 0 !important;
+    /* Remove default margins to control gap via flex */
   }
 
-  .button-group button.active {
-    background: var(--accent-primary);
-    color: white;
+  .f3-form input[type="text"]:focus,
+  .f3-form textarea:focus,
+  .f3-form select:focus {
+    outline: none !important;
+    border-color: var(--accent-primary) !important;
+    box-shadow: 0 0 0 2px var(--accent-glow) !important;
   }
 
-  /* Fieldsets */
-  fieldset {
-    border: 1px solid var(--panel-border);
-    border-radius: var(--radius-sm);
-    padding: var(--space-sm);
-    margin: 0;
-    background: rgba(255, 255, 255, 0.02);
+  /* Form Buttons */
+  .f3-form button {
+    width: 100% !important;
+    padding: 0.6rem !important;
+    border-radius: var(--radius-sm) !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    margin: 0 !important;
   }
 
-  legend {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    padding: 0 4px;
-    font-weight: 600;
+  .f3-form button[type="submit"] {
+    background: rgba(239, 68, 68, 0.2) !important;
   }
 
-  /* Hints */
-  .hint,
-  .group-hint {
-    font-size: 0.75rem;
-    color: var(--text-dim);
-    margin: 0;
-    line-height: 1.4;
+  /* Labels */
+  .f3-form label {
+    color: var(--text-muted) !important;
+    font-size: 0.8rem !important;
+    margin-bottom: 0.25rem !important;
+    display: block !important;
   }
 
-  /* Status */
-  .builder-status {
-    font-size: 0.8rem;
-    padding: var(--space-sm);
-    border-radius: var(--radius-sm);
-    background: rgba(0, 0, 0, 0.3);
+  /* Title */
+  .f3-form-title {
+    color: var(--text-main) !important;
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    margin-bottom: var(--space-md) !important;
+    text-align: left !important;
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--panel-border);
+  }
 
-    /* Dimension Grid */
-    .dimension-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: var(--space-sm);
-    }
+  /* Close Button - Positioned Top Right */
+  .f3-close-btn {
+    color: var(--text-muted) !important;
+    position: absolute !important;
+    top: var(--space-md) !important;
+    right: var(--space-md) !important;
+    left: auto !important;
+    font-size: 1.5rem !important;
+    background: var(--panel-bg) !important;
+    border-radius: 50% !important;
+    width: 32px !important;
+    height: 32px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+    z-index: 101 !important;
+  }
 
-    /* Resources */
-    .resources ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
+  .f3-close-btn:hover {
+    color: var(--text-main) !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+  }
 
-    .resources a {
-      color: var(--accent-secondary);
-      text-decoration: none;
-      font-size: 0.9rem;
-    }
+  /* Add Button (if present in header) - Positioned Left of Close Button */
+  /* Assuming the "Add" button might be .f3-add-btn or similar if it exists in the header */
+  .f3-form-cont .f3-add-btn,
+  .f3-form-cont [data-action="add"] {
+    position: absolute !important;
+    top: var(--space-md) !important;
+    right: calc(var(--space-md) + 40px) !important;
+    /* Positioned to the left of close button */
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 101 !important;
+  }
 
-    .resources a:hover {
-      text-decoration: underline;
-    }
+  /* Hide specific 'useless' pencil button in edit menu */
+  path[d^='M18.66'] {
+    display: none !important;
+  }
 
-    /* Chart Loading */
-    .chart-loading {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: var(--panel-bg);
-      padding: 1rem 2rem;
-      border-radius: 99px;
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--panel-border);
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      z-index: 50;
-    }
-
-    .loading-dot {
-      width: 8px;
-      height: 8px;
-      background: var(--accent-primary);
-      border-radius: 50%;
-      animation: pulse 1s infinite;
-    }
-
-    @keyframes pulse {
-      0% {
-        transform: scale(0.8);
-        opacity: 0.5;
-      }
-
-      50% {
-        transform: scale(1.2);
-        opacity: 1;
-      }
-
-      100% {
-        transform: scale(0.8);
-        opacity: 0.5;
-      }
-    }
-
-    /* Hide unwanted library controls */
-    .f3-nav-cont,
-    .f3-history-controls,
-    .f3-zoom-control,
-    .f3-fullscreen-control,
-    [title="Zoom in"],
-    [title="Zoom out"],
-    [title="Toggle theme"],
-    [title="Luminosité"],
-    [title="Agrandissement"] {
-      display: none !important;
-    }
-
-    /* Search Bar Fixes */
-    .search-panel .f3-autocomplete-input-cont {
-      width: 100% !important;
-      padding-right: 0;
-      max-width: none !important;
-    }
-
-    .search-panel .f3-autocomplete-input-cont input {
-      width: 100% !important;
-      box-sizing: border-box;
-      max-width: none !important;
-    }
-
-    .search-panel .empty {
-      display: none !important;
-    }
-
-    /* Status Bar Fixes */
-    #status {
-      white-space: nowrap !important;
-      display: block !important;
-      width: auto;
-      max-width: 95vw;
-      overflow: hidden !important;
-      text-overflow: ellipsis !important;
-      padding: 0.5rem 1rem;
-    }
-
-    /* Edit Form Refinements */
-
-    /* Hide the pencil icon in the form header */
-    .f3-form .f3-edit-btn {
-      display: none !important;
-    }
-
-    /* Form Container - Glassmorphism & Layout */
-    .f3-form-cont {
-      background: rgba(20, 20, 30, 0.85) !important;
-      /* Semi-transparent background */
-      backdrop-filter: blur(var(--backdrop-blur)) !important;
-      border-left: 1px solid var(--panel-border) !important;
-      box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3) !important;
-      width: 350px !important;
-      /* Fixed width or clamp */
-      max-width: 100vw !important;
-      overflow-x: hidden !important;
-      right: 0 !important;
-      top: 0 !important;
-      bottom: 0 !important;
-      height: 100vh !important;
-      padding: 0 !important;
-    }
-
-    /* Form Inner Layout */
-    .f3-form {
-      padding: var(--space-md) !important;
-      width: 100% !important;
-      box-sizing: border-box !important;
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-sm);
-      padding-top: 60px !important;
-      /* Space for header buttons */
-    }
-
-    /* Form Inputs */
-    .f3-form input[type="text"],
-    .f3-form textarea,
-    .f3-form select {
-      width: 100% !important;
-      max-width: 100% !important;
-      box-sizing: border-box !important;
-      background: var(--input-bg) !important;
-      border: 1px solid var(--input-border) !important;
-      color: var(--text-main) !important;
-      border-radius: var(--radius-sm) !important;
-      padding: 0.5rem !important;
-      font-family: inherit !important;
-      font-size: 0.9rem !important;
-      margin: 0 !important;
-      /* Remove default margins to control gap via flex */
-    }
-
-    .f3-form input[type="text"]:focus,
-    .f3-form textarea:focus,
-    .f3-form select:focus {
-      outline: none !important;
-      border-color: var(--accent-primary) !important;
-      box-shadow: 0 0 0 2px var(--accent-glow) !important;
-    }
-
-    /* Form Buttons */
-    .f3-form button {
-      width: 100% !important;
-      padding: 0.6rem !important;
-      border-radius: var(--radius-sm) !important;
-      font-weight: 500 !important;
-      cursor: pointer !important;
-      transition: all 0.2s ease !important;
-      margin: 0 !important;
-    }
-
-    .f3-form button[type="submit"] {
-      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)) !important;
-      color: white !important;
-      border: none !important;
-    }
-
-    .f3-form .f3-cancel-btn {
-      background: transparent !important;
-      border: 1px solid var(--panel-border) !important;
-      color: var(--text-muted) !important;
-    }
-
-    .f3-form .f3-cancel-btn:hover {
-      background: rgba(255, 255, 255, 0.05) !important;
-      color: var(--text-main) !important;
-    }
-
-    /* Hide Delete Button if not needed or style it */
-    .f3-form .f3-delete-btn {
-      border: 1px solid rgba(239, 68, 68, 0.3) !important;
-      color: #ef4444 !important;
-      background: rgba(239, 68, 68, 0.1) !important;
-    }
-
-    .f3-form .f3-delete-btn:hover {
-      background: rgba(239, 68, 68, 0.2) !important;
-    }
-
-    /* Labels */
-    .f3-form label {
-      color: var(--text-muted) !important;
-      font-size: 0.8rem !important;
-      margin-bottom: 0.25rem !important;
-      display: block !important;
-    }
-
-    /* Title */
-    .f3-form-title {
-      color: var(--text-main) !important;
-      font-size: 1.1rem !important;
-      font-weight: 600 !important;
-      margin-bottom: var(--space-md) !important;
-      text-align: left !important;
-      padding-bottom: var(--space-sm);
-      border-bottom: 1px solid var(--panel-border);
-    }
-
-    /* Close Button - Positioned Top Right */
-    .f3-close-btn {
-      color: var(--text-muted) !important;
-      position: absolute !important;
-      top: var(--space-md) !important;
-      right: var(--space-md) !important;
-      left: auto !important;
-      font-size: 1.5rem !important;
-      background: var(--panel-bg) !important;
-      border-radius: 50% !important;
-      width: 32px !important;
-      height: 32px !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-      z-index: 101 !important;
-    }
-
-    .f3-close-btn:hover {
-      color: var(--text-main) !important;
-      background: rgba(255, 255, 255, 0.1) !important;
-    }
-
-    /* Add Button (if present in header) - Positioned Left of Close Button */
-    /* Assuming the "Add" button might be .f3-add-btn or similar if it exists in the header */
-    .f3-form-cont .f3-add-btn,
-    .f3-form-cont [data-action="add"] {
-      position: absolute !important;
-      top: var(--space-md) !important;
-      right: calc(var(--space-md) + 40px) !important;
-      /* Positioned to the left of close button */
-      width: 32px !important;
-      height: 32px !important;
-      border-radius: 50% !important;
-      padding: 0 !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      z-index: 101 !important;
-    }
+  /* Hide circle in search panel */
+  .search-panel circle {
+    display: none !important;
+  }
+}
