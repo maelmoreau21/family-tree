@@ -452,8 +452,6 @@ const EDITABLE_DEFAULTS = [
   { value: 'avatar', label: 'Avatar', checked: true },
   { value: 'gender', label: 'Genre', checked: true },
   { value: 'bio', label: 'Biographie', checked: false }
-  , { value: 'metiers', label: 'Métiers', checked: false }
-  , { value: 'nationality', label: 'Nationalité', checked: false }
   , { value: 'union paragraph', label: "Paragraphe d'union", checked: true }
 ]
 

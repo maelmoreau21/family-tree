@@ -106,10 +106,6 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
 
   orderedFields.forEach(field => {
     fields_html += renderFormField(field)
-    if (!unionInserted && field.id === 'bio' && unionSectionHtml) {
-      fields_html += unionSectionHtml
-      unionInserted = true
-    }
   })
 
   if (!unionInserted && unionSectionHtml) {

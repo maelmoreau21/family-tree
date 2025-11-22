@@ -193,10 +193,10 @@ export function chevronUpSvgIcon() { return svgWrapper(chevronUpIcon()) }
 export function linkOffSvgIcon() { return svgWrapper(linkOffIcon()) }
 export function infoSvgIcon() { return svgWrapper(infoIcon()) }
 
-function svgWrapper(icon: string, viewBox='0 0 24 24') {
+function svgWrapper(icon: string, viewBox = '0 0 24 24') {
   const match = icon.match(/data-icon="([^"]+)"/);
   const dataIcon = match ? `data-icon="${match[1]}"` : '';
-  
+
   return (`
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" style="fill: currentColor" ${dataIcon}>
       ${icon}
@@ -206,6 +206,7 @@ function svgWrapper(icon: string, viewBox='0 0 24 24') {
 
 function bgCircle() {
   return (`
-    <circle r="12" cx="12" cy="12" style="fill: rgba(0,0,0,0)" />
+    
   `)
+    `)
 }
