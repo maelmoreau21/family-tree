@@ -144,47 +144,17 @@ function ensureAdminAuth(req, res, next) {
 }
 
 const uploadStorage = multer.diskStorage({
+  // Always write into the base DOCUMENT_DIR with a unique temporary filename.
+  // We will move/rename the file into a person subfolder after multer completes
+  // so we don't rely on multipart field parsing inside multer callbacks.
   destination: (req, file, cb) => {
-    // If the uploader provided a personId in the multipart form, use a subfolder
-    // under DOCUMENT_DIR so each person's files are stored in their own folder.
-    try {
-      const body = req.body || {}
-      const possible = body.personId || body.person_id || body.id || req.query?.personId || req.query?.person_id
-      if (possible && typeof possible === 'string') {
-        const safeId = sanitizeFileName(possible) || 'unknown'
-        const dest = path.join(DOCUMENT_DIR, safeId)
-        try { fsSync.mkdirSync(dest, { recursive: true }) } catch (e) { /* ignore */ }
-        return cb(null, dest)
-      }
-    } catch (e) {
-      // ignore and fallback to root
-    }
     try { fsSync.mkdirSync(DOCUMENT_DIR, { recursive: true }) } catch (e) { /* ignore */ }
     cb(null, DOCUMENT_DIR)
   },
   filename: (req, file, cb) => {
     const ext = resolveFileExtension(file)
-    const baseName = sanitizeFileName(path.parse(file.originalname || '').name) || 'image'
     const uniqueId = `${Date.now()}-${randomUUID().slice(0, 8)}`
-
-    // If uploader provided a personId and optionally a field name, write the file into
-    // the person's folder using the field name as the filename (e.g. avatar.jpg).
-    // This makes it obvious that this is the profile image for that person and allows
-    // overwriting the previous profile image for that field.
-    try {
-      const body = req.body || {}
-      const possible = body.personId || body.person_id || req.query?.personId || req.query?.person_id
-      // If personId is present, choose a deterministic filename for the profile image
-      // so each person has a single profile image stored at /document/<personId>/profil.<ext>
-      if (possible && typeof possible === 'string') {
-        return cb(null, `profil${ext}`)
-      }
-    } catch (e) {
-      // fallback to sensible default below
-    }
-
-    // Fallback: use original base name + unique id to avoid collisions when not associated
-    // with a specific person
+    const baseName = sanitizeFileName(path.parse(file.originalname || '').name) || 'image'
     cb(null, `${baseName}-${uniqueId}${ext}`)
   }
 })
@@ -971,7 +941,7 @@ function createStaticApp(staticFolder, { canWrite }) {
       uploadSingleImage(req, res, (error) => {
         if (error) {
           if (error.code === 'LIMIT_FILE_SIZE') {
-                res.status(413).json({ message: `Fichier trop volumineux (limite ${MAX_UPLOAD_SIZE_MB} Mo).` })
+            res.status(413).json({ message: `Fichier trop volumineux (limite ${MAX_UPLOAD_SIZE_MB} Mo).` })
             return
           }
           if (error.code === 'UNSUPPORTED_FILE_TYPE') {
@@ -988,27 +958,58 @@ function createStaticApp(staticFolder, { canWrite }) {
           return
         }
 
-        // Build returned URL. If file saved inside a person subfolder, req.file.destination
-        // will contain the actual filesystem path. We want a public URL path starting
-        // with /document.
-        let publicPath = `/document/${req.file.filename}`
-        try {
-          const rel = path.relative(DOCUMENT_DIR, req.file.destination || '')
-          if (rel && rel !== '') {
-            // sanitize any backslashes in Windows paths
-            const folder = rel.split(path.sep).filter(Boolean).join('/')
-            publicPath = `/document/${folder}/${req.file.filename}`
-          }
-        } catch (e) {
-          /* ignore and fallback */
-        }
+        // By default assume file is at /document/<filename>
+        (async () => {
+          let publicPath = `/document/${req.file.filename}`
+          try {
+            // Determine if uploader provided a personId and move/rename the file
+            const possible = (req.body && (req.body.personId || req.body.person_id)) || req.query?.personId || req.query?.person_id
+            if (possible && typeof possible === 'string' && possible.trim()) {
+              const safeId = sanitizeFileName(possible) || 'unknown'
+              const targetDir = path.join(DOCUMENT_DIR, safeId)
+              await fs.mkdir(targetDir, { recursive: true })
 
-        res.status(201).json({
-          url: publicPath,
-          originalName: req.file.originalname,
-          size: req.file.size,
-          mimeType: req.file.mimetype
-        })
+              const ext = path.extname(req.file.filename) || resolveFileExtension(req.file) || ''
+              const tempPath = req.file.path || path.join(req.file.destination || DOCUMENT_DIR, req.file.filename)
+              const targetPath = path.join(targetDir, `profil${ext}`)
+
+              try {
+                await fs.rename(tempPath, targetPath)
+              } catch (renameErr) {
+                try {
+                  // Fallback for cross-device rename
+                  await fs.copyFile(tempPath, targetPath)
+                  await fs.unlink(tempPath)
+                } catch (copyErr) {
+                  console.error('[server] Failed to move uploaded file', renameErr, copyErr)
+                  // If move failed, leave the file where multer saved it and continue
+                }
+              }
+
+              publicPath = `/document/${safeId}/profil${ext}`
+            } else {
+              // If no personId, try to resolve any subfolder used by multer
+              try {
+                const rel = path.relative(DOCUMENT_DIR, req.file.destination || '')
+                if (rel && rel !== '') {
+                  const folder = rel.split(path.sep).filter(Boolean).join('/')
+                  publicPath = `/document/${folder}/${req.file.filename}`
+                }
+              } catch (e) {
+                /* ignore and fallback */
+              }
+            }
+          } catch (e) {
+            console.error('[server] Post-upload processing failed', e)
+          }
+
+          res.status(201).json({
+            url: publicPath,
+            originalName: req.file.originalname,
+            size: req.file.size,
+            mimeType: req.file.mimetype
+          })
+        })()
       })
     })
   }
