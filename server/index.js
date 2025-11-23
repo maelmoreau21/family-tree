@@ -174,11 +174,10 @@ const uploadStorage = multer.diskStorage({
     try {
       const body = req.body || {}
       const possible = body.personId || body.person_id || req.query?.personId || req.query?.person_id
-      const field = (body.field || body.imageField || body.fieldname || '').toString().trim()
-      const safeField = sanitizeFileName(field) || null
-      if (possible && typeof possible === 'string' && safeField) {
-        // Use <field><ext> (e.g., avatar.jpg) inside the person's folder.
-        return cb(null, `${safeField}${ext}`)
+      // If personId is present, choose a deterministic filename for the profile image
+      // so each person has a single profile image stored at /document/<personId>/profil.<ext>
+      if (possible && typeof possible === 'string') {
+        return cb(null, `profil${ext}`)
       }
     } catch (e) {
       // fallback to sensible default below
