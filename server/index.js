@@ -1021,30 +1021,57 @@ function createStaticApp(staticFolder, { canWrite }) {
           res.status(400).json({ message: 'personId manquant' })
           return
         }
-        const safeId = sanitizeFileName(possible) || 'unknown'
-        const targetDir = path.join(DOCUMENT_DIR, safeId)
 
-        let entries
-        try {
-          entries = await fs.readdir(targetDir, { withFileTypes: true })
-        } catch (err) {
-          if (err && err.code === 'ENOENT') {
-            res.status(404).json({ message: 'Aucun fichier trouvé pour ce profil' })
-            return
+        // Build a list of candidate folders to check in order of likelihood:
+        //  - sanitized personId
+        //  - sanitized short id (take left part before colon if present)
+        //  - raw personId (sanitized again to be safe)
+        // If none of those exist, also check the DOCUMENT_DIR root for any profil.* file.
+        const raw = possible.trim()
+        const safeFull = sanitizeFileName(raw) || 'unknown'
+        const short = (raw.split(':')[0] || raw)
+        const safeShort = sanitizeFileName(short) || safeFull
+
+        const candidates = [...new Set([safeFull, safeShort])]
+
+        const foundFiles = []
+
+        for (const safeId of candidates) {
+          const candidateDir = path.join(DOCUMENT_DIR, safeId)
+          try {
+            const entries = await fs.readdir(candidateDir, { withFileTypes: true })
+            const profilFiles = entries
+              .filter(e => e.isFile() && /^profil\./i.test(e.name))
+              .map(e => path.join(candidateDir, e.name))
+            if (profilFiles.length) foundFiles.push(...profilFiles)
+          } catch (err) {
+            if (err && err.code === 'ENOENT') {
+              // folder doesn't exist — continue with next candidate
+              continue
+            }
+            throw err
           }
-          throw err
         }
 
-        const profilFiles = entries
-          .filter(e => e.isFile() && /^profil\./i.test(e.name))
-          .map(e => path.join(targetDir, e.name))
+        // fallback: check DOCUMENT_DIR root for profil.* files
+        if (!foundFiles.length) {
+          try {
+            const rootEntries = await fs.readdir(DOCUMENT_DIR, { withFileTypes: true })
+            const rootProfil = rootEntries
+              .filter(e => e.isFile() && /^profil\./i.test(e.name))
+              .map(e => path.join(DOCUMENT_DIR, e.name))
+            if (rootProfil.length) foundFiles.push(...rootProfil)
+          } catch (err) {
+            // ignore root read errors (unlikely)
+          }
+        }
 
-        if (!profilFiles.length) {
-          res.status(404).json({ message: 'Aucun fichier de profil trouvé' })
+        if (!foundFiles.length) {
+          res.status(404).json({ message: 'Aucun fichier trouvé pour ce profil', tried: candidates })
           return
         }
 
-        await Promise.allSettled(profilFiles.map(p => fs.unlink(p)))
+        await Promise.allSettled(foundFiles.map(p => fs.unlink(p)))
         res.status(204).end()
       } catch (error) {
         console.error('[server] Failed to delete profile image', error)
