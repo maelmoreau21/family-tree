@@ -335,11 +335,15 @@ function getStorageSafe() {
 
 function readCollapsedState() {
   const storage = getStorageSafe()
-  if (!storage) return false
+  // Default to collapsed (hidden) unless the user explicitly stored a different state.
+  // If localStorage is unavailable, assume collapsed so the panel stays hidden by default.
+  if (!storage) return true
   try {
-    return storage.getItem(CONTROL_PANEL_STATE_KEY) === '1'
+    const val = storage.getItem(CONTROL_PANEL_STATE_KEY)
+    if (val === null) return true
+    return val === '1'
   } catch (error) {
-    return false
+    return true
   }
 }
 
