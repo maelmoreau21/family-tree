@@ -223,30 +223,16 @@
   </details>
 
   <details class="panel" open>
-    <summary>Sources & Preuves</summary>
-    <div class="panel-body">
-      <div id="sourceManagerContainer"></div>
-    </div>
-  </details>
-  <div id="FamilyChart" class="f3"></div>
-  </section>
-  </main>
-  </div>
-
-  <script type="module">
-    const loadBuilder = async () => {
-      try {
-        await import('/builder.bundle.js')
-      } catch (error) {
-        console.warn('[builder] Bundle introuvable, utilisation du script non compressé.', error)
-        await import('/builder.js')
-      }
+    } catch (error) {
+    console.warn('[builder] Bundle introuvable, utilisation du script non compressé.', error)
+    await import('/builder.js')
+    }
     }
 
     loadBuilder().catch(error => {
-      console.error('[builder] Impossible de charger l’éditeur', error)
+    console.error('[builder] Impossible de charger l’éditeur', error)
     })
-  </script>
+    </script>
 </body>
 
 </html>
