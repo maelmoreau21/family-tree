@@ -1780,6 +1780,9 @@ function attachPanelControls({ chart, card }) {
     if (imageUploaderCurrentDatumId) {
       formData.append('personId', imageUploaderCurrentDatumId)
     }
+    // Send the field name (avatar/photo/picture) so the server can name the file
+    const activeField = getActiveImageFieldId()
+    if (activeField) formData.append('field', activeField)
 
     try {
       const response = await fetch('/api/document', {

@@ -166,6 +166,26 @@ const uploadStorage = multer.diskStorage({
     const ext = resolveFileExtension(file)
     const baseName = sanitizeFileName(path.parse(file.originalname || '').name) || 'image'
     const uniqueId = `${Date.now()}-${randomUUID().slice(0, 8)}`
+
+    // If uploader provided a personId and optionally a field name, write the file into
+    // the person's folder using the field name as the filename (e.g. avatar.jpg).
+    // This makes it obvious that this is the profile image for that person and allows
+    // overwriting the previous profile image for that field.
+    try {
+      const body = req.body || {}
+      const possible = body.personId || body.person_id || req.query?.personId || req.query?.person_id
+      const field = (body.field || body.imageField || body.fieldname || '').toString().trim()
+      const safeField = sanitizeFileName(field) || null
+      if (possible && typeof possible === 'string' && safeField) {
+        // Use <field><ext> (e.g., avatar.jpg) inside the person's folder.
+        return cb(null, `${safeField}${ext}`)
+      }
+    } catch (e) {
+      // fallback to sensible default below
+    }
+
+    // Fallback: use original base name + unique id to avoid collisions when not associated
+    // with a specific person
     cb(null, `${baseName}-${uniqueId}${ext}`)
   }
 })
