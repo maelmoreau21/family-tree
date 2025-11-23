@@ -9,7 +9,7 @@ Remplacez les valeurs d'environnement par vos valeurs de connexion PostgreSQL.
 ```bash
 docker run --rm -p 7920:7920 -p 7921:7921 \
   -e DATABASE_URL="postgresql://user:password@dbhost:5432/family_tree" \
-  -v "$(pwd)/uploads:/app/uploads" \
+  -v "$(pwd)/document:/app/document" \
   ghcr.io/<votre-registre>/family-tree:latest
 ```
 
@@ -52,7 +52,7 @@ services:
       - "7921:7921"
     volumes:
       - ./data/backups:/app/data/backups
-      - ./uploads:/app/uploads
+      - ./document:/app/document
 ```
 
 Le fichier `docker-compose.yml` démarre l'application et PostgreSQL pour le développement local.

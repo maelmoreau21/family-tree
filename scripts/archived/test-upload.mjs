@@ -38,7 +38,7 @@ async function doUpload(filePath) {
   const headers = {}
   if (ADMIN_TOKEN) headers['x-admin-token'] = ADMIN_TOKEN
 
-  const url = `${BUILDER_URL}/api/uploads`
+  const url = `${BUILDER_URL}/api/document`
   console.log(`Uploading ${path.basename(filePath)} (${(await fs.stat(filePath)).size} bytes) to ${url}`)
   try {
     const res = await fetch(url, { method: 'POST', body: form, headers, signal: undefined })

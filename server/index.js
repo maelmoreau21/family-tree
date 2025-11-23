@@ -4,6 +4,7 @@ import compression from 'compression'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import fs from 'node:fs/promises'
+import fsSync from 'node:fs'
 import multer from 'multer'
 import { randomUUID, createHash } from 'node:crypto'
 
@@ -22,7 +23,7 @@ const __dirname = path.dirname(__filename)
 const ROOT_DIR = path.resolve(__dirname, '..')
 const DIST_DIR = path.resolve(ROOT_DIR, 'dist')
 const STATIC_DIR = path.resolve(ROOT_DIR, 'static')
-const UPLOAD_DIR = path.resolve(ROOT_DIR, 'uploads')
+const DOCUMENT_DIR = path.resolve(ROOT_DIR, 'document')
 
 const TREE_DATA_DIR = path.resolve(process.env.TREE_DATA_DIR || path.join(ROOT_DIR, 'data'))
 const TREE_BACKUP_DIR = path.resolve(process.env.TREE_BACKUP_DIR || path.join(TREE_DATA_DIR, 'backups'))
@@ -144,7 +145,22 @@ function ensureAdminAuth(req, res, next) {
 
 const uploadStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, UPLOAD_DIR)
+    // If the uploader provided a personId in the multipart form, use a subfolder
+    // under DOCUMENT_DIR so each person's files are stored in their own folder.
+    try {
+      const body = req.body || {}
+      const possible = body.personId || body.person_id || body.id || req.query?.personId || req.query?.person_id
+      if (possible && typeof possible === 'string') {
+        const safeId = sanitizeFileName(possible) || 'unknown'
+        const dest = path.join(DOCUMENT_DIR, safeId)
+        try { fsSync.mkdirSync(dest, { recursive: true }) } catch (e) { /* ignore */ }
+        return cb(null, dest)
+      }
+    } catch (e) {
+      // ignore and fallback to root
+    }
+    try { fsSync.mkdirSync(DOCUMENT_DIR, { recursive: true }) } catch (e) { /* ignore */ }
+    cb(null, DOCUMENT_DIR)
   },
   filename: (req, file, cb) => {
     const ext = resolveFileExtension(file)
@@ -218,8 +234,8 @@ async function ensureDatabase() {
   }
 }
 
-async function ensureUploadDir() {
-  await fs.mkdir(UPLOAD_DIR, { recursive: true })
+async function ensureDocumentDir() {
+  await fs.mkdir(DOCUMENT_DIR, { recursive: true })
 }
 
 async function ensureBackupDir() {
@@ -928,11 +944,11 @@ function createStaticApp(staticFolder, { canWrite }) {
   app.use('/assets', express.static(path.resolve(ROOT_DIR, 'src', 'styles'), staticOptions))
   
   app.use('/static', express.static(STATIC_DIR, staticOptions))
-  app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '1d' }))
+  app.use('/document', express.static(DOCUMENT_DIR, { maxAge: '1d' }))
   app.use('/api', createTreeApi({ canWrite }))
 
   if (canWrite) {
-    app.post('/api/uploads', ensureAdminAuth, (req, res) => {
+    app.post('/api/document', ensureAdminAuth, (req, res) => {
       uploadSingleImage(req, res, (error) => {
         if (error) {
           if (error.code === 'LIMIT_FILE_SIZE') {
@@ -953,8 +969,23 @@ function createStaticApp(staticFolder, { canWrite }) {
           return
         }
 
+        // Build returned URL. If file saved inside a person subfolder, req.file.destination
+        // will contain the actual filesystem path. We want a public URL path starting
+        // with /document.
+        let publicPath = `/document/${req.file.filename}`
+        try {
+          const rel = path.relative(DOCUMENT_DIR, req.file.destination || '')
+          if (rel && rel !== '') {
+            // sanitize any backslashes in Windows paths
+            const folder = rel.split(path.sep).filter(Boolean).join('/')
+            publicPath = `/document/${folder}/${req.file.filename}`
+          }
+        } catch (e) {
+          /* ignore and fallback */
+        }
+
         res.status(201).json({
-          url: `/uploads/${req.file.filename}`,
+          url: publicPath,
           originalName: req.file.originalname,
           size: req.file.size,
           mimeType: req.file.mimetype
@@ -974,7 +1005,7 @@ function createStaticApp(staticFolder, { canWrite }) {
 
 async function start() {
   await ensureDatabase()
-  await ensureUploadDir()
+  await ensureDocumentDir()
   await ensureBackupDir()
   try {
     await fs.access(DIST_DIR)

@@ -1779,9 +1779,12 @@ function attachPanelControls({ chart, card }) {
 
     const formData = new FormData()
     formData.append('file', file, file.name)
+    if (imageUploaderCurrentDatumId) {
+      formData.append('personId', imageUploaderCurrentDatumId)
+    }
 
     try {
-      const response = await fetch('/api/uploads', {
+      const response = await fetch('/api/document', {
         method: 'POST',
         body: formData
       })
