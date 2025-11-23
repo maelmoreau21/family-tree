@@ -1419,8 +1419,8 @@ function attachPanelControls({ chart, card }) {
   const assetUploadUrlOutput = imageUploader?.querySelector('[data-role="upload-url"]')
   const assetUploadOpenLink = imageUploader?.querySelector('[data-role="open-upload"]')
   const copyUploadUrlBtn = imageUploader?.querySelector('[data-action="copy-upload-url"]')
-  const manualUrlInput = imageUploader?.querySelector('#assetUrl')
-  const copyManualUrlBtn = imageUploader?.querySelector('[data-action="copy-manual-url"]')
+  // manual URL input removed from UI — hide file input filename and use the label as trigger
+  const fileLabel = imageUploader?.querySelector('.file-label')
 
   const imageUploaderHome = imageUploader ? {
     parent: imageUploader.parentElement,
@@ -1548,7 +1548,7 @@ function attachPanelControls({ chart, card }) {
       scheduleAutoSave()
     }
 
-    if (manualUrlInput) manualUrlInput.value = stripOriginIfSame(absoluteUrl)
+    // manual URL input removed — nothing to set here
 
     const appliedSomewhere = formUpdated || datumUpdated
     if (origin === 'upload') {
@@ -1575,13 +1575,12 @@ function attachPanelControls({ chart, card }) {
 
     if (!existingValue) {
       clearUploadResult()
-      if (manualUrlInput) manualUrlInput.value = ''
       setUploadFeedback('Formats recommandés : JPG, PNG, WebP.', 'info')
       return
     }
 
     const absoluteUrl = showUploadResult(existingValue, { silent: true })
-    if (manualUrlInput) manualUrlInput.value = absoluteUrl
+    // manual URL input removed — nothing to update
     setUploadFeedback('Image actuelle du profil chargée.', 'info')
   }
 
@@ -1599,8 +1598,7 @@ function attachPanelControls({ chart, card }) {
     }
     imageUploader.classList.remove('is-modal-context')
     clearUploadResult()
-    if (manualUrlInput) manualUrlInput.value = ''
-    setUploadFeedback('Importez une image ou collez une URL publique. Formats recommandés : JPG, PNG, WebP.', 'info')
+    setUploadFeedback('Importez une image depuis votre ordinateur. Formats recommandés : JPG, PNG, WebP.', 'info')
   }
 
   function injectImageUploaderIntoForm(form) {
@@ -1726,7 +1724,7 @@ function attachPanelControls({ chart, card }) {
       }
     }
     assetUploadResult.classList.remove('hidden')
-    if (manualUrlInput) manualUrlInput.value = absoluteUrl
+    // manual URL input removed — nothing to update
     if (!silent) setUploadFeedback('Image prête à être appliquée.', 'info')
 
     return absoluteUrl
@@ -2625,6 +2623,12 @@ function attachPanelControls({ chart, card }) {
     event.target.value = ''
   })
 
+  // Make the visible label open the hidden file input (we hide filename text via CSS)
+  fileLabel?.addEventListener('click', (e) => {
+    e.preventDefault()
+    if (assetUploadInput) assetUploadInput.click()
+  })
+
   copyUploadUrlBtn?.addEventListener('click', () => {
     const storedUrl = assetUploadResult?.dataset?.url || assetUploadUrlOutput?.textContent?.trim()
     if (storedUrl) applyImageToActiveProfile(storedUrl, { origin: 'manual' })
@@ -2634,14 +2638,7 @@ function attachPanelControls({ chart, card }) {
     })
   })
 
-  copyManualUrlBtn?.addEventListener('click', () => {
-    const value = manualUrlInput?.value?.trim()
-    if (value) applyImageToActiveProfile(value, { origin: 'manual' })
-    copyToClipboard(value, {
-      successMessage: 'Image appliquée et URL copiée ✅',
-      errorMessage: 'Impossible de copier ce lien.'
-    })
-  })
+  // manual URL input removed: no manual apply/copy behavior
 
   const previousApplyingState = isApplyingConfig
   isApplyingConfig = true
