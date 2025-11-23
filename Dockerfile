@@ -17,7 +17,6 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/server ./server
 COPY --from=build /app/static ./static
 COPY --from=build /app/src/styles ./src/styles
-COPY --from=build /app/document ./document
 RUN mkdir -p /app/data/backups /app/document
 ENV NODE_ENV=production
 ENV DATABASE_URL=postgresql://family:family@postgres:5432/family_tree
