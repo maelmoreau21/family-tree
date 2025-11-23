@@ -3,17 +3,17 @@ import { stripOriginIfSame } from '../../src/utils/url'
 
 describe('stripOriginIfSame', () => {
   it('keeps relative url unchanged', () => {
-    expect(stripOriginIfSame('/uploads/photo.jpg')).toBe('/uploads/photo.jpg')
+    expect(stripOriginIfSame('/document/photo.jpg')).toBe('/document/photo.jpg')
   })
 
   it('strips same-origin url origin', () => {
     const origin = 'http://localhost'
-    const url = `${origin}/uploads/test.jpg`
-    expect(stripOriginIfSame(url)).toBe('/uploads/test.jpg')
+    const url = `${origin}/document/test.jpg`
+    expect(stripOriginIfSame(url)).toBe('/document/test.jpg')
   })
 
   it('returns absolute url for cross-origin', () => {
-    const url = 'https://example.com/uploads/test.jpg'
-    expect(stripOriginIfSame(url)).toBe('https://example.com/uploads/test.jpg')
+    const url = 'https://example.com/document/test.jpg'
+    expect(stripOriginIfSame(url)).toBe('https://example.com/document/test.jpg')
   })
 })

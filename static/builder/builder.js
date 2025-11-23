@@ -335,11 +335,15 @@ function getStorageSafe() {
 
 function readCollapsedState() {
   const storage = getStorageSafe()
-  if (!storage) return false
+  // Default to collapsed (hidden) unless the user explicitly stored a different state.
+  // If localStorage is unavailable, assume collapsed so the panel stays hidden by default.
+  if (!storage) return true
   try {
-    return storage.getItem(CONTROL_PANEL_STATE_KEY) === '1'
+    const val = storage.getItem(CONTROL_PANEL_STATE_KEY)
+    if (val === null) return true
+    return val === '1'
   } catch (error) {
-    return false
+    return true
   }
 }
 
@@ -451,8 +455,8 @@ const EDITABLE_DEFAULTS = [
   { value: 'deathplace', label: 'Lieu de Décès', checked: true },
   { value: 'avatar', label: 'Avatar', checked: true },
   { value: 'gender', label: 'Genre', checked: true },
-  { value: 'metiers', label: 'Métiers', checked: false },
-  { value: 'nationality', label: 'Nationalité', checked: false },
+  { value: 'nationality', label: 'Nationalité', checked: true },
+  { value: 'metiers', label: 'Métiers', checked: true },
   { value: 'bio', label: 'Biographie', checked: false }
 ]
 
@@ -1419,8 +1423,9 @@ function attachPanelControls({ chart, card }) {
   const assetUploadUrlOutput = imageUploader?.querySelector('[data-role="upload-url"]')
   const assetUploadOpenLink = imageUploader?.querySelector('[data-role="open-upload"]')
   const copyUploadUrlBtn = imageUploader?.querySelector('[data-action="copy-upload-url"]')
-  const manualUrlInput = imageUploader?.querySelector('#assetUrl')
-  const copyManualUrlBtn = imageUploader?.querySelector('[data-action="copy-manual-url"]')
+  const deleteUploadBtn = imageUploader?.querySelector('[data-action="delete-upload"]')
+  // manual URL input removed from UI — hide file input filename and use the label as trigger
+  const fileLabel = imageUploader?.querySelector('.file-label')
 
   const imageUploaderHome = imageUploader ? {
     parent: imageUploader.parentElement,
@@ -1548,7 +1553,7 @@ function attachPanelControls({ chart, card }) {
       scheduleAutoSave()
     }
 
-    if (manualUrlInput) manualUrlInput.value = stripOriginIfSame(absoluteUrl)
+    // manual URL input removed — nothing to set here
 
     const appliedSomewhere = formUpdated || datumUpdated
     if (origin === 'upload') {
@@ -1575,13 +1580,12 @@ function attachPanelControls({ chart, card }) {
 
     if (!existingValue) {
       clearUploadResult()
-      if (manualUrlInput) manualUrlInput.value = ''
       setUploadFeedback('Formats recommandés : JPG, PNG, WebP.', 'info')
       return
     }
 
     const absoluteUrl = showUploadResult(existingValue, { silent: true })
-    if (manualUrlInput) manualUrlInput.value = absoluteUrl
+    // manual URL input removed — nothing to update
     setUploadFeedback('Image actuelle du profil chargée.', 'info')
   }
 
@@ -1599,8 +1603,7 @@ function attachPanelControls({ chart, card }) {
     }
     imageUploader.classList.remove('is-modal-context')
     clearUploadResult()
-    if (manualUrlInput) manualUrlInput.value = ''
-    setUploadFeedback('Importez une image ou collez une URL publique. Formats recommandés : JPG, PNG, WebP.', 'info')
+    setUploadFeedback('Importez une image depuis votre ordinateur. Formats recommandés : JPG, PNG, WebP.', 'info')
   }
 
   function injectImageUploaderIntoForm(form) {
@@ -1726,7 +1729,7 @@ function attachPanelControls({ chart, card }) {
       }
     }
     assetUploadResult.classList.remove('hidden')
-    if (manualUrlInput) manualUrlInput.value = absoluteUrl
+    // manual URL input removed — nothing to update
     if (!silent) setUploadFeedback('Image prête à être appliquée.', 'info')
 
     return absoluteUrl
@@ -1779,9 +1782,13 @@ function attachPanelControls({ chart, card }) {
 
     const formData = new FormData()
     formData.append('file', file, file.name)
+    if (imageUploaderCurrentDatumId) {
+      formData.append('personId', imageUploaderCurrentDatumId)
+    }
+    // No need to send field anymore — server will store the upload as /document/<personId>/profil.<ext>
 
     try {
-      const response = await fetch('/api/uploads', {
+      const response = await fetch('/api/document', {
         method: 'POST',
         body: formData
       })
@@ -2622,6 +2629,12 @@ function attachPanelControls({ chart, card }) {
     event.target.value = ''
   })
 
+  // Make the visible label open the hidden file input (we hide filename text via CSS)
+  fileLabel?.addEventListener('click', (e) => {
+    e.preventDefault()
+    if (assetUploadInput) assetUploadInput.click()
+  })
+
   copyUploadUrlBtn?.addEventListener('click', () => {
     const storedUrl = assetUploadResult?.dataset?.url || assetUploadUrlOutput?.textContent?.trim()
     if (storedUrl) applyImageToActiveProfile(storedUrl, { origin: 'manual' })
@@ -2631,14 +2644,51 @@ function attachPanelControls({ chart, card }) {
     })
   })
 
-  copyManualUrlBtn?.addEventListener('click', () => {
-    const value = manualUrlInput?.value?.trim()
-    if (value) applyImageToActiveProfile(value, { origin: 'manual' })
-    copyToClipboard(value, {
-      successMessage: 'Image appliquée et URL copiée ✅',
-      errorMessage: 'Impossible de copier ce lien.'
-    })
+  deleteUploadBtn?.addEventListener('click', async () => {
+    const datum = getActiveDatum()
+    const personId = imageUploaderCurrentDatumId || (datum && datum.id)
+    if (!personId) {
+      setUploadFeedback('Sélectionnez un profil éditable pour supprimer sa photo.', 'error')
+      return
+    }
+
+    const confirmText = `Supprimer la photo de profil pour ${personId} ?`
+    if (!confirm(confirmText)) return
+
+    setUploadFeedback('Suppression en cours…', 'saving')
+    try {
+      const url = `/api/document?personId=${encodeURIComponent(personId)}`
+      const resp = await fetch(url, { method: 'DELETE' })
+      if (!resp.ok) {
+        let message = `Erreur serveur (${resp.status})`
+        try {
+          const payload = await resp.json()
+          if (payload?.message) message = payload.message
+        } catch (e) {}
+        throw new Error(message)
+      }
+
+      // Clear uploader UI and remove image from active datum
+      clearUploadResult()
+      setUploadFeedback('Photo supprimée.', 'success')
+      // If the active datum had the image URL in its data, remove it
+      try {
+        const targetFieldId = getActiveImageFieldId()
+        if (datum && datum.data && datum.data[targetFieldId]) {
+          delete datum.data[targetFieldId]
+          chart.updateTree({ initial: false, tree_position: 'inherit' })
+          scheduleAutoSave()
+        }
+      } catch (e) {
+        /* ignore */
+      }
+    } catch (error) {
+      console.error(error)
+      setUploadFeedback(error.message || 'Échec de la suppression.', 'error')
+    }
   })
+
+  // manual URL input removed: no manual apply/copy behavior
 
   const previousApplyingState = isApplyingConfig
   isApplyingConfig = true

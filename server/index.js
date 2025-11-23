@@ -4,6 +4,7 @@ import compression from 'compression'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import fs from 'node:fs/promises'
+import fsSync from 'node:fs'
 import multer from 'multer'
 import { randomUUID, createHash } from 'node:crypto'
 
@@ -22,7 +23,7 @@ const __dirname = path.dirname(__filename)
 const ROOT_DIR = path.resolve(__dirname, '..')
 const DIST_DIR = path.resolve(ROOT_DIR, 'dist')
 const STATIC_DIR = path.resolve(ROOT_DIR, 'static')
-const UPLOAD_DIR = path.resolve(ROOT_DIR, 'uploads')
+const DOCUMENT_DIR = path.resolve(ROOT_DIR, 'document')
 
 const TREE_DATA_DIR = path.resolve(process.env.TREE_DATA_DIR || path.join(ROOT_DIR, 'data'))
 const TREE_BACKUP_DIR = path.resolve(process.env.TREE_BACKUP_DIR || path.join(TREE_DATA_DIR, 'backups'))
@@ -143,13 +144,17 @@ function ensureAdminAuth(req, res, next) {
 }
 
 const uploadStorage = multer.diskStorage({
+  // Always write into the base DOCUMENT_DIR with a unique temporary filename.
+  // We will move/rename the file into a person subfolder after multer completes
+  // so we don't rely on multipart field parsing inside multer callbacks.
   destination: (req, file, cb) => {
-    cb(null, UPLOAD_DIR)
+    try { fsSync.mkdirSync(DOCUMENT_DIR, { recursive: true }) } catch (e) { /* ignore */ }
+    cb(null, DOCUMENT_DIR)
   },
   filename: (req, file, cb) => {
     const ext = resolveFileExtension(file)
-    const baseName = sanitizeFileName(path.parse(file.originalname || '').name) || 'image'
     const uniqueId = `${Date.now()}-${randomUUID().slice(0, 8)}`
+    const baseName = sanitizeFileName(path.parse(file.originalname || '').name) || 'image'
     cb(null, `${baseName}-${uniqueId}${ext}`)
   }
 })
@@ -218,8 +223,8 @@ async function ensureDatabase() {
   }
 }
 
-async function ensureUploadDir() {
-  await fs.mkdir(UPLOAD_DIR, { recursive: true })
+async function ensureDocumentDir() {
+  await fs.mkdir(DOCUMENT_DIR, { recursive: true })
 }
 
 async function ensureBackupDir() {
@@ -928,15 +933,15 @@ function createStaticApp(staticFolder, { canWrite }) {
   app.use('/assets', express.static(path.resolve(ROOT_DIR, 'src', 'styles'), staticOptions))
   
   app.use('/static', express.static(STATIC_DIR, staticOptions))
-  app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '1d' }))
+  app.use('/document', express.static(DOCUMENT_DIR, { maxAge: '1d' }))
   app.use('/api', createTreeApi({ canWrite }))
 
   if (canWrite) {
-    app.post('/api/uploads', ensureAdminAuth, (req, res) => {
+    app.post('/api/document', ensureAdminAuth, (req, res) => {
       uploadSingleImage(req, res, (error) => {
         if (error) {
           if (error.code === 'LIMIT_FILE_SIZE') {
-                res.status(413).json({ message: `Fichier trop volumineux (limite ${MAX_UPLOAD_SIZE_MB} Mo).` })
+            res.status(413).json({ message: `Fichier trop volumineux (limite ${MAX_UPLOAD_SIZE_MB} Mo).` })
             return
           }
           if (error.code === 'UNSUPPORTED_FILE_TYPE') {
@@ -953,13 +958,125 @@ function createStaticApp(staticFolder, { canWrite }) {
           return
         }
 
-        res.status(201).json({
-          url: `/uploads/${req.file.filename}`,
-          originalName: req.file.originalname,
-          size: req.file.size,
-          mimeType: req.file.mimetype
-        })
+        // By default assume file is at /document/<filename>
+        (async () => {
+          let publicPath = `/document/${req.file.filename}`
+          try {
+            // Determine if uploader provided a personId and move/rename the file
+            const possible = (req.body && (req.body.personId || req.body.person_id)) || req.query?.personId || req.query?.person_id
+            if (possible && typeof possible === 'string' && possible.trim()) {
+              const safeId = sanitizeFileName(possible) || 'unknown'
+              const targetDir = path.join(DOCUMENT_DIR, safeId)
+              await fs.mkdir(targetDir, { recursive: true })
+
+              const ext = path.extname(req.file.filename) || resolveFileExtension(req.file) || ''
+              const tempPath = req.file.path || path.join(req.file.destination || DOCUMENT_DIR, req.file.filename)
+              const targetPath = path.join(targetDir, `profil${ext}`)
+
+              try {
+                await fs.rename(tempPath, targetPath)
+              } catch (renameErr) {
+                try {
+                  // Fallback for cross-device rename
+                  await fs.copyFile(tempPath, targetPath)
+                  await fs.unlink(tempPath)
+                } catch (copyErr) {
+                  console.error('[server] Failed to move uploaded file', renameErr, copyErr)
+                  // If move failed, leave the file where multer saved it and continue
+                }
+              }
+
+              publicPath = `/document/${safeId}/profil${ext}`
+            } else {
+              // If no personId, try to resolve any subfolder used by multer
+              try {
+                const rel = path.relative(DOCUMENT_DIR, req.file.destination || '')
+                if (rel && rel !== '') {
+                  const folder = rel.split(path.sep).filter(Boolean).join('/')
+                  publicPath = `/document/${folder}/${req.file.filename}`
+                }
+              } catch (e) {
+                /* ignore and fallback */
+              }
+            }
+          } catch (e) {
+            console.error('[server] Post-upload processing failed', e)
+          }
+
+          res.status(201).json({
+            url: publicPath,
+            originalName: req.file.originalname,
+            size: req.file.size,
+            mimeType: req.file.mimetype
+          })
+        })()
       })
+    })
+    
+    // Delete profile image for a person (removes any profil.* files in the person folder)
+    app.delete('/api/document', ensureAdminAuth, async (req, res) => {
+      try {
+        const possible = (req.query?.personId || req.query?.person_id) || (req.body && (req.body.personId || req.body.person_id))
+        if (!possible || typeof possible !== 'string' || !possible.trim()) {
+          res.status(400).json({ message: 'personId manquant' })
+          return
+        }
+
+        // Build a list of candidate folders to check in order of likelihood:
+        //  - sanitized personId
+        //  - sanitized short id (take left part before colon if present)
+        //  - raw personId (sanitized again to be safe)
+        // If none of those exist, also check the DOCUMENT_DIR root for any profil.* file.
+        const raw = possible.trim()
+        const safeFull = sanitizeFileName(raw) || 'unknown'
+        const short = (raw.split(':')[0] || raw)
+        const safeShort = sanitizeFileName(short) || safeFull
+
+        const candidates = [...new Set([safeFull, safeShort])]
+
+        const foundFiles = []
+
+        for (const safeId of candidates) {
+          const candidateDir = path.join(DOCUMENT_DIR, safeId)
+          try {
+            const entries = await fs.readdir(candidateDir, { withFileTypes: true })
+            const profilFiles = entries
+              .filter(e => e.isFile() && /^profil\./i.test(e.name))
+              .map(e => path.join(candidateDir, e.name))
+            if (profilFiles.length) foundFiles.push(...profilFiles)
+          } catch (err) {
+            if (err && err.code === 'ENOENT') {
+              // folder doesn't exist — continue with next candidate
+              continue
+            }
+            throw err
+          }
+        }
+
+        // fallback: check DOCUMENT_DIR root for profil.* files
+        if (!foundFiles.length) {
+          try {
+            const rootEntries = await fs.readdir(DOCUMENT_DIR, { withFileTypes: true })
+            const rootProfil = rootEntries
+              .filter(e => e.isFile() && /^profil\./i.test(e.name))
+              .map(e => path.join(DOCUMENT_DIR, e.name))
+            if (rootProfil.length) foundFiles.push(...rootProfil)
+          } catch (err) {
+            // ignore root read errors (unlikely)
+          }
+        }
+
+        if (!foundFiles.length) {
+          res.status(404).json({ message: 'Aucun fichier trouvé pour ce profil', tried: candidates })
+          return
+        }
+
+        await Promise.allSettled(foundFiles.map(p => fs.unlink(p)))
+        res.status(204).end()
+      } catch (error) {
+        console.error('[server] Failed to delete profile image', error)
+        res.status(500).json({ message: 'Impossible de supprimer le fichier' })
+      }
     })
   }
 
@@ -974,7 +1091,7 @@ function createStaticApp(staticFolder, { canWrite }) {
 
 async function start() {
   await ensureDatabase()
-  await ensureUploadDir()
+  await ensureDocumentDir()
   await ensureBackupDir()
   try {
     await fs.access(DIST_DIR)

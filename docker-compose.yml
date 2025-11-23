@@ -32,4 +32,4 @@ services:
       - "7921:7921"
     volumes:
       - ./data/backups:/app/data/backups
-      - ./uploads:/app/uploads
+      - ./document:/app/document

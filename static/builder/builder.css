@@ -324,6 +324,34 @@ select {
   transition: all 0.2s ease;
 }
 
+/* Hide native file input UI (prevents browser showing 'Aucun fichier choisi')
+   and make the label look/act like the upload button */
+.media-tools input[type="file"] {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.file-label {
+  display: inline-block;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--panel-border);
+  padding: 0.45rem 0.8rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-main);
+}
+
+.file-label:hover {
+  background: rgba(255,255,255,0.06);
+}
+
 input:focus,
 select:focus {
   outline: none;
@@ -1879,5 +1907,6 @@ legend {
      o p a c i t y :   0   ! i m p o r t a n t ; 
      v i s i b i l i t y :   h i d d e n   ! i m p o r t a n t ; 
  } 
-  
+ 
+ 
  
