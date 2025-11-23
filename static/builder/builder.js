@@ -1419,6 +1419,7 @@ function attachPanelControls({ chart, card }) {
   const assetUploadUrlOutput = imageUploader?.querySelector('[data-role="upload-url"]')
   const assetUploadOpenLink = imageUploader?.querySelector('[data-role="open-upload"]')
   const copyUploadUrlBtn = imageUploader?.querySelector('[data-action="copy-upload-url"]')
+  const deleteUploadBtn = imageUploader?.querySelector('[data-action="delete-upload"]')
   // manual URL input removed from UI — hide file input filename and use the label as trigger
   const fileLabel = imageUploader?.querySelector('.file-label')
 
@@ -2637,6 +2638,50 @@ function attachPanelControls({ chart, card }) {
       successMessage: 'URL du téléversement copiée ✅',
       errorMessage: 'Impossible de copier l’URL du téléversement.'
     })
+  })
+
+  deleteUploadBtn?.addEventListener('click', async () => {
+    const datum = getActiveDatum()
+    const personId = imageUploaderCurrentDatumId || (datum && datum.id)
+    if (!personId) {
+      setUploadFeedback('Sélectionnez un profil éditable pour supprimer sa photo.', 'error')
+      return
+    }
+
+    const confirmText = `Supprimer la photo de profil pour ${personId} ?`
+    if (!confirm(confirmText)) return
+
+    setUploadFeedback('Suppression en cours…', 'saving')
+    try {
+      const url = `/api/document?personId=${encodeURIComponent(personId)}`
+      const resp = await fetch(url, { method: 'DELETE' })
+      if (!resp.ok) {
+        let message = `Erreur serveur (${resp.status})`
+        try {
+          const payload = await resp.json()
+          if (payload?.message) message = payload.message
+        } catch (e) {}
+        throw new Error(message)
+      }
+
+      // Clear uploader UI and remove image from active datum
+      clearUploadResult()
+      setUploadFeedback('Photo supprimée.', 'success')
+      // If the active datum had the image URL in its data, remove it
+      try {
+        const targetFieldId = getActiveImageFieldId()
+        if (datum && datum.data && datum.data[targetFieldId]) {
+          delete datum.data[targetFieldId]
+          chart.updateTree({ initial: false, tree_position: 'inherit' })
+          scheduleAutoSave()
+        }
+      } catch (e) {
+        /* ignore */
+      }
+    } catch (error) {
+      console.error(error)
+      setUploadFeedback(error.message || 'Échec de la suppression.', 'error')
+    }
   })
 
   // manual URL input removed: no manual apply/copy behavior

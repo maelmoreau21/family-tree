@@ -1012,6 +1012,45 @@ function createStaticApp(staticFolder, { canWrite }) {
         })()
       })
     })
+    
+    // Delete profile image for a person (removes any profil.* files in the person folder)
+    app.delete('/api/document', ensureAdminAuth, async (req, res) => {
+      try {
+        const possible = (req.query?.personId || req.query?.person_id) || (req.body && (req.body.personId || req.body.person_id))
+        if (!possible || typeof possible !== 'string' || !possible.trim()) {
+          res.status(400).json({ message: 'personId manquant' })
+          return
+        }
+        const safeId = sanitizeFileName(possible) || 'unknown'
+        const targetDir = path.join(DOCUMENT_DIR, safeId)
+
+        let entries
+        try {
+          entries = await fs.readdir(targetDir, { withFileTypes: true })
+        } catch (err) {
+          if (err && err.code === 'ENOENT') {
+            res.status(404).json({ message: 'Aucun fichier trouvé pour ce profil' })
+            return
+          }
+          throw err
+        }
+
+        const profilFiles = entries
+          .filter(e => e.isFile() && /^profil\./i.test(e.name))
+          .map(e => path.join(targetDir, e.name))
+
+        if (!profilFiles.length) {
+          res.status(404).json({ message: 'Aucun fichier de profil trouvé' })
+          return
+        }
+
+        await Promise.allSettled(profilFiles.map(p => fs.unlink(p)))
+        res.status(204).end()
+      } catch (error) {
+        console.error('[server] Failed to delete profile image', error)
+        res.status(500).json({ message: 'Impossible de supprimer le fichier' })
+      }
+    })
   }
 
   app.use(express.static(staticFolder, { extensions: ['html'], setHeaders: setStaticCacheHeaders }))
