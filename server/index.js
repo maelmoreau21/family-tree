@@ -144,8 +144,25 @@ function ensureAdminAuth(req, res, next) {
 }
 
 const uploadStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, UPLOAD_DIR)
+  destination: async (req, file, cb) => {
+    const personId = (req.body.personId || req.query.personId || '').trim()
+    let dest = UPLOAD_DIR
+
+    if (personId) {
+      // Sanitize personId to prevent directory traversal
+      const safeId = sanitizeFileName(personId)
+      if (safeId) {
+        dest = path.join(UPLOAD_DIR, safeId)
+        try {
+          await fs.mkdir(dest, { recursive: true })
+        } catch (err) {
+          console.error(`[server] Failed to create upload subdir for ${safeId}`, err)
+          // Fallback to root upload dir if mkdir fails
+          dest = UPLOAD_DIR
+        }
+      }
+    }
+    cb(null, dest)
   },
   filename: (req, file, cb) => {
     const ext = resolveFileExtension(file)
@@ -954,8 +971,17 @@ function createStaticApp(staticFolder, { canWrite }) {
           return
         }
 
+        const personId = (req.body.personId || req.query.personId || '').trim()
+        const safeId = sanitizeFileName(personId)
+
+        // Construct URL based on whether it's in a subdir or root
+        let fileUrl = `/uploads/${req.file.filename}`
+        if (safeId && req.file.path.includes(safeId)) {
+          fileUrl = `/uploads/${safeId}/${req.file.filename}`
+        }
+
         res.status(201).json({
-          url: `/uploads/${req.file.filename}`,
+          url: fileUrl,
           originalName: req.file.originalname,
           size: req.file.size,
           mimeType: req.file.mimetype
