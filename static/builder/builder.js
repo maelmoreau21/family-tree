@@ -451,8 +451,8 @@ const EDITABLE_DEFAULTS = [
   { value: 'deathplace', label: 'Lieu de Décès', checked: true },
   { value: 'avatar', label: 'Avatar', checked: true },
   { value: 'gender', label: 'Genre', checked: true },
-  { value: 'metiers', label: 'Métiers', checked: false },
-  { value: 'nationality', label: 'Nationalité', checked: false },
+  { value: 'nationality', label: 'Nationalité', checked: true },
+  { value: 'metiers', label: 'Métiers', checked: true },
   { value: 'bio', label: 'Biographie', checked: false }
 ]
 
