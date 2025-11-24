@@ -1,0 +1,71 @@
+/* Dropdown field menus - Custom styles for select elements */
+
+/* Style for editable and display dropdown selects */
+select.editable-dropdown,
+select.display-dropdown {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem;
+  color: var(--text-main);
+  font-size: 0.9rem;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+select.editable-dropdown:focus,
+select.display-dropdown:focus {
+  outline: none;
+  border-color: var(--input-focus-border);
+  background: rgba(0, 0, 0, 0.4);
+}
+
+/* Style for individual options */
+select.editable-dropdown option,
+select.display-dropdown option {
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+  margin: 2px 0;
+}
+
+/* Style for selected options */
+select.editable-dropdown option:checked,
+select.display-dropdown option:checked {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  color: white;
+  font-weight: 500;
+}
+
+/* Disabled options */
+select.editable-dropdown option:disabled,
+select.display-dropdown option:disabled {
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.05);
+  cursor: not-allowed;
+}
+
+/* Custom scrollbar for dropdown selects */
+select.editable-dropdown::-webkit-scrollbar,
+select.display-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+select.editable-dropdown::-webkit-scrollbar-track,
+select.display-dropdown::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+select.editable-dropdown::-webkit-scrollbar-thumb,
+select.display-dropdown::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+
+select.editable-dropdown::-webkit-scrollbar-thumb:hover,
+select.display-dropdown::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
