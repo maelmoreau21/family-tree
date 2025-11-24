@@ -106,6 +106,9 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
 
   orderedFields.forEach(field => {
     fields_html += renderFormField(field)
+    if (field.id === 'avatar') {
+      fields_html += renderIdField(form_creator.datum_id)
+    }
   })
 
   if (!unionInserted && unionSectionHtml) {
@@ -113,6 +116,14 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
   }
 
   return fields_html
+
+  function renderIdField(id: string) {
+    return `
+      <div class="f3-form-field">
+        <label>Clé primaire (ID)</label>
+        <input type="text" value="${escapeHtml(id)}" readonly style="background: rgba(0,0,0,0.1); color: var(--text-muted, #999);">
+      </div>`
+  }
 
   function infoField() {
     let fields_html = ''

@@ -31,7 +31,8 @@
 <body class="controls-collapsed">
   <div class="layout">
     <main class="workspace">
-      <button type="button" class="panel-toggle" data-action="toggle-panel" aria-controls="controlPanel" aria-expanded="false" aria-label="Basculer le panneau">
+      <button type="button" class="panel-toggle" data-action="toggle-panel" aria-controls="controlPanel"
+        aria-expanded="false" aria-label="Basculer le panneau">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
@@ -66,65 +67,49 @@
               </div>
               <div class="display-group" data-display-row="2">
                 <span class="group-label">Ligne&nbsp;2</span>
-                <p class="group-hint">Les champs cochés s’affichent en dessous de la ligne principale.</p>
-                <div class="field-list" role="group" aria-label="Champs affichés pour la ligne 2"></div>
-              </div>
-            </fieldset>
+                <summary>Éléments de carte</summary>
+                <div class="panel-body">
+                  <label for="imageField">Champ image</label>
+                  <select id="imageField">
+                    <option value="avatar" selected>Avatar</option>
+                    <option value="photo">Photo</option>
+                    <option value="picture">Portrait</option>
+                  </select>
 
-            <fieldset class="main-profile" data-role="main-profile">
-              <legend>Profil affiché par défaut</legend>
-              <select id="mainProfileSelect">
-                <option value="">Chargement…</option>
-              </select>
-              <p class="hint">Sélectionné par défaut : <span data-role="main-profile-name">—</span></p>
-
-            </fieldset>
-          </div>
-        </details>
-
-        <details class="panel" open>
-          <summary>Éléments de carte</summary>
-          <div class="panel-body">
-            <label for="imageField">Champ image</label>
-            <select id="imageField">
-              <option value="avatar" selected>Avatar</option>
-              <option value="photo">Photo</option>
-              <option value="picture">Portrait</option>
-            </select>
-
-            <label for="cardStyle">Style de carte</label>
-            <select id="cardStyle">
-              <option value="default" selected>Défaut</option>
-              <option value="imageCircle">Image cercle</option>
-              <option value="imageCircleRect">Image cercle rect.</option>
-              <option value="imageRect">Image rect.</option>
-              <option value="rect">Rect.</option>
-            </select>
+                  <label for="cardStyle">Style de carte</label>
+                  <select id="cardStyle">
+                    <option value="default" selected>Défaut</option>
+                    <option value="imageCircle">Image cercle</option>
+                    <option value="imageCircleRect">Image cercle rect.</option>
+                    <option value="imageRect">Image rect.</option>
+                    <option value="rect">Rect.</option>
+                  </select>
 
 
-            <fieldset class="media-tools" data-role="image-uploader">
-              <legend>Images</legend>
-              <p class="group-hint">Importez une image depuis votre ordinateur. Taille
-                max&nbsp;: 5&nbsp;Mo.</p>
+                  <fieldset class="media-tools" data-role="image-uploader">
+                    <legend>Images</legend>
+                    <p class="group-hint">Importez une image depuis votre ordinateur. Taille
+                      max&nbsp;: 5&nbsp;Mo.</p>
 
-              <label for="assetUpload" class="file-label">Téléverser une image</label>
-              <input type="file" id="assetUpload" accept="image/*">
-              <p class="hint" data-role="upload-feedback">Formats recommandés&nbsp;: JPG, PNG, WebP.</p>
+                    <label for="assetUpload" class="file-label">Téléverser une image</label>
+                    <input type="file" id="assetUpload" accept="image/*">
+                    <p class="hint" data-role="upload-feedback">Formats recommandés&nbsp;: JPG, PNG, WebP.</p>
 
-              <div class="upload-result hidden" data-role="upload-result">
-                <span class="upload-label">Image disponible à&nbsp;:</span>
-                <code class="upload-url" data-role="upload-url"></code>
-                <div class="upload-actions">
-                  <button type="button" class="ghost small" data-action="copy-upload-url">Copier l’URL</button>
-                  <a class="ghost small hidden" data-role="open-upload" href="#" target="_blank"
-                    rel="noopener">Ouvrir</a>
-                  <button type="button" class="ghost small" data-action="delete-upload">Supprimer la photo</button>
+                    <div class="upload-result hidden" data-role="upload-result">
+                      <span class="upload-label">Image disponible à&nbsp;:</span>
+                      <code class="upload-url" data-role="upload-url"></code>
+                      <div class="upload-actions">
+                        <button type="button" class="ghost small" data-action="copy-upload-url">Copier l’URL</button>
+                        <a class="ghost small hidden" data-role="open-upload" href="#" target="_blank"
+                          rel="noopener">Ouvrir</a>
+                        <button type="button" class="ghost small" data-action="delete-upload">Supprimer la
+                          photo</button>
+                      </div>
+                    </div>
+
+                    <!-- URL entry removed — uploads use the file picker directly -->
+                  </fieldset>
                 </div>
-              </div>
-
-              <!-- URL entry removed — uploads use the file picker directly -->
-            </fieldset>
-          </div>
         </details>
 
         <details class="panel" open>
