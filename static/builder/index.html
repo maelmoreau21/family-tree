@@ -44,8 +44,8 @@
         <div class="search-panel" data-role="builder-search" data-state="loading">
           <h2 class="search-title" id="builderSearchLabel">Recherche rapide</h2>
           <div class="search-widget" data-role="builder-search-target"></div>
-
         </div>
+
         <details class="panel" open>
           <summary>Panneau de détails</summary>
           <div class="panel-body">
@@ -58,10 +58,18 @@
               </div>
             </fieldset>
 
+            <fieldset data-role="main-profile">
+              <legend>Profil par défaut</legend>
+              <p class="group-hint">Entrez l'identifiant du profil à centrer au démarrage.</p>
+              <div class="input-group">
+                <input type="text" id="mainProfileId" placeholder="ID du profil (ex: 1)" class="full-width">
+              </div>
+              <p class="hint">Profil actuel : <strong data-role="main-profile-name">—</strong></p>
+            </fieldset>
+
             <fieldset class="display-fields">
               <legend>Champs affichés</legend>
               <div class="display-group" data-display-row="1">
-
                 <label for="cardStyle">Style de carte</label>
                 <select id="cardStyle">
                   <option value="default" selected>Défaut</option>
@@ -71,31 +79,38 @@
                   <option value="rect">Rect.</option>
                 </select>
 
-
-                <fieldset class="media-tools" data-role="image-uploader">
-                  <legend>Images</legend>
-                  <p class="group-hint">Importez une image depuis votre ordinateur. Taille
-                    max&nbsp;: 5&nbsp;Mo.</p>
-
-                  <label for="assetUpload" class="file-label">Téléverser une image</label>
-                  <input type="file" id="assetUpload" accept="image/*">
-                  <p class="hint" data-role="upload-feedback">Formats recommandés&nbsp;: JPG, PNG, WebP.</p>
-
-                  <div class="upload-result hidden" data-role="upload-result">
-                    <span class="upload-label">Image disponible à&nbsp;:</span>
-                    <code class="upload-url" data-role="upload-url"></code>
-                    <div class="upload-actions">
-                      <button type="button" class="ghost small" data-action="copy-upload-url">Copier l’URL</button>
-                      <a class="ghost small hidden" data-role="open-upload" href="#" target="_blank"
-                        rel="noopener">Ouvrir</a>
-                      <button type="button" class="ghost small" data-action="delete-upload">Supprimer la
-                        photo</button>
-                    </div>
-                  </div>
-
-                  <!-- URL entry removed — uploads use the file picker directly -->
-                </fieldset>
+                <span class="row-label">Ligne 1</span>
+                <div class="field-list"></div>
               </div>
+
+              <div class="display-group" data-display-row="2">
+                <span class="row-label">Ligne 2</span>
+                <div class="field-list"></div>
+              </div>
+
+              <fieldset class="media-tools" data-role="image-uploader">
+                <legend>Images</legend>
+                <p class="group-hint">Importez une image depuis votre ordinateur. Taille
+                  max&nbsp;: 5&nbsp;Mo.</p>
+
+                <label for="assetUpload" class="file-label">Téléverser une image</label>
+                <input type="file" id="assetUpload" accept="image/*">
+                <p class="hint" data-role="upload-feedback">Formats recommandés&nbsp;: JPG, PNG, WebP.</p>
+
+                <div class="upload-result hidden" data-role="upload-result">
+                  <span class="upload-label">Image disponible à&nbsp;:</span>
+                  <code class="upload-url" data-role="upload-url"></code>
+                  <div class="upload-actions">
+                    <button type="button" class="ghost small" data-action="copy-upload-url">Copier l’URL</button>
+                    <a class="ghost small hidden" data-role="open-upload" href="#" target="_blank"
+                      rel="noopener">Ouvrir</a>
+                    <button type="button" class="ghost small" data-action="delete-upload">Supprimer la
+                      photo</button>
+                  </div>
+                </div>
+              </fieldset>
+            </fieldset>
+          </div>
         </details>
 
         <details class="panel" open>
@@ -197,7 +212,6 @@
             </ul>
           </div>
         </details>
-        <!-- Moved status here so it appears under "Dimensions de la carte" -->
         <div class="builder-status" id="status" role="status" aria-live="assertive"></div>
       </aside>
       <section class="canvas">
