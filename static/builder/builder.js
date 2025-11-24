@@ -2157,139 +2157,6 @@ function attachPanelControls({ chart, card }) {
     })
   }
 
-  function applyConfigToDisplayControls() {
-    displayGroups.forEach((group, index) => {
-      const desiredRow = (chartConfig.cardDisplay && chartConfig.cardDisplay[index]) || []
-      const desiredSet = new Set(desiredRow.map(normalizeFieldKey))
-      group.querySelectorAll('input[type="checkbox"]').forEach(input => {
-        const key = normalizeFieldKey(input.value)
-        input.checked = desiredSet.has(key)
-      })
-    })
-  }
-
-  function createDisplayItem(group, { value, label, defaultChecked = false, removable = false }) {
-    const list = group.querySelector('.field-list')
-    if (!list) return { item: null, isNew: false }
-    const key = normalizeFieldKey(value)
-    if (HIDDEN_FIELD_KEYS.has(key)) return { item: null, isNew: false }
-    const selector = `[data-field-key="${escapeSelector(key)}"]`
-    const displayLabel = ensureFieldLabel(value, label)
-    let item = list.querySelector(selector)
-
-    if (item) {
-      const textEl = item.querySelector('label span')
-      if (textEl) textEl.textContent = displayLabel
-      if (removable) {
-        item.dataset.custom = 'true'
-        addRemoveButton(item)
-      }
-      return { item, isNew: false }
-    }
-
-    item = document.createElement('div')
-    item.className = 'display-item'
-    item.dataset.fieldKey = key
-    if (removable) item.dataset.custom = 'true'
-
-    const labelEl = document.createElement('label')
-    const checkbox = document.createElement('input')
-    checkbox.type = 'checkbox'
-    checkbox.value = value
-    checkbox.checked = defaultChecked
-
-    const textEl = document.createElement('span')
-    textEl.textContent = displayLabel
-
-    labelEl.append(checkbox, textEl)
-    item.append(labelEl)
-
-    if (removable) {
-      addRemoveButton(item)
-    }
-
-    list.append(item)
-    return { item, isNew: true }
-  }
-
-  function createEditableItem({ value, label, checked = true, removable = false, selectRows = [] }) {
-    if (!editableList) return
-    const key = normalizeFieldKey(value)
-    if (HIDDEN_FIELD_KEYS.has(key)) return
-    const displayLabel = ensureFieldLabel(value, label)
-    const selector = `[data-field-key="${escapeSelector(key)}"]`
-    let item = editableList.querySelector(selector)
-    const isNew = !item
-
-    if (!item) {
-      item = document.createElement('div')
-      item.className = 'editable-item'
-      item.dataset.fieldKey = key
-      if (removable) item.dataset.custom = 'true'
-
-      const labelEl = document.createElement('label')
-      const checkbox = document.createElement('input')
-      checkbox.type = 'checkbox'
-      checkbox.value = value
-      checkbox.checked = checked
-
-      const textEl = document.createElement('span')
-      textEl.textContent = displayLabel
-
-      labelEl.append(checkbox, textEl)
-      item.append(labelEl)
-
-      if (removable) {
-        const removeBtn = document.createElement('button')
-        removeBtn.type = 'button'
-        removeBtn.className = 'remove-field'
-        removeBtn.textContent = 'Retirer'
-        removeBtn.addEventListener('click', () => {
-          item.remove()
-          removeDisplayFieldEntries(key)
-          applyEditableFields()
-        })
-        item.append(removeBtn)
-      }
-
-      editableList.append(item)
-    } else {
-      const checkbox = item.querySelector('input[type="checkbox"]')
-      if (checkbox && typeof checked === 'boolean') checkbox.checked = checked
-      const textEl = item.querySelector('label span')
-      if (textEl) textEl.textContent = displayLabel
-      if (removable) item.dataset.custom = 'true'
-    }
-
-    const selectRowSet = new Set((selectRows || []).map(String))
-
-    displayGroups.forEach(group => {
-      const rowKey = group.dataset.displayRow
-      const defaults = displayDefaultsByRow.get(rowKey)
-      const defaultChecked = defaults?.get(key)
-      const shouldCheck = defaultChecked !== undefined ? defaultChecked : selectRowSet.has(rowKey)
-      const removableForGroup = removable
-      const { item: displayItem, isNew: created } = createDisplayItem(group, {
-        value,
-        label: displayLabel,
-        defaultChecked: shouldCheck,
-        removable: removableForGroup
-      })
-
-      if (!displayItem) return
-      if (!created && selectRowSet.has(rowKey)) {
-        const checkbox = displayItem.querySelector('input[type="checkbox"]')
-        if (checkbox) checkbox.checked = true
-      }
-    })
-  }
-
-  function getSelectedValues(group) {
-    if (!group) return []
-    return [...group.querySelectorAll('input[type="checkbox"]')]
-      .filter(input => input.checked)
-      .map(input => input.value)
-  }
 
   function areFieldListsEqual(a = [], b = []) {
     if (a.length !== b.length) return false
@@ -2303,18 +2170,26 @@ function attachPanelControls({ chart, card }) {
 
   function syncDisplayItemsWithEditable(activeKeys) {
     displayGroups.forEach(group => {
-      const items = group.querySelectorAll('.display-item')
+      // Support dropdown items
+      const items = group.querySelectorAll('.dropdown-item, .display-item')
       items.forEach(item => {
         const key = item.dataset.fieldKey
         const checkbox = item.querySelector('input[type="checkbox"]')
         const isActive = activeKeys.has(key)
-        item.classList.toggle('is-disabled', !isActive)
+
+        // Hide/Show item instead of disabling
+        item.style.display = isActive ? 'flex' : 'none'
+
         if (!checkbox) return
         checkbox.disabled = !isActive
         if (!isActive && checkbox.checked) {
           checkbox.checked = false
         }
       })
+
+      // Update anchor label after syncing
+      const dropdown = group.querySelector('.multi-select-dropdown')
+      if (dropdown) updateDropdownAnchorLabel(dropdown)
     })
   }
 

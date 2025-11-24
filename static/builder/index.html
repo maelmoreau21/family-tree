@@ -61,55 +61,41 @@
             <fieldset class="display-fields">
               <legend>Champs affichés</legend>
               <div class="display-group" data-display-row="1">
-                <span class="group-label">Ligne&nbsp;1</span>
-                <p class="group-hint">Cochez les champs à afficher pour la première ligne.</p>
-                <div class="field-list" role="group" aria-label="Champs affichés pour la ligne 1"></div>
-              </div>
-              <div class="display-group" data-display-row="2">
-                <span class="group-label">Ligne&nbsp;2</span>
-                <summary>Éléments de carte</summary>
-                <div class="panel-body">
-                  <label for="imageField">Champ image</label>
-                  <select id="imageField">
-                    <option value="avatar" selected>Avatar</option>
-                    <option value="photo">Photo</option>
-                    <option value="picture">Portrait</option>
-                  </select>
 
-                  <label for="cardStyle">Style de carte</label>
-                  <select id="cardStyle">
-                    <option value="default" selected>Défaut</option>
-                    <option value="imageCircle">Image cercle</option>
-                    <option value="imageCircleRect">Image cercle rect.</option>
-                    <option value="imageRect">Image rect.</option>
-                    <option value="rect">Rect.</option>
-                  </select>
+                <label for="cardStyle">Style de carte</label>
+                <select id="cardStyle">
+                  <option value="default" selected>Défaut</option>
+                  <option value="imageCircle">Image cercle</option>
+                  <option value="imageCircleRect">Image cercle rect.</option>
+                  <option value="imageRect">Image rect.</option>
+                  <option value="rect">Rect.</option>
+                </select>
 
 
-                  <fieldset class="media-tools" data-role="image-uploader">
-                    <legend>Images</legend>
-                    <p class="group-hint">Importez une image depuis votre ordinateur. Taille
-                      max&nbsp;: 5&nbsp;Mo.</p>
+                <fieldset class="media-tools" data-role="image-uploader">
+                  <legend>Images</legend>
+                  <p class="group-hint">Importez une image depuis votre ordinateur. Taille
+                    max&nbsp;: 5&nbsp;Mo.</p>
 
-                    <label for="assetUpload" class="file-label">Téléverser une image</label>
-                    <input type="file" id="assetUpload" accept="image/*">
-                    <p class="hint" data-role="upload-feedback">Formats recommandés&nbsp;: JPG, PNG, WebP.</p>
+                  <label for="assetUpload" class="file-label">Téléverser une image</label>
+                  <input type="file" id="assetUpload" accept="image/*">
+                  <p class="hint" data-role="upload-feedback">Formats recommandés&nbsp;: JPG, PNG, WebP.</p>
 
-                    <div class="upload-result hidden" data-role="upload-result">
-                      <span class="upload-label">Image disponible à&nbsp;:</span>
-                      <code class="upload-url" data-role="upload-url"></code>
-                      <div class="upload-actions">
-                        <button type="button" class="ghost small" data-action="copy-upload-url">Copier l’URL</button>
-                        <a class="ghost small hidden" data-role="open-upload" href="#" target="_blank"
-                          rel="noopener">Ouvrir</a>
-                        <button type="button" class="ghost small" data-action="delete-upload">Supprimer la
-                          photo</button>
-                      </div>
+                  <div class="upload-result hidden" data-role="upload-result">
+                    <span class="upload-label">Image disponible à&nbsp;:</span>
+                    <code class="upload-url" data-role="upload-url"></code>
+                    <div class="upload-actions">
+                      <button type="button" class="ghost small" data-action="copy-upload-url">Copier l’URL</button>
+                      <a class="ghost small hidden" data-role="open-upload" href="#" target="_blank"
+                        rel="noopener">Ouvrir</a>
+                      <button type="button" class="ghost small" data-action="delete-upload">Supprimer la
+                        photo</button>
                     </div>
+                  </div>
 
-                    <!-- URL entry removed — uploads use the file picker directly -->
-                  </fieldset>
-                </div>
+                  <!-- URL entry removed — uploads use the file picker directly -->
+                </fieldset>
+              </div>
         </details>
 
         <details class="panel" open>
