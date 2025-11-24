@@ -1382,7 +1382,7 @@ function attachPanelControls({ chart, card }) {
   }
 
   const editableFieldset = panel.querySelector('[data-role="editable-fields"]')
-  const editableList = editableFieldset?.querySelector('.editable-list')
+  const editableList = editableFieldset?.querySelector('.editable-dropdown')
   const addEditableBtn = editableFieldset?.querySelector('[data-action="add-editable"]')
   const displayGroups = [...panel.querySelectorAll('[data-display-row]')]
   const displayGroupMap = new Map(displayGroups.map(group => [group.dataset.displayRow, group]))
@@ -2155,9 +2155,11 @@ function attachPanelControls({ chart, card }) {
 
   function removeDisplayFieldEntries(fieldKey) {
     displayGroups.forEach(group => {
-      const list = group.querySelector('.field-list')
+      const list = group.querySelector('.display-dropdown')
       if (!list) return
-      const selector = `[data-field-key="${escapeSelector(fieldKey)}"]`
+      const value = [...list.options].find(opt => normalizeFieldKey(opt.value) === fieldKey)?.value
+      if (!value) return
+      const selector = `option[value="${escapeSelector(value)}"]`
       const item = list.querySelector(selector)
       if (!item) return
 
@@ -2166,9 +2168,8 @@ function attachPanelControls({ chart, card }) {
       } else {
         const defaults = displayDefaultsByRow.get(group.dataset.displayRow)
         const defaultChecked = defaults?.get(fieldKey)
-        const checkbox = item.querySelector('input[type="checkbox"]')
-        if (checkbox && typeof defaultChecked === 'boolean') {
-          checkbox.checked = defaultChecked
+        if (typeof defaultChecked === 'boolean') {
+          item.selected = defaultChecked
         }
       }
     })
@@ -2226,44 +2227,25 @@ function attachPanelControls({ chart, card }) {
   }
 
   function createDisplayItem(group, { value, label, defaultChecked = false, removable = false }) {
-    const list = group.querySelector('.field-list')
+    const list = group.querySelector('.display-dropdown')
     if (!list) return { item: null, isNew: false }
     const key = normalizeFieldKey(value)
     if (HIDDEN_FIELD_KEYS.has(key)) return { item: null, isNew: false }
-    const selector = `[data-field-key="${escapeSelector(key)}"]`
+    const selector = `option[value="${escapeSelector(value)}"]`
     const displayLabel = ensureFieldLabel(value, label)
     let item = list.querySelector(selector)
 
     if (item) {
-      const textEl = item.querySelector('label span')
-      if (textEl) textEl.textContent = displayLabel
-      if (removable) {
-        item.dataset.custom = 'true'
-        addRemoveButton(item)
-      }
+      item.textContent = displayLabel
+      if (removable) item.dataset.custom = 'true'
       return { item, isNew: false }
     }
 
-    item = document.createElement('div')
-    item.className = 'display-item'
-    item.dataset.fieldKey = key
+    item = document.createElement('option')
+    item.value = value
+    item.textContent = displayLabel
+    item.selected = defaultChecked
     if (removable) item.dataset.custom = 'true'
-
-    const labelEl = document.createElement('label')
-    const checkbox = document.createElement('input')
-    checkbox.type = 'checkbox'
-    checkbox.value = value
-    checkbox.checked = defaultChecked
-
-    const textEl = document.createElement('span')
-    textEl.textContent = displayLabel
-
-    labelEl.append(checkbox, textEl)
-    item.append(labelEl)
-
-    if (removable) {
-      addRemoveButton(item)
-    }
 
     list.append(item)
     return { item, isNew: true }
@@ -2274,47 +2256,20 @@ function attachPanelControls({ chart, card }) {
     const key = normalizeFieldKey(value)
     if (HIDDEN_FIELD_KEYS.has(key)) return
     const displayLabel = ensureFieldLabel(value, label)
-    const selector = `[data-field-key="${escapeSelector(key)}"]`
+    const selector = `option[value="${escapeSelector(value)}"]`
     let item = editableList.querySelector(selector)
     const isNew = !item
 
     if (!item) {
-      item = document.createElement('div')
-      item.className = 'editable-item'
-      item.dataset.fieldKey = key
+      item = document.createElement('option')
+      item.value = value
+      item.textContent = displayLabel
+      item.selected = checked
       if (removable) item.dataset.custom = 'true'
-
-      const labelEl = document.createElement('label')
-      const checkbox = document.createElement('input')
-      checkbox.type = 'checkbox'
-      checkbox.value = value
-      checkbox.checked = checked
-
-      const textEl = document.createElement('span')
-      textEl.textContent = displayLabel
-
-      labelEl.append(checkbox, textEl)
-      item.append(labelEl)
-
-      if (removable) {
-        const removeBtn = document.createElement('button')
-        removeBtn.type = 'button'
-        removeBtn.className = 'remove-field'
-        removeBtn.textContent = 'Retirer'
-        removeBtn.addEventListener('click', () => {
-          item.remove()
-          removeDisplayFieldEntries(key)
-          applyEditableFields()
-        })
-        item.append(removeBtn)
-      }
-
       editableList.append(item)
     } else {
-      const checkbox = item.querySelector('input[type="checkbox"]')
-      if (checkbox && typeof checked === 'boolean') checkbox.checked = checked
-      const textEl = item.querySelector('label span')
-      if (textEl) textEl.textContent = displayLabel
+      if (typeof checked === 'boolean') item.selected = checked
+      item.textContent = displayLabel
       if (removable) item.dataset.custom = 'true'
     }
 
@@ -2335,17 +2290,16 @@ function attachPanelControls({ chart, card }) {
 
       if (!displayItem) return
       if (!created && selectRowSet.has(rowKey)) {
-        const checkbox = displayItem.querySelector('input[type="checkbox"]')
-        if (checkbox) checkbox.checked = true
+        displayItem.selected = true
       }
     })
   }
 
   function getSelectedValues(group) {
     if (!group) return []
-    return [...group.querySelectorAll('input[type="checkbox"]')]
-      .filter(input => input.checked)
-      .map(input => input.value)
+    const selectEl = group.querySelector('.display-dropdown')
+    if (!selectEl) return []
+    return [...selectEl.selectedOptions].map(option => option.value)
   }
 
   function areFieldListsEqual(a = [], b = []) {
@@ -2360,16 +2314,15 @@ function attachPanelControls({ chart, card }) {
 
   function syncDisplayItemsWithEditable(activeKeys) {
     displayGroups.forEach(group => {
-      const items = group.querySelectorAll('.display-item')
-      items.forEach(item => {
-        const key = item.dataset.fieldKey
-        const checkbox = item.querySelector('input[type="checkbox"]')
+      const selectEl = group.querySelector('.display-dropdown')
+      if (!selectEl) return
+      const options = [...selectEl.options]
+      options.forEach(option => {
+        const key = normalizeFieldKey(option.value)
         const isActive = activeKeys.has(key)
-        item.classList.toggle('is-disabled', !isActive)
-        if (!checkbox) return
-        checkbox.disabled = !isActive
-        if (!isActive && checkbox.checked) {
-          checkbox.checked = false
+        option.disabled = !isActive
+        if (!isActive && option.selected) {
+          option.selected = false
         }
       })
     })
@@ -2403,19 +2356,15 @@ function attachPanelControls({ chart, card }) {
 
   function applyEditableFields({ suppressSave = false } = {}) {
     if (!editTreeInstance || !editableList) return
-    const values = [...editableList.querySelectorAll('input[type="checkbox"]')]
-      .filter(input => input.checked)
-      .map(input => input.value)
+    const values = [...editableList.selectedOptions].map(option => option.value)
     let applied = values.length ? values : (chartConfig.editableFields.length ? [...chartConfig.editableFields] : ['first name'])
     applied = sanitizeFieldValues(applied)
     if (!applied.length) {
       const fallbackField = DEFAULT_EDITABLE_FIELDS[0] || 'first name'
       applied = [fallbackField]
       if (editableList) {
-        const fallbackKey = normalizeFieldKey(fallbackField)
-        const selector = `[data-field-key="${escapeSelector(fallbackKey)}"] input[type="checkbox"]`
-        const fallbackInput = editableList.querySelector(selector)
-        if (fallbackInput) fallbackInput.checked = true
+        const fallbackOption = editableList.querySelector(`option[value="${escapeSelector(fallbackField)}"]`)
+        if (fallbackOption) fallbackOption.selected = true
       }
     }
     currentEditableFields = [...applied]
@@ -2483,18 +2432,15 @@ function attachPanelControls({ chart, card }) {
   })
 
   editableList?.addEventListener('change', (event) => {
-    if (event.target.matches('input[type="checkbox"]')) {
-      applyEditableFields()
-    }
+    applyEditableFields()
   })
 
   addEditableBtn?.addEventListener('click', () => handleAddEditableField())
 
   displayGroups.forEach(group => {
-    group.addEventListener('change', (event) => {
-      if (event.target.matches('input[type="checkbox"]')) {
-        updateCardDisplay()
-      }
+    const selectEl = group.querySelector('.display-dropdown')
+    selectEl?.addEventListener('change', (event) => {
+      updateCardDisplay()
     })
   })
 
@@ -2664,7 +2610,7 @@ function attachPanelControls({ chart, card }) {
         try {
           const payload = await resp.json()
           if (payload?.message) message = payload.message
-        } catch (e) {}
+        } catch (e) { }
         throw new Error(message)
       }
 
