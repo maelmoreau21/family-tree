@@ -1910,3 +1910,122 @@ legend {
  
  
  
+/* Dropdown Check List */
+.dropdown-check-list {
+  position: relative;
+  width: 100%;
+}
+
+.dropdown-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  padding: 0.6rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-main);
+  cursor: pointer;
+  text-align: left;
+}
+
+.dropdown-toggle:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.dropdown-toggle[aria-expanded='true'] {
+  border-color: var(--accent-primary);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.dropdown-count {
+  background: var(--accent-primary);
+  color: white;
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 99px;
+  font-weight: 600;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--panel-bg);
+  backdrop-filter: blur(var(--backdrop-blur));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur));
+  border: 1px solid var(--panel-border);
+  border-top: none;
+  border-bottom-left-radius: var(--radius-sm);
+  border-bottom-right-radius: var(--radius-sm);
+  z-index: 50;
+  padding: var(--space-sm);
+  max-height: 300px;
+  overflow-y: auto;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+.dropdown-toggle[aria-expanded='true'] + .dropdown-content {
+  display: block;
+}
+
+.dropdown-actions {
+  margin-top: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--panel-border);
+  text-align: center;
+}
+
+/* Adjust existing list items for dropdown context */
+.editable-item,
+.display-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem;
+  border-radius: var(--radius-sm);
+  transition: background 0.2s ease;
+}
+
+.editable-item:hover,
+.display-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.editable-item label,
+.display-item label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  cursor: pointer;
+  flex: 1;
+  color: var(--text-main);
+}
+
+.editable-item .remove-field,
+.display-item .remove-field {
+  opacity: 0;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.editable-item:hover .remove-field,
+.display-item:hover .remove-field {
+  opacity: 1;
+}
+
+.editable-item .remove-field:hover,
+.display-item .remove-field:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+

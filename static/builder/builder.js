@@ -1388,6 +1388,49 @@ function attachPanelControls({ chart, card }) {
   const displayGroupMap = new Map(displayGroups.map(group => [group.dataset.displayRow, group]))
   const fieldLabelStore = createBaseFieldLabelStore()
 
+  // Dropdown setup
+  function setupDropdown(container) {
+    if (!container) return
+    const toggle = container.querySelector('.dropdown-toggle')
+    const content = container.querySelector('.dropdown-content')
+    if (!toggle || !content) return
+
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation()
+      const isExpanded = toggle.getAttribute('aria-expanded') === 'true'
+
+      // Close all other dropdowns
+      document.querySelectorAll('.dropdown-toggle').forEach(t => {
+        if (t !== toggle) t.setAttribute('aria-expanded', 'false')
+      })
+
+      toggle.setAttribute('aria-expanded', String(!isExpanded))
+    })
+
+    // Close when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!container.contains(e.target)) {
+        toggle.setAttribute('aria-expanded', 'false')
+      }
+    })
+
+    // Prevent closing when clicking inside content
+    content.addEventListener('click', (e) => {
+      e.stopPropagation()
+    })
+  }
+
+  setupDropdown(document.getElementById('editableFieldsDropdown'))
+  setupDropdown(document.getElementById('displayRow1Dropdown'))
+  setupDropdown(document.getElementById('displayRow2Dropdown'))
+
+  function updateDropdownCount(container, count) {
+    if (!container) return
+    const badge = container.querySelector('.dropdown-count')
+    if (badge) badge.textContent = count
+  }
+
+
   const displayDefaultsByRow = new Map(
     Object.entries(DISPLAY_DEFAULTS).map(([row, defs]) => [
       row,
@@ -2208,20 +2251,27 @@ function attachPanelControls({ chart, card }) {
   function applyConfigToEditableControls() {
     if (!editableList) return
     const desired = new Set((chartConfig.editableFields || []).map(normalizeFieldKey))
+    let count = 0
     editableList.querySelectorAll('input[type="checkbox"]').forEach(input => {
       const key = normalizeFieldKey(input.value)
       input.checked = desired.has(key)
+      if (input.checked) count++
     })
+    updateDropdownCount(document.getElementById('editableFieldsDropdown'), count)
   }
 
   function applyConfigToDisplayControls() {
     displayGroups.forEach((group, index) => {
       const desiredRow = (chartConfig.cardDisplay && chartConfig.cardDisplay[index]) || []
       const desiredSet = new Set(desiredRow.map(normalizeFieldKey))
+      let count = 0
       group.querySelectorAll('input[type="checkbox"]').forEach(input => {
         const key = normalizeFieldKey(input.value)
         input.checked = desiredSet.has(key)
+        if (input.checked) count++
       })
+      const dropdownId = `displayRow${index + 1}Dropdown`
+      updateDropdownCount(document.getElementById(dropdownId), count)
     })
   }
 
@@ -2318,6 +2368,10 @@ function attachPanelControls({ chart, card }) {
       if (removable) item.dataset.custom = 'true'
     }
 
+    // Update count
+    const count = editableList.querySelectorAll('input[type="checkbox"]:checked').length
+    updateDropdownCount(document.getElementById('editableFieldsDropdown'), count)
+
     const selectRowSet = new Set((selectRows || []).map(String))
 
     displayGroups.forEach(group => {
@@ -2337,6 +2391,14 @@ function attachPanelControls({ chart, card }) {
       if (!created && selectRowSet.has(rowKey)) {
         const checkbox = displayItem.querySelector('input[type="checkbox"]')
         if (checkbox) checkbox.checked = true
+      }
+
+      // Update count
+      const list = group.querySelector('.field-list')
+      if (list) {
+        const count = list.querySelectorAll('input[type="checkbox"]:checked').length
+        const dropdownId = `displayRow${group.dataset.displayRow}Dropdown`
+        updateDropdownCount(document.getElementById(dropdownId), count)
       }
     })
   }
@@ -2664,7 +2726,7 @@ function attachPanelControls({ chart, card }) {
         try {
           const payload = await resp.json()
           if (payload?.message) message = payload.message
-        } catch (e) {}
+        } catch (e) { }
         throw new Error(message)
       }
 
