@@ -2174,6 +2174,201 @@ path[d^='M18.66'] {
   margin: 0;
   font-size: 0.9rem;
 }
+/* Remove default margins to control gap via flex */
+}
+
+.f3-form input[type="text"]:focus,
+.f3-form textarea:focus,
+.f3-form select:focus {
+  outline: none !important;
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 0 0 2px var(--accent-glow) !important;
+}
+
+/* Form Buttons */
+.f3-form button {
+  width: 100% !important;
+  padding: 0.6rem !important;
+  border-radius: var(--radius-sm) !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  margin: 0 !important;
+}
+
+.f3-form button[type="submit"] {
+  background: rgba(239, 68, 68, 0.2) !important;
+}
+
+/* Labels */
+/* Labels */
+.f3-form label {
+  color: var(--text-muted) !important;
+  font-size: 0.8rem !important;
+  margin-bottom: 0.15rem !important;
+  padding-bottom: 0px !important;
+  display: block !important;
+}
+
+/* Title */
+.f3-form-title {
+  color: var(--text-main) !important;
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+  margin-bottom: var(--space-md) !important;
+  text-align: left !important;
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--panel-border);
+}
+
+/* Close Button - Positioned Top Right */
+.f3-close-btn {
+  color: var(--text-muted) !important;
+  position: absolute !important;
+  top: var(--space-md) !important;
+  right: var(--space-md) !important;
+  left: auto !important;
+  font-size: 1.5rem !important;
+  background: var(--panel-bg) !important;
+  border-radius: 50% !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+  z-index: 101 !important;
+}
+
+.f3-close-btn:hover {
+  color: var(--text-main) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Add Button (if present in header) - Positioned Left of Close Button */
+/* Assuming the "Add" button might be .f3-add-btn or similar if it exists in the header */
+.f3-form-cont .f3-add-btn,
+.f3-form-cont [data-action="add"] {
+  position: absolute !important;
+  top: var(--space-md) !important;
+  right: calc(var(--space-md) + 40px) !important;
+  /* Positioned to the left of close button */
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 101 !important;
+}
+
+/* Hide specific 'useless' pencil button in edit menu */
+path[d^='M18.66'] {
+  display: none !important;
+}
+
+/* Hide circle in search panel */
+.search-panel circle,
+.search-widget svg circle {
+  display: none !important;
+}
+
+/* Prevent input text from overflowing the search container */
+.search-panel .f3-autocomplete-input-cont {
+  overflow: hidden !important;
+}
+
+.search-panel .f3-autocomplete-input-cont input {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  visibility: hidden !important;
+}
+
+/* Multi-select Dropdown Styles */
+.multi-select-dropdown {
+  position: relative;
+  width: 100%;
+}
+
+.dropdown-anchor {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 0.5rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.9rem;
+  color: var(--text-main);
+}
+
+.dropdown-anchor:hover {
+  background: var(--surface-3);
+  border-color: var(--primary);
+}
+
+.dropdown-anchor::after {
+  content: '';
+  width: 0.6em;
+  height: 0.6em;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 0.2s;
+  margin-left: 0.5rem;
+  opacity: 0.6;
+}
+
+.multi-select-dropdown.is-open .dropdown-anchor::after {
+  transform: rotate(-135deg) translateY(-2px);
+}
+
+.dropdown-items {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--surface-1);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 4px;
+  padding: 0.25rem 0;
+}
+
+.multi-select-dropdown.is-open .dropdown-items {
+  display: block;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  padding: 0.4rem 0.5rem;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.dropdown-item:hover {
+  background: var(--surface-2);
+}
+
+.dropdown-item label {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  cursor: pointer;
+  margin: 0;
+  font-size: 0.9rem;
+}
 
 .dropdown-item input[type="checkbox"] {
   margin-right: 0.5rem;
@@ -2184,4 +2379,96 @@ path[d^='M18.66'] {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.modal-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.modal-content {
+  background: var(--bg-root);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  width: 90%;
+  max-width: 400px;
+  box-shadow: var(--panel-shadow);
+  text-align: center;
+}
+
+.modal-content h2 {
+  margin-top: 0;
+  color: var(--text-main);
+}
+
+.modal-content form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+  text-align: left;
+}
+
+/* File List */
+.file-list-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.03);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--panel-border);
+}
+
+.file-item a {
+  color: var(--accent-secondary);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: var(--space-sm);
+}
+
+.file-item a:hover {
+  text-decoration: underline;
+}
+
+.file-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.text-danger {
+  color: #ef4444 !important;
+}
+
+.text-danger:hover {
+  background: rgba(239, 68, 68, 0.1) !important;
 }

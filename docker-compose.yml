@@ -32,4 +32,6 @@ services:
       - "7921:7921"
     volumes:
       - ./data/backups:/app/data/backups
+      - ./data/backups:/app/data/backups
       - ./document:/app/document
+      - ./union_documents:/app/union_documents

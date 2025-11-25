@@ -28,6 +28,334 @@ let cardHighlightTimer = null
 let pendingHighlightId = null
 let ignoreNextMainSync = false
 let transientMainSelection = false
+let activePersonId = null
+
+const emptyTreeModal = document.getElementById('emptyTreeModal')
+const createFirstPersonForm = document.getElementById('createFirstPersonForm')
+const personFileList = document.getElementById('personFileList')
+const personFileUpload = document.getElementById('personFileUpload')
+const unionList = document.getElementById('unionList')
+
+function showEmptyTreeModal() {
+  if (emptyTreeModal) emptyTreeModal.classList.remove('hidden')
+}
+
+function hideEmptyTreeModal() {
+  if (emptyTreeModal) emptyTreeModal.classList.add('hidden')
+}
+
+if (createFirstPersonForm) {
+  createFirstPersonForm.addEventListener('submit', async (e) => {
+    e.preventDefault()
+    const firstName = document.getElementById('firstPersonName').value
+    const lastName = document.getElementById('firstPersonLastName').value
+    const gender = document.getElementById('firstPersonGender').value
+
+    const newPerson = {
+      id: '1',
+      data: {
+        'first name': firstName,
+        'last name': lastName,
+        gender: gender
+      },
+      rels: { parents: [], children: [], spouses: [] }
+    }
+
+    try {
+      await fetch('/api/tree', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: [newPerson], config: { mainId: '1' } })
+      })
+      window.location.reload()
+    } catch (error) {
+      console.error('Failed to create first person', error)
+      alert('Erreur lors de la création.')
+    }
+  })
+}
+
+async function updateFilePanel(personId) {
+  if (!personFileList) return
+  personFileList.innerHTML = '<p class="hint">Chargement...</p>'
+
+  if (!personId) {
+    personFileList.innerHTML = ''
+    return
+  }
+
+  try {
+    const res = await fetch(`/api/document/${personId}`)
+    const files = await res.json()
+    renderFileList(files, personId)
+  } catch (e) {
+    console.error(e)
+    personFileList.innerHTML = '<p class="hint error">Erreur de chargement.</p>'
+  }
+}
+
+function renderFileList(files, personId) {
+  personFileList.innerHTML = ''
+  if (!files.length) {
+    personFileList.innerHTML = '<p class="hint">Aucun fichier.</p>'
+    return
+  }
+
+  const ul = document.createElement('ul')
+  ul.className = 'file-list-items'
+
+  files.forEach(file => {
+    const li = document.createElement('li')
+    li.className = 'file-item'
+
+    const link = document.createElement('a')
+    link.href = file.url
+    link.target = '_blank'
+    link.textContent = file.name
+
+    const actions = document.createElement('div')
+    actions.className = 'file-actions'
+
+    const renameBtn = document.createElement('button')
+    renameBtn.type = 'button'
+    renameBtn.className = 'ghost small'
+    renameBtn.textContent = '✏️'
+    renameBtn.onclick = () => promptRenameFile(personId, file.name)
+
+    const deleteBtn = document.createElement('button')
+    deleteBtn.type = 'button'
+    deleteBtn.className = 'ghost small text-danger'
+    deleteBtn.textContent = '🗑️'
+    deleteBtn.onclick = () => confirmDeleteFile(personId, file.name)
+
+    actions.append(renameBtn, deleteBtn)
+    li.append(link, actions)
+    ul.append(li)
+  })
+  personFileList.append(ul)
+}
+
+async function promptRenameFile(personId, oldName) {
+  const newName = prompt('Nouveau nom (sans extension) :', oldName.replace(/\.[^/.]+$/, ""))
+  if (newName && newName !== oldName) {
+    try {
+      await fetch(`/api/document/${personId}/rename`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oldName, newName })
+      })
+      updateFilePanel(personId)
+    } catch (e) {
+      alert('Erreur lors du renommage.')
+    }
+  }
+}
+
+async function confirmDeleteFile(personId, filename) {
+  if (confirm(`Supprimer ${filename} ?`)) {
+    try {
+      await fetch(`/api/document/${personId}/${filename}`, { method: 'DELETE' })
+      updateFilePanel(personId)
+    } catch (e) {
+      alert('Erreur lors de la suppression.')
+    }
+  }
+}
+
+async function updateUnionPanel(personId) {
+  if (!unionList) return
+  unionList.innerHTML = ''
+
+  if (!personId || !activeChartInstance) return
+
+  const datum = activeChartInstance.store.getDatum(personId)
+  if (!datum || !datum.rels || !datum.rels.spouses || !datum.rels.spouses.length) {
+    unionList.innerHTML = '<p class="hint">Aucune union.</p>'
+    return
+  }
+
+  datum.rels.spouses.forEach(spouseId => {
+    const spouseDatum = activeChartInstance.store.getDatum(spouseId)
+    const spouseName = spouseDatum ? buildPersonLabel(spouseDatum) : spouseId
+
+    const div = document.createElement('div')
+    div.className = 'union-item'
+    div.style.marginBottom = '1rem'
+
+    const header = document.createElement('div')
+    header.innerHTML = `<strong>Union avec ${spouseName}</strong>`
+
+    const fileListDiv = document.createElement('div')
+    fileListDiv.id = `union-files-${personId}-${spouseId}`
+
+    const uploadBtn = document.createElement('label')
+    uploadBtn.className = 'button ghost small'
+    uploadBtn.textContent = 'Ajouter doc union'
+    uploadBtn.style.display = 'inline-block'
+    uploadBtn.style.marginTop = '0.5rem'
+
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.className = 'hidden'
+    input.onchange = (e) => uploadUnionFile(personId, spouseId, e.target.files[0])
+    uploadBtn.append(input)
+
+    div.append(header, fileListDiv, uploadBtn)
+    unionList.append(div)
+
+    loadUnionFiles(personId, spouseId, fileListDiv)
+  })
+}
+
+async function loadUnionFiles(id1, id2, container) {
+  try {
+    const res = await fetch(`/api/union-document/${id1}/${id2}`)
+    const files = await res.json()
+    renderUnionFileList(files, id1, id2, container)
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+function renderUnionFileList(files, id1, id2, container) {
+  container.innerHTML = ''
+  if (!files.length) return
+
+  const ul = document.createElement('ul')
+  ul.className = 'file-list-items'
+
+  files.forEach(file => {
+    const li = document.createElement('li')
+    li.className = 'file-item'
+
+    const link = document.createElement('a')
+    link.href = file.url
+    link.target = '_blank'
+    link.textContent = file.name
+
+    const actions = document.createElement('div')
+    actions.className = 'file-actions'
+
+    const renameBtn = document.createElement('button')
+    renameBtn.type = 'button'
+    renameBtn.className = 'ghost small'
+    renameBtn.textContent = '✏️'
+    renameBtn.onclick = () => promptRenameUnionFile(id1, id2, file.name, container)
+
+    const deleteBtn = document.createElement('button')
+    deleteBtn.type = 'button'
+    deleteBtn.className = 'ghost small text-danger'
+    deleteBtn.textContent = '🗑️'
+    deleteBtn.onclick = () => confirmDeleteUnionFile(id1, id2, file.name, container)
+
+    actions.append(renameBtn, deleteBtn)
+    li.append(link, actions)
+    ul.append(li)
+  })
+  container.append(ul)
+}
+
+async function uploadUnionFile(id1, id2, file) {
+  if (!file) return
+  const formData = new FormData()
+  formData.append('file', file)
+
+  try {
+    await fetch(`/api/union-document/${id1}/${id2}`, {
+      method: 'POST',
+      body: formData
+    })
+    // Refresh
+    const container = document.getElementById(`union-files-${id1}-${id2}`)
+    if (container) loadUnionFiles(id1, id2, container)
+  } catch (e) {
+    alert('Erreur upload union.')
+  }
+}
+
+async function promptRenameUnionFile(id1, id2, oldName, container) {
+  const newName = prompt('Nouveau nom (sans extension) :', oldName.replace(/\.[^/.]+$/, ""))
+  if (newName && newName !== oldName) {
+    try {
+      await fetch(`/api/union-document/${id1}/${id2}/rename`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oldName, newName })
+      })
+      loadUnionFiles(id1, id2, container)
+    } catch (e) {
+      alert('Erreur renommage.')
+    }
+  }
+}
+
+async function confirmDeleteUnionFile(id1, id2, filename, container) {
+  if (confirm(`Supprimer ${filename} ?`)) {
+    try {
+      await fetch(`/api/union-document/${id1}/${id2}/${filename}`, { method: 'DELETE' })
+      loadUnionFiles(id1, id2, container)
+    } catch (e) {
+      alert('Erreur suppression.')
+    }
+  }
+}
+
+async function importGedcom(file) {
+  if (!file) return
+  const formData = new FormData()
+  formData.append('file', file)
+
+  try {
+    setChartLoading(true, 'Import GEDCOM en cours...')
+    const res = await fetch('/api/import/gedcom', {
+      method: 'POST',
+      body: formData
+    })
+    if (!res.ok) throw new Error('Import failed')
+    window.location.reload()
+  } catch (e) {
+    console.error(e)
+    alert('Erreur lors de l\'import GEDCOM.')
+    setChartLoading(false)
+  }
+}
+
+async function exportGedcom(rootId, direction) {
+  try {
+    let url = '/api/export/gedcom'
+    const params = new URLSearchParams()
+    if (rootId && direction) {
+      params.append('rootId', rootId)
+      params.append('direction', direction)
+    }
+    const queryString = params.toString()
+    if (queryString) url += `?${queryString}`
+
+    window.open(url, '_blank')
+  } catch (e) {
+    console.error(e)
+    alert('Erreur lors de l\'export.')
+  }
+}
+
+async function deleteBranch(personId, direction) {
+  if (!confirm(`Attention ! Vous allez supprimer toute la branche ${direction === 'ascending' ? 'ascendante (ancêtres)' : 'descendante (descendants)'} de cette personne. Cette action est irréversible. Continuer ?`)) {
+    return
+  }
+
+  try {
+    setChartLoading(true, 'Suppression de la branche...')
+    const res = await fetch(`/api/person/${personId}/branch?direction=${direction}`, {
+      method: 'DELETE'
+    })
+    if (!res.ok) throw new Error('Delete failed')
+    window.location.reload()
+  } catch (e) {
+    console.error(e)
+    alert('Erreur lors de la suppression de la branche.')
+    setChartLoading(false)
+  }
+}
 
 function clearElement(target) {
   if (!target) return
@@ -256,6 +584,9 @@ function activateProfileInteraction(personId, {
   }
   if (openEditor && datum && editTreeInstance) {
     editTreeInstance.open(datum)
+    activePersonId = personId
+    updateFilePanel(personId)
+    updateUnionPanel(personId)
   }
 }
 
@@ -1150,6 +1481,13 @@ function setupChart(payload) {
   }
 
   const { data, config } = normaliseTreePayload(payload)
+
+  if (!data || data.length === 0) {
+    showEmptyTreeModal()
+    setStatus('Arbre vide. Créez la première personne.', 'info')
+    setChartLoading(false)
+    return
+  }
   try {
     if (Array.isArray(data) && data.length) {
       const imageKeys = ['avatar', 'photo', 'picture']
@@ -1379,6 +1717,26 @@ function attachPanelControls({ chart, card }) {
       handleFormCreation: () => { },
       teardown: () => { }
     }
+  }
+
+  if (personFileUpload) {
+    personFileUpload.addEventListener('change', async (e) => {
+      const file = e.target.files[0]
+      if (!file || !activePersonId) return
+
+      const formData = new FormData()
+      formData.append('file', file)
+
+      try {
+        await fetch(`/api/document/${activePersonId}`, {
+          method: 'POST',
+          body: formData
+        })
+        updateFilePanel(activePersonId)
+      } catch (e) {
+        alert('Erreur upload.')
+      }
+    })
   }
 
   const editableFieldset = panel.querySelector('[data-role="editable-fields"]')

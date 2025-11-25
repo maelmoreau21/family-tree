@@ -16,6 +16,8 @@ import {
   rebuildFts,
   getDatabaseUrl
 } from './db.js'
+import { parseGedcom, generateGedcom } from './gedcom.js'
+import { getBranchIds } from './tree-ops.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -24,6 +26,7 @@ const ROOT_DIR = path.resolve(__dirname, '..')
 const DIST_DIR = path.resolve(ROOT_DIR, 'dist')
 const STATIC_DIR = path.resolve(ROOT_DIR, 'static')
 const DOCUMENT_DIR = path.resolve(ROOT_DIR, 'document')
+const UNION_DOC_DIR = path.resolve(ROOT_DIR, 'union_documents')
 
 const TREE_DATA_DIR = path.resolve(process.env.TREE_DATA_DIR || path.join(ROOT_DIR, 'data'))
 const TREE_BACKUP_DIR = path.resolve(process.env.TREE_BACKUP_DIR || path.join(TREE_DATA_DIR, 'backups'))
@@ -57,7 +60,7 @@ const DEFAULT_SEED_DATASET = {
       data: {
         'first name': 'Inconnu',
         'last name': 'Profil',
-            gender: ''
+        gender: ''
       },
       rels: {
         spouses: [],
@@ -163,7 +166,7 @@ const uploadMiddleware = multer({
   storage: uploadStorage,
   limits: { fileSize: MAX_UPLOAD_SIZE },
   fileFilter: (req, file, cb) => {
-    
+
     if (!file.mimetype || !file.mimetype.startsWith('image/')) {
       const error = new Error('UNSUPPORTED_FILE_TYPE')
       error.code = 'UNSUPPORTED_FILE_TYPE'
@@ -179,6 +182,22 @@ const uploadMiddleware = multer({
 })
 
 const uploadSingleImage = uploadMiddleware.single('file')
+
+const documentUploadMiddleware = multer({
+  storage: uploadStorage,
+  limits: { fileSize: MAX_UPLOAD_SIZE },
+  fileFilter: (req, file, cb) => {
+    // Allow all file types for documents
+    cb(null, true)
+  }
+})
+
+const uploadSingleDocument = documentUploadMiddleware.single('file')
+
+function getUnionFolder(id1, id2) {
+  const ids = [id1, id2].map(id => sanitizeFileName(id)).sort()
+  return ids.join('_')
+}
 
 function sanitizeFileName(value = '') {
   return value
@@ -215,8 +234,8 @@ async function ensureDatabase() {
     const current = normaliseTreePayloadRoot(await readTreeData())
     const hasPersons = Array.isArray(current.data) && current.data.length > 0
     if (!hasPersons) {
-      const fallbackSeed = cloneSeedPayload(DEFAULT_SEED_DATASET)
-      await writeTreeData(fallbackSeed)
+      // Do not seed default person. Start empty.
+      await writeTreeData({ data: [], config: {}, meta: {} })
     }
   } catch (error) {
     console.warn('[server] Unable to inspect database contents during initialisation', error)
@@ -229,6 +248,10 @@ async function ensureDocumentDir() {
 
 async function ensureBackupDir() {
   await fs.mkdir(TREE_BACKUP_DIR, { recursive: true })
+}
+
+async function ensureUnionDocDir() {
+  await fs.mkdir(UNION_DOC_DIR, { recursive: true })
 }
 
 async function loadSeedPayload() {
@@ -803,7 +826,7 @@ function createTreeApi({ canWrite }) {
       const normalised = normaliseTreePayloadRoot(payload)
       const persons = Array.isArray(normalised.data) ? normalised.data : []
       const summaries = buildPeopleSummary(persons)
-  const updatedAt = await getLastUpdatedAt()
+      const updatedAt = await getLastUpdatedAt()
 
       res.json({
         total: persons.length,
@@ -858,7 +881,7 @@ function createTreeApi({ canWrite }) {
       }
     })
 
-    
+
     router.post('/admin/import', ensureAdminAuth, jsonParser, async (req, res) => {
       try {
         const body = req.body
@@ -877,7 +900,7 @@ function createTreeApi({ canWrite }) {
           dropIndexes = parseBooleanParam(req.query.dropIndexes, true)
         }
 
-        
+
         let fastImport = false
         if (hasPayloadField && Object.prototype.hasOwnProperty.call(body, 'fastImport')) {
           fastImport = parseBooleanParam(body.fastImport, false)
@@ -895,7 +918,7 @@ function createTreeApi({ canWrite }) {
 
     router.post('/admin/rebuild-fts', ensureAdminAuth, async (req, res) => {
       try {
-  const result = await rebuildFts()
+        const result = await rebuildFts()
         res.json(result)
       } catch (error) {
         console.error('[server] rebuild-fts failed', error)
@@ -904,7 +927,7 @@ function createTreeApi({ canWrite }) {
     })
 
     router.post('/admin/reset-to-seed', ensureAdminAuth, async (req, res) => {
-    
+
       const confirm = req.query.confirm === '1' || req.query.confirm === 'true'
       if (!confirm) {
         res.status(400).json({ message: 'Missing confirm=1 query param to reset database to seed' })
@@ -931,9 +954,10 @@ function createStaticApp(staticFolder, { canWrite }) {
   const staticOptions = { setHeaders: setStaticCacheHeaders }
   app.use('/lib', express.static(DIST_DIR, staticOptions))
   app.use('/assets', express.static(path.resolve(ROOT_DIR, 'src', 'styles'), staticOptions))
-  
+
   app.use('/static', express.static(STATIC_DIR, staticOptions))
   app.use('/document', express.static(DOCUMENT_DIR, { maxAge: '1d' }))
+  app.use('/union-documents', express.static(UNION_DOC_DIR, { maxAge: '1d' }))
   app.use('/api', createTreeApi({ canWrite }))
 
   if (canWrite) {
@@ -1012,7 +1036,7 @@ function createStaticApp(staticFolder, { canWrite }) {
         })()
       })
     })
-    
+
     // Delete profile image for a person (removes any profil.* files in the person folder)
     app.delete('/api/document', ensureAdminAuth, async (req, res) => {
       try {
@@ -1078,6 +1102,189 @@ function createStaticApp(staticFolder, { canWrite }) {
         res.status(500).json({ message: 'Impossible de supprimer le fichier' })
       }
     })
+
+    // Person Files API
+    app.get('/api/document/:personId', ensureAdminAuth, async (req, res) => {
+      try {
+        const { personId } = req.params
+        const safeId = sanitizeFileName(personId)
+        if (!safeId) return res.json([])
+
+        const targetDir = path.join(DOCUMENT_DIR, safeId)
+        try {
+          await fs.access(targetDir)
+        } catch {
+          return res.json([])
+        }
+
+        const entries = await fs.readdir(targetDir, { withFileTypes: true })
+        const files = entries
+          .filter(e => e.isFile())
+          .map(e => ({
+            name: e.name,
+            url: `/document/${safeId}/${e.name}`
+          }))
+        res.json(files)
+      } catch (error) {
+        console.error('[server] Failed to list person files', error)
+        res.status(500).json({ message: 'Error listing files' })
+      }
+    })
+
+    app.post('/api/document/:personId', ensureAdminAuth, (req, res) => {
+      uploadSingleDocument(req, res, async (error) => {
+        if (error) return res.status(500).json({ message: 'Upload failed' })
+        if (!req.file) return res.status(400).json({ message: 'No file' })
+
+        const { personId } = req.params
+        const safeId = sanitizeFileName(personId)
+        const targetDir = path.join(DOCUMENT_DIR, safeId)
+        await fs.mkdir(targetDir, { recursive: true })
+
+        const safeFilename = sanitizeFileName(req.file.originalname)
+        const targetPath = path.join(targetDir, safeFilename)
+
+        try {
+          await fs.rename(req.file.path, targetPath)
+        } catch (e) {
+          await fs.copyFile(req.file.path, targetPath)
+          await fs.unlink(req.file.path)
+        }
+
+        res.json({ url: `/document/${safeId}/${safeFilename}`, name: safeFilename })
+      })
+    })
+
+    app.post('/api/document/:personId/rename', ensureAdminAuth, express.json(), async (req, res) => {
+      try {
+        const { personId } = req.params
+        const { oldName, newName } = req.body
+        const safeId = sanitizeFileName(personId)
+
+        if (!safeId || !oldName || !newName) {
+          return res.status(400).json({ message: 'Missing parameters' })
+        }
+
+        const targetDir = path.join(DOCUMENT_DIR, safeId)
+        const oldPath = path.join(targetDir, oldName)
+
+        const ext = path.extname(oldName)
+        const safeNewName = sanitizeFileName(newName) + ext
+        const newPath = path.join(targetDir, safeNewName)
+
+        await fs.rename(oldPath, newPath)
+        res.json({ name: safeNewName, url: `/document/${safeId}/${safeNewName}` })
+      } catch (error) {
+        console.error('[server] Failed to rename file', error)
+        res.status(500).json({ message: 'Error renaming file' })
+      }
+    })
+
+    app.delete('/api/document/:personId/:filename', ensureAdminAuth, async (req, res) => {
+      try {
+        const { personId, filename } = req.params
+        const safeId = sanitizeFileName(personId)
+        const targetDir = path.join(DOCUMENT_DIR, safeId)
+        const filePath = path.join(targetDir, filename)
+
+        await fs.unlink(filePath)
+        res.status(204).end()
+      } catch (error) {
+        console.error('[server] Failed to delete file', error)
+        res.status(500).json({ message: 'Error deleting file' })
+      }
+    })
+
+    // Union Files API
+    app.get('/api/union-document/:id1/:id2', ensureAdminAuth, async (req, res) => {
+      try {
+        const { id1, id2 } = req.params
+        const folderName = getUnionFolder(id1, id2)
+        const targetDir = path.join(UNION_DOC_DIR, folderName)
+
+        try {
+          await fs.access(targetDir)
+        } catch {
+          return res.json([])
+        }
+
+        const entries = await fs.readdir(targetDir, { withFileTypes: true })
+        const files = entries
+          .filter(e => e.isFile())
+          .map(e => ({
+            name: e.name,
+            url: `/union-documents/${folderName}/${e.name}`
+          }))
+        res.json(files)
+      } catch (error) {
+        console.error('[server] Failed to list union files', error)
+        res.status(500).json({ message: 'Error listing union files' })
+      }
+    })
+
+    app.post('/api/union-document/:id1/:id2', ensureAdminAuth, (req, res) => {
+      uploadSingleDocument(req, res, async (error) => {
+        if (error) return res.status(500).json({ message: 'Upload failed' })
+        if (!req.file) return res.status(400).json({ message: 'No file' })
+
+        const { id1, id2 } = req.params
+        const folderName = getUnionFolder(id1, id2)
+        const targetDir = path.join(UNION_DOC_DIR, folderName)
+        await fs.mkdir(targetDir, { recursive: true })
+
+        const safeFilename = sanitizeFileName(req.file.originalname)
+        const targetPath = path.join(targetDir, safeFilename)
+
+        try {
+          await fs.rename(req.file.path, targetPath)
+        } catch (e) {
+          await fs.copyFile(req.file.path, targetPath)
+          await fs.unlink(req.file.path)
+        }
+
+        res.json({ url: `/union-documents/${folderName}/${safeFilename}`, name: safeFilename })
+      })
+    })
+
+    app.post('/api/union-document/:id1/:id2/rename', ensureAdminAuth, express.json(), async (req, res) => {
+      try {
+        const { id1, id2 } = req.params
+        const { oldName, newName } = req.body
+        const folderName = getUnionFolder(id1, id2)
+
+        if (!folderName || !oldName || !newName) {
+          return res.status(400).json({ message: 'Missing parameters' })
+        }
+
+        const targetDir = path.join(UNION_DOC_DIR, folderName)
+        const oldPath = path.join(targetDir, oldName)
+
+        const ext = path.extname(oldName)
+        const safeNewName = sanitizeFileName(newName) + ext
+        const newPath = path.join(targetDir, safeNewName)
+
+        await fs.rename(oldPath, newPath)
+        res.json({ name: safeNewName, url: `/union-documents/${folderName}/${safeNewName}` })
+      } catch (error) {
+        console.error('[server] Failed to rename union file', error)
+        res.status(500).json({ message: 'Error renaming file' })
+      }
+    })
+
+    app.delete('/api/union-document/:id1/:id2/:filename', ensureAdminAuth, async (req, res) => {
+      try {
+        const { id1, id2, filename } = req.params
+        const folderName = getUnionFolder(id1, id2)
+        const targetDir = path.join(UNION_DOC_DIR, folderName)
+        const filePath = path.join(targetDir, filename)
+
+        await fs.unlink(filePath)
+        res.status(204).end()
+      } catch (error) {
+        console.error('[server] Failed to delete union file', error)
+        res.status(500).json({ message: 'Error deleting file' })
+      }
+    })
   }
 
   app.use(express.static(staticFolder, { extensions: ['html'], setHeaders: setStaticCacheHeaders }))
@@ -1092,6 +1299,7 @@ function createStaticApp(staticFolder, { canWrite }) {
 async function start() {
   await ensureDatabase()
   await ensureDocumentDir()
+  await ensureUnionDocDir()
   await ensureBackupDir()
   try {
     await fs.access(DIST_DIR)
