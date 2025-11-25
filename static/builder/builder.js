@@ -2566,15 +2566,95 @@ function attachPanelControls({ chart, card }) {
     })
   }
 
-  function applyConfigToEditableControls() {
-    if (!editableList) return
-    const desired = new Set((chartConfig.editableFields || []).map(normalizeFieldKey))
-    editableList.querySelectorAll('input[type="checkbox"]').forEach(input => {
-      const key = normalizeFieldKey(input.value)
-      input.checked = desired.has(key)
+  function refreshConfigControls() {
+    if (ancestryDepthSelect) ancestryDepthSelect.value = chartConfig.ancestryDepth || '2'
+    if (progenyDepthSelect) progenyDepthSelect.value = chartConfig.progenyDepth || '2'
+    if (cardWidth) cardWidth.value = chartConfig.cardDim.width
+    if (cardHeight) cardHeight.value = chartConfig.cardDim.height
+    if (imgWidth) imgWidth.value = chartConfig.cardDim.img_w
+    if (imgHeight) imgHeight.value = chartConfig.cardDim.img_h
+    if (imgX) imgX.value = chartConfig.cardDim.img_x
+    if (imgY) imgY.value = chartConfig.cardDim.img_y
+    if (cardXSpacing) cardXSpacing.value = chartConfig.cardXSpacing
+    if (cardYSpacing) cardYSpacing.value = chartConfig.cardYSpacing
+    if (transitionInput) transitionInput.value = chartConfig.transitionTime
+    if (emptyLabel) emptyLabel.value = chartConfig.singleParentEmptyCardLabel
+    if (miniTreeToggle) miniTreeToggle.checked = chartConfig.miniTree
+    if (imageField) imageField.value = chartConfig.imageField || 'avatar'
+    if (cardStyle) cardStyle.value = chartConfig.cardStyle || 'main'
+
+    orientationButtons?.forEach(btn => {
+      if (btn.dataset.orientation === chartConfig.orientation) {
+        btn.classList.add('active')
+      } else {
+        btn.classList.remove('active')
+      }
     })
   }
 
+  function applyConfigToEditableControls() {
+    if (!editableList) return
+    const checkboxes = editableList.querySelectorAll('input[type="checkbox"]')
+    const configSet = new Set((chartConfig.editableFields || []).map(normalizeFieldKey))
+    checkboxes.forEach(cb => {
+      cb.checked = configSet.has(normalizeFieldKey(cb.value))
+    })
+  }
+
+  function applyConfigToDisplayControls() {
+    displayGroups.forEach(group => {
+      const row = group.dataset.displayRow
+      const checkboxes = group.querySelectorAll('input[type="checkbox"]')
+      const rowConfig = (chartConfig.cardDisplay || [])[parseInt(row) - 1] || []
+      const rowSet = new Set(rowConfig.map(normalizeFieldKey))
+      checkboxes.forEach(cb => {
+        cb.checked = rowSet.has(normalizeFieldKey(cb.value))
+      })
+    })
+  }
+
+  function applyEditableFields({ suppressSave = false } = {}) {
+    if (!editableList) return
+    const checkboxes = editableList.querySelectorAll('input[type="checkbox"]')
+    const selected = []
+    checkboxes.forEach(cb => {
+      if (cb.checked) selected.push(cb.value)
+    })
+
+    // Update config
+    const newEditable = sanitizeFieldValues(selected)
+    if (JSON.stringify(newEditable) !== JSON.stringify(chartConfig.editableFields)) {
+      chartConfig = { ...chartConfig, editableFields: newEditable }
+      if (!suppressSave) scheduleAutoSave()
+    }
+
+    // Sync display items
+    displayGroups.forEach(group => {
+      const list = group.querySelector('.field-list')
+      if (!list) return
+      // Clear existing
+      list.innerHTML = ''
+      // Re-populate based on editable fields
+      selected.forEach(field => {
+        const key = normalizeFieldKey(field)
+        const label = fieldLabelStore.get(key) || field
+        createDisplayItem(group, { value: field, label, key })
+      })
+    })
+
+    // Re-apply display checks
+    applyConfigToDisplayControls()
+
+    // Update chart
+    if (editTreeInstance) {
+      const descriptors = selected.map(field => {
+        const key = normalizeFieldKey(field)
+        return createFieldDescriptor(key, field, fieldLabelStore.get(key))
+      })
+      editTreeInstance.setFields(descriptors)
+      chart.updateTree({ initial: false, tree_position: 'inherit' })
+    }
+  }
 
   function areFieldListsEqual(a = [], b = []) {
     if (a.length !== b.length) return false

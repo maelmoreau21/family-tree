@@ -127,6 +127,26 @@ if (panelToggleBtn) {
   panelToggleBtn.addEventListener('click', () => togglePanelCollapsed())
 }
 
+// Tab Handling
+const tabButtons = document.querySelectorAll('.tab-button')
+const tabContents = document.querySelectorAll('.tab-content')
+
+function switchTab(tabId) {
+  tabButtons.forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabId)
+  })
+  tabContents.forEach(content => {
+    content.classList.toggle('active', content.dataset.tab === tabId)
+  })
+}
+
+tabButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tabId = btn.dataset.tab
+    if (tabId) switchTab(tabId)
+  })
+})
+
 function normalizeFieldKey(value) {
   if (value === undefined || value === null) return ''
   return String(value).trim().toLowerCase()
