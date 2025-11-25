@@ -1623,6 +1623,74 @@ function setupChart(payload) {
     teardown: () => { }
   }
 
+  function initBuilderSearch(chart) {
+    const searchWidget = document.querySelector('[data-role="builder-search-target"]')
+    if (!searchWidget) return null
+
+    // Clear existing
+    searchWidget.innerHTML = ''
+
+    const searchInput = document.createElement('input')
+    searchInput.type = 'text'
+    searchInput.placeholder = 'Rechercher...'
+    searchInput.className = 'f3-search-input'
+
+    const resultsContainer = document.createElement('div')
+    resultsContainer.className = 'f3-search-results hidden'
+
+    searchWidget.append(searchInput, resultsContainer)
+
+    let debounceTimer = null
+
+    searchInput.addEventListener('input', (e) => {
+      const term = e.target.value.trim().toLowerCase()
+      if (debounceTimer) clearTimeout(debounceTimer)
+
+      debounceTimer = setTimeout(() => {
+        if (!term) {
+          resultsContainer.innerHTML = ''
+          resultsContainer.classList.add('hidden')
+          return
+        }
+
+        const allPersons = getAllPersons()
+        const matches = allPersons.filter(p => {
+          const label = (p.data.label || '').toLowerCase()
+          const id = (p.data.id || '').toLowerCase()
+          return label.includes(term) || id.includes(term)
+        }).slice(0, 10)
+
+        resultsContainer.innerHTML = ''
+        if (matches.length > 0) {
+          resultsContainer.classList.remove('hidden')
+          matches.forEach(p => {
+            const div = document.createElement('div')
+            div.className = 'search-result-item'
+            div.textContent = p.data.label || p.data.id
+            div.addEventListener('click', () => {
+              activateProfileInteraction(p.data.id, {
+                openEditor: true,
+                highlightCard: true,
+                focusSearch: false
+              })
+              resultsContainer.classList.add('hidden')
+              searchInput.value = ''
+            })
+            resultsContainer.append(div)
+          })
+        } else {
+          resultsContainer.classList.add('hidden')
+        }
+      }, 300)
+    })
+
+    return {
+      refreshSearchOptions: () => {
+        // No-op for now, but could refresh index if needed
+      }
+    }
+  }
+
   searchControlAPI = initBuilderSearch(chart)
 
   if (typeof panelControlAPI.teardown === 'function') {
@@ -1719,7 +1787,191 @@ function attachPanelControls({ chart, card }) {
     return {
       refreshMainProfileOptions: () => { },
       syncMainProfileSelection: () => { },
-      handleFormCreation: () => { },
+      handleFormCreation: (form, datum) => {
+        if (!form || !datum || !datum.data) return
+
+        activePersonId = datum.data.id
+        panel.classList.add('open')
+
+        // Clear existing content
+        form.innerHTML = ''
+
+        // Create Tabs
+        const tabsContainer = document.createElement('div')
+        tabsContainer.className = 'tabs-container'
+
+        const tabBar = document.createElement('div')
+        tabBar.className = 'tab-bar'
+
+        const detailsTabBtn = document.createElement('button')
+        detailsTabBtn.className = 'tab-button active'
+        detailsTabBtn.textContent = 'Détails'
+        detailsTabBtn.dataset.tab = 'details'
+
+        const filesTabBtn = document.createElement('button')
+        filesTabBtn.className = 'tab-button'
+        filesTabBtn.textContent = 'Fichiers'
+        filesTabBtn.dataset.tab = 'files'
+
+        tabBar.append(detailsTabBtn, filesTabBtn)
+
+        const detailsContent = document.createElement('div')
+        detailsContent.className = 'tab-content active'
+        detailsContent.dataset.tab = 'details'
+
+        const filesContent = document.createElement('div')
+        filesContent.className = 'tab-content'
+        filesContent.dataset.tab = 'files'
+
+        tabsContainer.append(tabBar, detailsContent, filesContent)
+        form.append(tabsContainer)
+
+        // Tab Switching Logic
+        const switchTab = (tabId) => {
+          [detailsTabBtn, filesTabBtn].forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === tabId)
+          })
+          detailsContent.classList.toggle('active', tabId === 'details')
+          filesContent.classList.toggle('active', tabId === 'files')
+        }
+
+        detailsTabBtn.addEventListener('click', () => switchTab('details'))
+        filesTabBtn.addEventListener('click', () => switchTab('files'))
+
+        // --- Details Tab Content ---
+
+        // Header with Close Button
+        const header = document.createElement('div')
+        header.className = 'person-edit-header'
+        header.style.display = 'flex'
+        header.style.justifyContent = 'space-between'
+        header.style.alignItems = 'center'
+        header.style.marginBottom = '1rem'
+
+        const title = document.createElement('h3')
+        title.textContent = 'Modifier la personne'
+        title.style.margin = '0'
+
+        const closeBtn = document.createElement('button')
+        closeBtn.type = 'button'
+        closeBtn.className = 'close-panel'
+        closeBtn.innerHTML = '&times;'
+        closeBtn.style.background = 'none'
+        closeBtn.style.border = 'none'
+        closeBtn.style.fontSize = '1.5rem'
+        closeBtn.style.cursor = 'pointer'
+        closeBtn.style.color = 'var(--text-muted)'
+
+        closeBtn.addEventListener('click', () => {
+          panel.classList.remove('open')
+          activePersonId = null
+        })
+
+        header.append(title, closeBtn)
+        detailsContent.append(header)
+
+        // Render standard fields (using the library's default form generation if possible, or manual)
+        // Since we cleared the form, we need to rebuild the inputs.
+        // We can use the editTreeInstance's internal methods or manually create inputs based on fields.
+
+        const fieldsContainer = document.createElement('div')
+        fieldsContainer.className = 'f3-form-fields'
+
+        // Helper to create input
+        const createInput = (field) => {
+          const wrapper = document.createElement('div')
+          wrapper.className = 'f3-form-group'
+
+          const label = document.createElement('label')
+          label.textContent = field.label
+
+          const input = document.createElement('input')
+          input.type = 'text'
+          input.value = datum.data[field.value] || ''
+          input.className = 'f3-input'
+
+          input.addEventListener('input', (e) => {
+            datum.data[field.value] = e.target.value
+            chart.updateTree({ initial: false })
+            scheduleAutoSave()
+          })
+
+          wrapper.append(label, input)
+          return wrapper
+        }
+
+        // Render configured fields
+        const fields = editTreeInstance.getFields() || []
+        fields.forEach(field => {
+          fieldsContainer.append(createInput(field))
+        })
+
+        detailsContent.append(fieldsContainer)
+
+        // Restore Union Section
+        const unionSection = document.createElement('div')
+        unionSection.className = 'union-section'
+        unionSection.style.marginTop = '1rem'
+        unionSection.style.borderTop = '1px solid var(--border-color)'
+        unionSection.style.paddingTop = '1rem'
+
+        const unionTitle = document.createElement('h4')
+        unionTitle.textContent = 'Unions'
+        unionSection.append(unionTitle)
+
+        // (Simplified Union Logic - re-implementing basic union display/add)
+        const unions = datum.data.rels ? datum.data.rels.spouses : []
+        const unionList = document.createElement('ul')
+        unionList.className = 'union-list'
+
+        if (unions && unions.length) {
+          unions.forEach(spouseId => {
+            const li = document.createElement('li')
+            const spouse = dataArray.find(p => p.id === spouseId)
+            li.textContent = spouse ? (spouse.data.label || spouse.id) : spouseId
+            unionList.append(li)
+          })
+        } else {
+          const empty = document.createElement('li')
+          empty.textContent = 'Aucune union'
+          empty.style.color = 'var(--text-muted)'
+          empty.style.listStyle = 'none'
+          unionList.append(empty)
+        }
+        unionSection.append(unionList)
+        detailsContent.append(unionSection)
+
+
+        // --- Files Tab Content ---
+        const filesBody = document.createElement('div')
+        filesBody.className = 'files-body'
+
+        const fileList = document.createElement('div')
+        fileList.className = 'file-list'
+        fileList.id = 'builderFileList' // ID for potential external referencing
+
+        // Initial load of files
+        updateFileList(activePersonId, fileList)
+
+        const uploadLabel = document.createElement('label')
+        uploadLabel.className = 'button ghost small'
+        uploadLabel.style.marginTop = '1rem'
+        uploadLabel.textContent = 'Ajouter un document '
+
+        const fileInput = document.createElement('input')
+        fileInput.type = 'file'
+        fileInput.className = 'hidden'
+        fileInput.addEventListener('change', async (e) => {
+          if (e.target.files[0] && activePersonId) {
+            await uploadFile(activePersonId, e.target.files[0])
+            updateFileList(activePersonId, fileList)
+          }
+        })
+
+        uploadLabel.append(fileInput)
+        filesBody.append(fileList, uploadLabel)
+        filesContent.append(filesBody)
+      },
       teardown: () => { }
     }
   }
@@ -2532,6 +2784,9 @@ function attachPanelControls({ chart, card }) {
     input.type = 'checkbox'
     input.value = value
     input.checked = checked
+    input.addEventListener('change', () => {
+      applyEditableFields()
+    })
 
     labelEl.append(input, document.createTextNode(` ${label}`))
     li.append(labelEl)
