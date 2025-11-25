@@ -2569,12 +2569,12 @@ function attachPanelControls({ chart, card }) {
   function refreshConfigControls() {
     if (ancestryDepthSelect) ancestryDepthSelect.value = chartConfig.ancestryDepth || '2'
     if (progenyDepthSelect) progenyDepthSelect.value = chartConfig.progenyDepth || '2'
-    if (cardWidth) cardWidth.value = chartConfig.cardDim.width
-    if (cardHeight) cardHeight.value = chartConfig.cardDim.height
-    if (imgWidth) imgWidth.value = chartConfig.cardDim.img_w
-    if (imgHeight) imgHeight.value = chartConfig.cardDim.img_h
-    if (imgX) imgX.value = chartConfig.cardDim.img_x
-    if (imgY) imgY.value = chartConfig.cardDim.img_y
+    if (cardWidth) cardWidth.value = chartConfig.cardDim?.width ?? 240
+    if (cardHeight) cardHeight.value = chartConfig.cardDim?.height ?? 150
+    if (imgWidth) imgWidth.value = chartConfig.cardDim?.img_w ?? 80
+    if (imgHeight) imgHeight.value = chartConfig.cardDim?.img_h ?? 80
+    if (imgX) imgX.value = chartConfig.cardDim?.img_x ?? 16
+    if (imgY) imgY.value = chartConfig.cardDim?.img_y ?? 16
     if (cardXSpacing) cardXSpacing.value = chartConfig.cardXSpacing
     if (cardYSpacing) cardYSpacing.value = chartConfig.cardYSpacing
     if (transitionInput) transitionInput.value = chartConfig.transitionTime
