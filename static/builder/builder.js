@@ -37,19 +37,7 @@ const personFileUpload = document.getElementById('personFileUpload')
 const unionList = document.getElementById('unionList')
 const editableList = document.querySelector('.editable-list')
 
-function getAllPersons() {
-  // dataArray is defined in the main scope, but we are at top level here.
-  // We need to access the data from the chart or a global store.
-  // Since builder.js structure is a bit monolithic, let's see where dataArray is.
-  // It's inside loadTree -> ... wait.
-  // builder.js seems to be a module.
-  // If dataArray is inside a function, we can't access it here.
-  // However, initBuilderSearch is inside that function, so it can access it.
-  // BUT, initBuilderSearch called getAllPersons() which was expected to be global?
-  // No, initBuilderSearch was defined INSIDE the function where dataArray exists.
-  // So getAllPersons needs to be defined INSIDE that function too.
-  return []
-}
+
 
 function showEmptyTreeModal() {
   if (emptyTreeModal) emptyTreeModal.classList.remove('hidden')
