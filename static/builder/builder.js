@@ -2493,7 +2493,7 @@ function attachPanelControls({ chart, card }) {
   }
 
   function createFieldDescriptor(key, value, label) {
-    return { type: 'text', label: label || value, value: key }
+    return { id: key, type: 'text', label: label || value, value: key }
   }
 
   function createDisplayItem(group, { value, label, key }) {
@@ -2690,6 +2690,43 @@ function attachPanelControls({ chart, card }) {
       if (dropdown) updateDropdownAnchorLabel(dropdown)
     })
   }
+
+  function getSelectedValues(container) {
+    if (!container) return []
+    const checkboxes = container.querySelectorAll('input[type="checkbox"]')
+    const values = []
+    checkboxes.forEach(cb => {
+      if (cb.checked) values.push(cb.value)
+    })
+    return values
+  }
+
+  function createFieldDescriptors(fields) {
+    return fields.map(field => {
+      const key = normalizeFieldKey(field)
+      return createFieldDescriptor(key, field, fieldLabelStore.get(key))
+    })
+  }
+
+  // Tab Handling
+  const tabButtons = document.querySelectorAll('.tab-button')
+  const tabContents = document.querySelectorAll('.tab-content')
+
+  function switchTab(tabId) {
+    tabButtons.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.tab === tabId)
+    })
+    tabContents.forEach(content => {
+      content.classList.toggle('active', content.dataset.tab === tabId)
+    })
+  }
+
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tabId = btn.dataset.tab
+      if (tabId) switchTab(tabId)
+    })
+  })
 
   function updateCardDisplay({ suppressSave = false } = {}) {
     const row1Group = displayGroupMap.get('1')
