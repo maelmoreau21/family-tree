@@ -2492,6 +2492,61 @@ function attachPanelControls({ chart, card }) {
     return rows
   }
 
+  function createFieldDescriptor(key, value, label) {
+    return { type: 'text', label: label || value, value: key }
+  }
+
+  function createDisplayItem(group, { value, label, key }) {
+    const list = group.querySelector('.field-list')
+    if (!list) return
+
+    if (list.querySelector(`[data-field-key="${escapeSelector(key)}"]`)) return
+
+    const item = document.createElement('div')
+    item.className = 'display-item'
+    item.dataset.fieldKey = key
+
+    const checkbox = document.createElement('input')
+    checkbox.type = 'checkbox'
+    checkbox.value = value
+
+    const labelSpan = document.createElement('span')
+    labelSpan.textContent = label
+
+    item.append(checkbox, labelSpan)
+    list.append(item)
+  }
+
+  function createEditableItem({ value, label, checked, removable, selectRows = [] }) {
+    if (!editableList) return
+    const key = normalizeFieldKey(value)
+
+    if (editableList.querySelector(`[data-field-key="${escapeSelector(key)}"]`)) return
+
+    const li = document.createElement('div')
+    li.className = 'editable-item'
+    li.dataset.fieldKey = key
+
+    const labelEl = document.createElement('label')
+    const input = document.createElement('input')
+    input.type = 'checkbox'
+    input.value = value
+    input.checked = checked
+
+    labelEl.append(input, document.createTextNode(` ${label}`))
+    li.append(labelEl)
+
+    if (removable) {
+      addRemoveButton(li)
+    }
+
+    editableList.append(li)
+
+    displayGroups.forEach(group => {
+      createDisplayItem(group, { value, label, key })
+    })
+  }
+
   function ensureConfigEditableItems() {
     if (!Array.isArray(chartConfig.editableFields)) return
     chartConfig.editableFields.forEach(field => {
