@@ -41,14 +41,19 @@
         <span>Afficher</span>
       </button>
       <aside class="controls" id="controlPanel">
-        <div class="search-panel" data-role="builder-search" data-state="loading">
-          <h2 class="search-title" id="builderSearchLabel">Recherche rapide</h2>
-          <div class="search-widget" data-role="builder-search-target"></div>
-        </div>
+        <div class="tabs-container">
+          <div class="tab-bar">
+            <button type="button" class="tab-button active" data-tab="data">Données</button>
+            <button type="button" class="tab-button" data-tab="appearance">Apparence</button>
+            <button type="button" class="tab-button" data-tab="tools">Outils</button>
+          </div>
 
-        <details class="panel" open>
-          <summary>Panneau de détails</summary>
-          <div class="panel-body">
+          <div class="tab-content active" data-tab="data">
+            <div class="search-panel" data-role="builder-search" data-state="loading">
+              <h2 class="search-title" id="builderSearchLabel">Recherche rapide</h2>
+              <div class="search-widget" data-role="builder-search-target"></div>
+            </div>
+
             <fieldset data-role="editable-fields">
               <legend>Champs modifiables</legend>
               <p class="group-hint">Sélectionnez les champs éditables ou ajoutez vos propres champs personnalisés.</p>
@@ -66,7 +71,9 @@
               </div>
               <p class="hint">Profil actuel : <strong data-role="main-profile-name">—</strong></p>
             </fieldset>
+          </div>
 
+          <div class="tab-content" data-tab="appearance">
             <fieldset class="display-fields">
               <legend>Champs affichés</legend>
               <div class="display-group" data-display-row="1">
@@ -79,7 +86,14 @@
                   <option value="rect">Rect.</option>
                 </select>
 
+                <label for="cardXSpacing">Espacement horizontal</label>
                 <input type="number" id="cardXSpacing" min="120" max="400" step="10" value="240">
+
+                <label for="cardYSpacing">Espacement vertical</label>
+                <input type="number" id="cardYSpacing" min="10" max="200" step="5" value="50">
+
+                <label for="transitionInput">Durée de transition (ms)</label>
+                <input type="number" id="transitionInput" min="0" max="2000" step="100" value="750">
 
                 <label for="emptyLabel">Libellé carte vide</label>
                 <input type="text" id="emptyLabel" placeholder="Inconnu" value="Inconnu">
@@ -130,48 +144,37 @@
                   </div>
                 </div>
               </div>
-        </details>
+            </fieldset>
 
-        <details class="panel" open>
-          <summary>Dimensions de la carte</summary>
-          <div class="panel-body">
-            <p class="hint">Modifier ces valeurs impacte directement la mise en page.</p>
-            <div class="dimension-grid">
-              <label for="cardWidth">Largeur de la carte</label>
-              <input type="number" id="cardWidth" min="160" max="400" step="10" value="240">
+            <details class="panel" open>
+              <summary>Dimensions de la carte</summary>
+              <div class="panel-body">
+                <p class="hint">Modifier ces valeurs impacte directement la mise en page.</p>
+                <div class="dimension-grid">
+                  <label for="cardWidth">Largeur de la carte</label>
+                  <input type="number" id="cardWidth" min="160" max="400" step="10" value="240">
 
-              <label for="cardHeight">Hauteur de la carte</label>
-              <input type="number" id="cardHeight" min="100" max="300" step="10" value="150">
+                  <label for="cardHeight">Hauteur de la carte</label>
+                  <input type="number" id="cardHeight" min="100" max="300" step="10" value="150">
 
-              <label for="imgWidth">Largeur de l'image</label>
-              <input type="number" id="imgWidth" min="40" max="160" step="5" value="80">
+                  <label for="imgWidth">Largeur de l'image</label>
+                  <input type="number" id="imgWidth" min="40" max="160" step="5" value="80">
 
-              <label for="imgHeight">Hauteur de l'image</label>
-              <input type="number" id="imgHeight" min="40" max="160" step="5" value="80">
+                  <label for="imgHeight">Hauteur de l'image</label>
+                  <input type="number" id="imgHeight" min="40" max="160" step="5" value="80">
 
-              <label for="imgX">Position X de l'image</label>
-              <input type="number" id="imgX" min="0" max="200" step="5" value="16">
+                  <label for="imgX">Position X de l'image</label>
+                  <input type="number" id="imgX" min="0" max="200" step="5" value="16">
 
-              <label for="imgY">Position Y de l'image</label>
-              <input type="number" id="imgY" min="0" max="200" step="5" value="16">
-            </div>
-            <button id="resetDimensions" class="ghost" type="button">Réinitialiser</button>
+                  <label for="imgY">Position Y de l'image</label>
+                  <input type="number" id="imgY" min="0" max="200" step="5" value="16">
+                </div>
+                <button id="resetDimensions" class="ghost" type="button">Réinitialiser</button>
+              </div>
+            </details>
           </div>
-        </details>
 
-        <details class="panel resources" open>
-          <summary>Ressources</summary>
-          <div class="panel-body">
-            <ul>
-              <li><a href="https://github.com/maelmoreau21/family-tree" target="_blank" rel="noopener">Dépôt GitHub du
-                  projet</a></li>
-            </ul>
-          </div>
-        </details>
-
-        <details class="panel" open>
-          <summary>Outils Avancés</summary>
-          <div class="panel-body">
+          <div class="tab-content" data-tab="tools">
             <div class="tool-group">
               <h3>GEDCOM</h3>
               <div class="button-group-vertical">
@@ -200,14 +203,24 @@
                   ⚠️</button>
               </div>
             </div>
+
+            <details class="panel resources" open style="margin-top: 2rem;">
+              <summary>Ressources</summary>
+              <div class="panel-body">
+                <ul>
+                  <li><a href="https://github.com/maelmoreau21/family-tree" target="_blank" rel="noopener">Dépôt GitHub
+                      du
+                      projet</a></li>
+                </ul>
+              </div>
+            </details>
           </div>
-        </details>
+        </div>
         <div class="builder-status" id="status" role="status" aria-live="assertive"></div>
       </aside>
       <section class="canvas">
         <div id="FamilyChart" class="f3"></div>
       </section>
-    </main>
     </main>
 
     <div id="emptyTreeModal" class="modal-overlay hidden">
