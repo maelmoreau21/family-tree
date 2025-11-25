@@ -357,6 +357,11 @@ async function deleteBranch(personId, direction) {
   }
 }
 
+// Expose functions to global scope for HTML onclick handlers
+window.importGedcom = importGedcom
+window.exportGedcom = exportGedcom
+window.deleteBranch = deleteBranch
+
 function clearElement(target) {
   if (!target) return
   while (target.firstChild) {

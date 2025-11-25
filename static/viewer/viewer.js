@@ -25,6 +25,7 @@ const SUBTREE_CACHE_TTL = 120000
 const SUBTREE_CACHE_MAX_ENTRIES = 32
 const subtreeCache = new Map()
 let currentDatasetSignature = null
+let activeViewerPersonId = null
 
 function clearElement(target) {
   if (!target) return
@@ -1780,7 +1781,11 @@ function showDetailsForDatum(datum) {
   if (!detailsPanel || !detailsList || !emptyState) return
   const person = datum?.data || {}
 
+  activeViewerPersonId = datum?.id || null
+  if (window) window.activeViewerPersonId = activeViewerPersonId
+
   clearElement(detailsList)
+  updateViewerFiles(activeViewerPersonId)
 
   const fullName = buildFullName(person)
   const highlight = []
@@ -2139,3 +2144,70 @@ function renderChart(payload, options = {}) {
 fetchFullTree({ preservePreferences: false, source: 'system' }).catch(() => {
   setStatus('Impossible de charger les données', 'error')
 })
+
+// Viewer File Management
+const viewerFileList = document.getElementById('viewerFileList')
+
+async function updateViewerFiles(personId) {
+  if (!viewerFileList) return
+  viewerFileList.innerHTML = '<p class="hint">Chargement...</p>'
+
+  if (!personId) {
+    viewerFileList.innerHTML = ''
+    return
+  }
+
+  try {
+    const res = await fetch(`/api/document/${personId}`)
+    const files = await res.json()
+    renderViewerFiles(files, personId)
+  } catch (e) {
+    console.error(e)
+    viewerFileList.innerHTML = '<p class="hint error">Erreur de chargement.</p>'
+  }
+}
+
+function renderViewerFiles(files, personId) {
+  viewerFileList.innerHTML = ''
+  if (!files.length) {
+    viewerFileList.innerHTML = '<p class="hint">Aucun fichier.</p>'
+    return
+  }
+
+  const ul = document.createElement('ul')
+  ul.className = 'file-list-items'
+
+  files.forEach(file => {
+    const li = document.createElement('li')
+    li.className = 'file-item'
+
+    const link = document.createElement('a')
+    link.href = file.url
+    link.target = '_blank'
+    link.textContent = file.name
+
+    li.append(link)
+    ul.append(li)
+  })
+  viewerFileList.append(ul)
+}
+
+async function uploadViewerFile(personId, file) {
+  if (!file || !personId) return
+  const formData = new FormData()
+  formData.append('file', file)
+
+  try {
+    const res = await fetch(`/api/document/${personId}`, {
+      method: 'POST',
+      body: formData
+    })
+    if (!res.ok) throw new Error('Upload failed')
+    updateViewerFiles(personId)
+  } catch (e) {
+    console.error(e)
+    alert('Erreur lors du téléversement.')
+  }
+}
+
+window.uploadViewerFile = uploadViewerFile

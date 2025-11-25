@@ -81,6 +81,20 @@
             <div class="detail-list"></div>
           </div>
         </section>
+
+        <section class="files-section" aria-labelledby="filesSectionTitle">
+          <details open>
+            <summary id="filesSectionTitle">Fichiers</summary>
+            <div class="files-body">
+              <div id="viewerFileList" class="file-list"></div>
+              <label class="button ghost small" style="margin-top: 1rem;">
+                Ajouter un document
+                <input type="file" class="hidden"
+                  onchange="if(window.uploadViewerFile && activeViewerPersonId) window.uploadViewerFile(activeViewerPersonId, this.files[0])">
+              </label>
+            </div>
+          </details>
+        </section>
       </aside>
     </section>
     <footer id="status" role="status" aria-live="polite"></footer>

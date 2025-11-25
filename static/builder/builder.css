@@ -2174,8 +2174,9 @@ path[d^='M18.66'] {
   margin: 0;
   font-size: 0.9rem;
 }
+
 /* Remove default margins to control gap via flex */
-}
+/* Remove default margins to control gap via flex */
 
 .f3-form input[type="text"]:focus,
 .f3-form textarea:focus,
