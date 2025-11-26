@@ -2954,9 +2954,58 @@ function attachPanelControls({ chart, card }) {
     }
 
     updateCardDisplay({ suppressSave })
+  }
 
-    const datum = editTreeInstance.store.getMainDatum()
-    if (datum) editTreeInstance.open(datum)
+  function createEditableItem({ value, label, checked, removable, selectRows = [] }) {
+    if (!editableList) return
+    const key = normalizeFieldKey(value)
+
+    if (editableList.querySelector(`[data-field-key="${escapeSelector(key)}"]`)) return
+
+    const li = document.createElement('div')
+    li.className = 'editable-item'
+    li.dataset.fieldKey = key
+
+    const labelEl = document.createElement('label')
+    const input = document.createElement('input')
+    input.type = 'checkbox'
+    input.value = value
+    input.checked = checked
+    input.addEventListener('change', () => {
+      applyEditableFields()
+    })
+
+    labelEl.append(input, document.createTextNode(` ${label}`))
+    li.append(labelEl)
+
+    if (removable) {
+      addRemoveButton(li)
+    }
+
+    editableList.append(li)
+
+    displayGroups.forEach(group => {
+      createDisplayItem(group, { value, label, key })
+    })
+  }
+
+  function ensureConfigEditableItems() {
+    if (!Array.isArray(chartConfig.editableFields)) return
+    chartConfig.editableFields.forEach(field => {
+      const key = normalizeFieldKey(field)
+      if (getUnionFieldKind(key)) return
+      if (!key) return
+      const label = ensureFieldLabel(field, fieldLabelStore.get(key))
+      const selector = `[data-field-key="${escapeSelector(key)}"]`
+      if (editableList?.querySelector(selector)) return
+      createEditableItem({
+        value: field,
+        label,
+        checked: true,
+        removable: true,
+        selectRows: getDisplayRowsForField(field)
+      })
+    })
   }
 
   function requestFieldDefinition() {
