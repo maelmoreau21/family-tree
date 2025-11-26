@@ -1607,6 +1607,177 @@ function setupChart(payload) {
     return dataArray
   }
 
+  function setMainProfile(id) {
+    if (!id) return
+    const person = dataArray.find(p => p.id === id)
+    if (!person) return
+
+    chartConfig.mainId = id
+    const input = document.getElementById('mainProfileId')
+    if (input) input.value = id
+
+    const nameEl = document.querySelector('[data-role="main-profile-name"]')
+    if (nameEl) nameEl.textContent = person.data.label || person.id
+
+    if (!isApplyingConfig) scheduleAutoSave()
+  }
+
+  function refreshMainProfileOptions({ keepSelection = false } = {}) {
+    // No-op for input field
+  }
+
+  function syncMainProfileSelection({ scheduleSaveIfChanged = false } = {}) {
+    const input = document.getElementById('mainProfileId')
+    if (input && chartConfig.mainId) {
+      input.value = chartConfig.mainId
+      const person = dataArray.find(p => p.id === chartConfig.mainId)
+      const nameEl = document.querySelector('[data-role="main-profile-name"]')
+      if (nameEl) nameEl.textContent = person ? (person.data.label || person.id) : chartConfig.mainId
+    }
+  }
+
+  function switchEditTab(form, tabId) {
+    form.querySelectorAll('.edit-tab-button').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId))
+    form.querySelectorAll('.edit-tab-content').forEach(c => {
+      c.style.display = c.dataset.tab === tabId ? 'block' : 'none'
+      c.classList.toggle('active', c.dataset.tab === tabId)
+    })
+  }
+
+  function handleFormCreation(form, datum) {
+    form.innerHTML = ''
+    form.className = 'edit-person-form'
+
+    // Header
+    const header = document.createElement('div')
+    header.className = 'edit-panel-header'
+    const title = document.createElement('h2')
+    title.textContent = datum.data.label || 'Personne'
+    const closeBtn = document.createElement('button')
+    closeBtn.className = 'edit-panel-close'
+    closeBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`
+    closeBtn.onclick = () => editTreeInstance.close()
+    header.append(title, closeBtn)
+    form.append(header)
+
+    // Tabs & Actions
+    const tabsRow = document.createElement('div')
+    tabsRow.className = 'edit-tabs-row'
+    tabsRow.style.display = 'flex'
+    tabsRow.style.alignItems = 'center'
+    tabsRow.style.justifyContent = 'space-between'
+    tabsRow.style.padding = '10px'
+    tabsRow.style.borderBottom = '1px solid var(--panel-border)'
+
+    const tabsContainer = document.createElement('div')
+    tabsContainer.className = 'edit-tabs'
+    const detailsTab = document.createElement('button')
+    detailsTab.className = 'edit-tab-button active'
+    detailsTab.textContent = 'Détails'
+    detailsTab.dataset.tab = 'details'
+    detailsTab.onclick = () => switchEditTab(form, 'details')
+
+    const filesTab = document.createElement('button')
+    filesTab.className = 'edit-tab-button'
+    filesTab.textContent = 'Fichiers'
+    filesTab.dataset.tab = 'files'
+    filesTab.onclick = () => switchEditTab(form, 'files')
+
+    tabsContainer.append(detailsTab, filesTab)
+
+    const addBtn = document.createElement('button')
+    addBtn.className = 'action-button primary small'
+    addBtn.textContent = 'Ajouter'
+    // Logic to add relative would go here
+
+    tabsRow.append(tabsContainer, addBtn)
+    form.append(tabsRow)
+
+    // Content
+    const detailsContent = document.createElement('div')
+    detailsContent.className = 'edit-tab-content active'
+    detailsContent.dataset.tab = 'details'
+    detailsContent.style.padding = '10px'
+
+    // Profile Picture
+    const imageContainer = document.createElement('div')
+    imageContainer.className = 'profile-image-upload'
+    imageContainer.innerHTML = `<div class="drop-zone" id="dropZone">
+      <p>Glissez une image ici ou cliquez pour modifier</p>
+      <input type="file" accept="image/*" class="hidden">
+    </div>`
+    detailsContent.append(imageContainer)
+
+    // Fields
+    const fieldsContainer = document.createElement('div')
+    fieldsContainer.className = 'edit-fields'
+
+    if (currentEditableFields && currentEditableFields.length) {
+      currentEditableFields.forEach(fieldKey => {
+        const group = document.createElement('div')
+        group.className = 'input-group'
+
+        const label = document.createElement('label')
+        label.textContent = FIELD_LABELS[fieldKey] || fieldKey
+
+        const input = document.createElement('input')
+        input.type = 'text'
+        input.value = datum.data[fieldKey] || ''
+        input.className = 'full-width'
+
+        input.addEventListener('input', (e) => {
+          datum.data[fieldKey] = e.target.value
+          chart.updateTree({ initial: false, tree_position: 'inherit' })
+          scheduleAutoSave()
+        })
+
+        group.append(label, input)
+        fieldsContainer.append(group)
+      })
+    } else {
+      fieldsContainer.textContent = 'Aucun champ modifiable configuré.'
+      fieldsContainer.className = 'hint'
+    }
+
+    detailsContent.append(fieldsContainer)
+
+    // Unions
+    const unionsContainer = document.createElement('div')
+    unionsContainer.className = 'edit-unions'
+    unionsContainer.innerHTML = '<h3>Unions</h3>'
+    if (datum.rels && datum.rels.spouses && datum.rels.spouses.length) {
+      datum.rels.spouses.forEach(spouseId => {
+        const spouse = dataArray.find(p => p.id === spouseId)
+        const div = document.createElement('div')
+        div.className = 'union-item'
+        div.textContent = spouse ? (spouse.data.label || spouseId) : spouseId
+        unionsContainer.append(div)
+      })
+    } else {
+      const hint = document.createElement('p')
+      hint.className = 'hint'
+      hint.textContent = 'Aucune union'
+      unionsContainer.append(hint)
+    }
+    detailsContent.append(unionsContainer)
+
+    const filesContent = document.createElement('div')
+    filesContent.className = 'edit-tab-content'
+    filesContent.dataset.tab = 'files'
+    filesContent.style.display = 'none'
+
+    // File list container
+    const fileListContainer = document.createElement('div')
+    fileListContainer.id = 'personFileList'
+    filesContent.append(fileListContainer)
+
+    // Trigger file load
+    updateFilePanel(datum.id)
+
+    form.append(detailsContent, filesContent)
+  }
+
+
   editTreeInstance = chart.editTree()
     .setFields(initialFieldDescriptors)
     .setEditFirst(true)
@@ -3304,172 +3475,6 @@ function attachPanelControls({ chart, card }) {
   isApplyingConfig = previousApplyingState
 
   applyEditableFields({ suppressSave: true })
-
-  function setMainProfile(id) {
-    if (!id) return
-    const person = dataArray.find(p => p.id === id)
-    if (!person) return
-
-    chartConfig.mainId = id
-    const input = document.getElementById('mainProfileId')
-    if (input) input.value = id
-
-    const nameEl = document.querySelector('[data-role="main-profile-name"]')
-    if (nameEl) nameEl.textContent = person.data.label || person.id
-
-    if (!isApplyingConfig) scheduleAutoSave()
-  }
-
-  function handleFormCreation(form, datum) {
-    form.innerHTML = ''
-    form.className = 'edit-person-form'
-
-    // Header
-    const header = document.createElement('div')
-    header.className = 'edit-panel-header'
-    const title = document.createElement('h2')
-    title.textContent = datum.data.label || 'Personne'
-    const closeBtn = document.createElement('button')
-    closeBtn.className = 'edit-panel-close'
-    closeBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`
-    closeBtn.onclick = () => editTreeInstance.close()
-    header.append(title, closeBtn)
-    form.append(header)
-
-    // Tabs & Actions
-    const tabsRow = document.createElement('div')
-    tabsRow.className = 'edit-tabs-row'
-    tabsRow.style.display = 'flex'
-    tabsRow.style.alignItems = 'center'
-    tabsRow.style.justifyContent = 'space-between'
-    tabsRow.style.padding = '10px'
-    tabsRow.style.borderBottom = '1px solid var(--panel-border)'
-
-    const tabsContainer = document.createElement('div')
-    tabsContainer.className = 'edit-tabs'
-    const detailsTab = document.createElement('button')
-    detailsTab.className = 'edit-tab-button active'
-    detailsTab.textContent = 'Détails'
-    detailsTab.dataset.tab = 'details'
-    detailsTab.onclick = () => switchEditTab(form, 'details')
-
-    const filesTab = document.createElement('button')
-    filesTab.className = 'edit-tab-button'
-    filesTab.textContent = 'Fichiers'
-    filesTab.dataset.tab = 'files'
-    filesTab.onclick = () => switchEditTab(form, 'files')
-
-    tabsContainer.append(detailsTab, filesTab)
-
-    const addBtn = document.createElement('button')
-    addBtn.className = 'action-button primary small'
-    addBtn.textContent = 'Ajouter'
-    // Logic to add relative would go here, maybe trigger a modal or another form
-
-    tabsRow.append(tabsContainer, addBtn)
-    form.append(tabsRow)
-
-    // Content
-    const detailsContent = document.createElement('div')
-    detailsContent.className = 'edit-tab-content active'
-    detailsContent.dataset.tab = 'details'
-    detailsContent.style.padding = '10px'
-
-    // Profile Picture
-    const imageContainer = document.createElement('div')
-    imageContainer.className = 'profile-image-upload'
-    imageContainer.innerHTML = `<div class="drop-zone" id="dropZone">
-      <p>Glissez une image ici ou cliquez pour modifier</p>
-      <input type="file" accept="image/*" class="hidden">
-    </div>`
-    // Add event listeners for drag & drop here if needed
-    detailsContent.append(imageContainer)
-
-    // Fields
-    const fieldsContainer = document.createElement('div')
-    fieldsContainer.className = 'edit-fields'
-
-    if (currentEditableFields && currentEditableFields.length) {
-      currentEditableFields.forEach(fieldKey => {
-        const group = document.createElement('div')
-        group.className = 'input-group'
-
-        const label = document.createElement('label')
-        label.textContent = FIELD_LABELS[fieldKey] || fieldKey
-
-        const input = document.createElement('input')
-        input.type = 'text'
-        input.value = datum.data[fieldKey] || ''
-        input.className = 'full-width'
-
-        input.addEventListener('input', (e) => {
-          datum.data[fieldKey] = e.target.value
-          chart.updateTree({ initial: false, tree_position: 'inherit' })
-          scheduleAutoSave()
-        })
-
-        group.append(label, input)
-        fieldsContainer.append(group)
-      })
-    } else {
-      fieldsContainer.textContent = 'Aucun champ modifiable configuré.'
-      fieldsContainer.className = 'hint'
-    }
-
-    detailsContent.append(fieldsContainer)
-
-    // Unions
-    const unionsContainer = document.createElement('div')
-    unionsContainer.className = 'edit-unions'
-    unionsContainer.innerHTML = '<h3>Unions</h3>'
-    if (datum.rels.spouses) {
-      datum.rels.spouses.forEach(spouseId => {
-        const spouse = dataArray.find(p => p.id === spouseId)
-        const div = document.createElement('div')
-        div.className = 'union-item'
-        div.textContent = spouse ? (spouse.data.label || spouseId) : spouseId
-        unionsContainer.append(div)
-      })
-    }
-    detailsContent.append(unionsContainer)
-
-    const filesContent = document.createElement('div')
-    filesContent.className = 'edit-tab-content'
-    filesContent.dataset.tab = 'files'
-    filesContent.style.display = 'none'
-
-    // File list container
-    const fileListContainer = document.createElement('div')
-    fileListContainer.id = 'personFileList'
-    filesContent.append(fileListContainer)
-
-    // Trigger file load
-    updateFilePanel(datum.id)
-
-    form.append(detailsContent, filesContent)
-  }
-
-  function switchEditTab(form, tabId) {
-    form.querySelectorAll('.edit-tab-button').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId))
-    form.querySelectorAll('.edit-tab-content').forEach(c => {
-      c.style.display = c.dataset.tab === tabId ? 'block' : 'none'
-      c.classList.toggle('active', c.dataset.tab === tabId)
-    })
-  }
-
-  function refreshMainProfileOptions({ keepSelection = false } = {}) {
-    // No-op for input field
-  }
-
-  function syncMainProfileSelection({ scheduleSaveIfChanged = false } = {}) {
-    const input = document.getElementById('mainProfileId')
-    if (input && chartConfig.mainId) {
-      input.value = chartConfig.mainId
-      const person = dataArray.find(p => p.id === chartConfig.mainId)
-      const nameEl = document.querySelector('[data-role="main-profile-name"]')
-      if (nameEl) nameEl.textContent = person ? (person.data.label || person.id) : chartConfig.mainId
-    }
-  }
 
   setMainProfileHandler = setMainProfile
 
