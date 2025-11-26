@@ -1782,7 +1782,6 @@ function setupChart(payload) {
     .setFields(initialFieldDescriptors)
     .setEditFirst(true)
     .setCardClickOpen(card)
-    .setFormCreator(handleFormCreation)
     .setOnChange(() => {
       lastSnapshotString = null
       if (panelControlAPI) {
