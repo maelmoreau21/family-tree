@@ -2956,6 +2956,10 @@ function attachPanelControls({ chart, card }) {
     updateCardDisplay({ suppressSave })
   }
 
+  function escapeSelector(value) {
+    return CSS.escape(value)
+  }
+
   function createEditableItem({ value, label, checked, removable, selectRows = [] }) {
     if (!editableList) return
     const key = normalizeFieldKey(value)
