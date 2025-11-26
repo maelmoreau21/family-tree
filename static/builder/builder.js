@@ -1691,6 +1691,9 @@ function setupChart(payload) {
       }, 300)
     })
 
+    setBuilderSearchState('ready')
+    builderSearchReady = true
+
     return {
       refreshSearchOptions: () => {
         // No-op for now, but could refresh index if needed
