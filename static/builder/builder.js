@@ -2960,6 +2960,32 @@ function attachPanelControls({ chart, card }) {
     return CSS.escape(value)
   }
 
+  function createDisplayItem(group, { value, label, key }) {
+    let list = group.querySelector('.field-list')
+    if (!list) {
+      list = group
+    }
+
+    if (list.querySelector(`[data-field-key="${escapeSelector(key)}"]`)) return
+
+    const item = document.createElement('div')
+    item.className = 'display-item'
+    item.dataset.fieldKey = key
+
+    const checkbox = document.createElement('input')
+    checkbox.type = 'checkbox'
+    checkbox.value = value
+    checkbox.addEventListener('change', () => {
+      updateCardDisplay()
+    })
+
+    const labelSpan = document.createElement('span')
+    labelSpan.textContent = label
+
+    item.append(checkbox, labelSpan)
+    list.append(item)
+  }
+
   function createEditableItem({ value, label, checked, removable, selectRows = [] }) {
     if (!editableList) return
     const key = normalizeFieldKey(value)
