@@ -1636,148 +1636,6 @@ function setupChart(payload) {
     }
   }
 
-  function switchEditTab(form, tabId) {
-    form.querySelectorAll('.edit-tab-button').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId))
-    form.querySelectorAll('.edit-tab-content').forEach(c => {
-      c.style.display = c.dataset.tab === tabId ? 'block' : 'none'
-      c.classList.toggle('active', c.dataset.tab === tabId)
-    })
-  }
-
-  function handleFormCreation(form, datum) {
-    form.innerHTML = ''
-    form.className = 'edit-person-form'
-
-    // Header
-    const header = document.createElement('div')
-    header.className = 'edit-panel-header'
-    const title = document.createElement('h2')
-    title.textContent = datum.data.label || 'Personne'
-    const closeBtn = document.createElement('button')
-    closeBtn.className = 'edit-panel-close'
-    closeBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`
-    closeBtn.onclick = () => editTreeInstance.close()
-    header.append(title, closeBtn)
-    form.append(header)
-
-    // Tabs & Actions
-    const tabsRow = document.createElement('div')
-    tabsRow.className = 'edit-tabs-row'
-    tabsRow.style.display = 'flex'
-    tabsRow.style.alignItems = 'center'
-    tabsRow.style.justifyContent = 'space-between'
-    tabsRow.style.padding = '10px'
-    tabsRow.style.borderBottom = '1px solid var(--panel-border)'
-
-    const tabsContainer = document.createElement('div')
-    tabsContainer.className = 'edit-tabs'
-    const detailsTab = document.createElement('button')
-    detailsTab.className = 'edit-tab-button active'
-    detailsTab.textContent = 'Détails'
-    detailsTab.dataset.tab = 'details'
-    detailsTab.onclick = () => switchEditTab(form, 'details')
-
-    const filesTab = document.createElement('button')
-    filesTab.className = 'edit-tab-button'
-    filesTab.textContent = 'Fichiers'
-    filesTab.dataset.tab = 'files'
-    filesTab.onclick = () => switchEditTab(form, 'files')
-
-    tabsContainer.append(detailsTab, filesTab)
-
-    const addBtn = document.createElement('button')
-    addBtn.className = 'action-button primary small'
-    addBtn.textContent = 'Ajouter'
-    // Logic to add relative would go here
-
-    tabsRow.append(tabsContainer, addBtn)
-    form.append(tabsRow)
-
-    // Content
-    const detailsContent = document.createElement('div')
-    detailsContent.className = 'edit-tab-content active'
-    detailsContent.dataset.tab = 'details'
-    detailsContent.style.padding = '10px'
-
-    // Profile Picture
-    const imageContainer = document.createElement('div')
-    imageContainer.className = 'profile-image-upload'
-    imageContainer.innerHTML = `<div class="drop-zone" id="dropZone">
-      <p>Glissez une image ici ou cliquez pour modifier</p>
-      <input type="file" accept="image/*" class="hidden">
-    </div>`
-    detailsContent.append(imageContainer)
-
-    // Fields
-    const fieldsContainer = document.createElement('div')
-    fieldsContainer.className = 'edit-fields'
-
-    if (currentEditableFields && currentEditableFields.length) {
-      currentEditableFields.forEach(fieldKey => {
-        const group = document.createElement('div')
-        group.className = 'input-group'
-
-        const label = document.createElement('label')
-        label.textContent = FIELD_LABELS[fieldKey] || fieldKey
-
-        const input = document.createElement('input')
-        input.type = 'text'
-        input.value = datum.data[fieldKey] || ''
-        input.className = 'full-width'
-
-        input.addEventListener('input', (e) => {
-          datum.data[fieldKey] = e.target.value
-          chart.updateTree({ initial: false, tree_position: 'inherit' })
-          scheduleAutoSave()
-        })
-
-        group.append(label, input)
-        fieldsContainer.append(group)
-      })
-    } else {
-      fieldsContainer.textContent = 'Aucun champ modifiable configuré.'
-      fieldsContainer.className = 'hint'
-    }
-
-    detailsContent.append(fieldsContainer)
-
-    // Unions
-    const unionsContainer = document.createElement('div')
-    unionsContainer.className = 'edit-unions'
-    unionsContainer.innerHTML = '<h3>Unions</h3>'
-    if (datum.rels && datum.rels.spouses && datum.rels.spouses.length) {
-      datum.rels.spouses.forEach(spouseId => {
-        const spouse = dataArray.find(p => p.id === spouseId)
-        const div = document.createElement('div')
-        div.className = 'union-item'
-        div.textContent = spouse ? (spouse.data.label || spouseId) : spouseId
-        unionsContainer.append(div)
-      })
-    } else {
-      const hint = document.createElement('p')
-      hint.className = 'hint'
-      hint.textContent = 'Aucune union'
-      unionsContainer.append(hint)
-    }
-    detailsContent.append(unionsContainer)
-
-    const filesContent = document.createElement('div')
-    filesContent.className = 'edit-tab-content'
-    filesContent.dataset.tab = 'files'
-    filesContent.style.display = 'none'
-
-    // File list container
-    const fileListContainer = document.createElement('div')
-    fileListContainer.id = 'personFileList'
-    filesContent.append(fileListContainer)
-
-    // Trigger file load
-    updateFilePanel(datum.id)
-
-    form.append(detailsContent, filesContent)
-  }
-
-
   editTreeInstance = chart.editTree()
     .setFields(initialFieldDescriptors)
     .setEditFirst(true)
@@ -1797,7 +1655,6 @@ function setupChart(payload) {
   panelControlAPI = {
     refreshMainProfileOptions,
     syncMainProfileSelection,
-    handleFormCreation,
     teardown: () => { }
   }
 
@@ -2857,674 +2714,708 @@ function attachPanelControls({ chart, card }) {
       return rows
     }
 
-    if (editableList.querySelector(`[data-field-key="${escapeSelector(key)}"]`)) return
-
-    const li = document.createElement('div')
-    li.className = 'editable-item'
-    li.dataset.fieldKey = key
-
-    const labelEl = document.createElement('label')
-    const input = document.createElement('input')
-    input.type = 'checkbox'
-    input.value = value
-    input.checked = checked
-    input.addEventListener('change', () => {
-      applyEditableFields()
-    })
-
-    labelEl.append(input, document.createTextNode(` ${label}`))
-    li.append(labelEl)
-
-    if (removable) {
-      addRemoveButton(li)
+    function ensureFieldLabel(field, storedLabel) {
+      return storedLabel || field
     }
 
-    editableList.append(li)
-
-    displayGroups.forEach(group => {
-      createDisplayItem(group, { value, label, key })
-    })
-  }
-
-  function ensureConfigEditableItems() {
-    if (!Array.isArray(chartConfig.editableFields)) return
-    chartConfig.editableFields.forEach(field => {
-      const key = normalizeFieldKey(field)
-      if (getUnionFieldKind(key)) return
-      if (!key) return
-      const label = ensureFieldLabel(field, fieldLabelStore.get(key))
-      const selector = `[data-field-key="${escapeSelector(key)}"]`
-      if (editableList?.querySelector(selector)) return
-      createEditableItem({
-        value: field,
-        label,
-        checked: true,
-        removable: true,
-        selectRows: getDisplayRowsForField(field)
-      })
-    })
-  }
-
-  function refreshConfigControls() {
-    if (ancestryDepthSelect) ancestryDepthSelect.value = chartConfig.ancestryDepth || '2'
-    if (progenyDepthSelect) progenyDepthSelect.value = chartConfig.progenyDepth || '2'
-    if (cardWidth) cardWidth.value = chartConfig.cardDim?.width ?? 240
-    if (cardHeight) cardHeight.value = chartConfig.cardDim?.height ?? 150
-    if (imgWidth) imgWidth.value = chartConfig.cardDim?.img_w ?? 80
-    if (imgHeight) imgHeight.value = chartConfig.cardDim?.img_h ?? 80
-    if (imgX) imgX.value = chartConfig.cardDim?.img_x ?? 16
-    if (imgY) imgY.value = chartConfig.cardDim?.img_y ?? 16
-    if (cardXSpacing) cardXSpacing.value = chartConfig.cardXSpacing
-    if (cardYSpacing) cardYSpacing.value = chartConfig.cardYSpacing
-    if (transitionInput) transitionInput.value = chartConfig.transitionTime
-    if (emptyLabel) emptyLabel.value = chartConfig.singleParentEmptyCardLabel
-    if (miniTreeToggle) miniTreeToggle.checked = chartConfig.miniTree
-    if (imageField) imageField.value = chartConfig.imageField || 'avatar'
-    if (cardStyle) cardStyle.value = chartConfig.cardStyle || 'main'
-
-    orientationButtons?.forEach(btn => {
-      if (btn.dataset.orientation === chartConfig.orientation) {
-        btn.classList.add('active')
-      } else {
-        btn.classList.remove('active')
+    function createDisplayItem(group, { value, label, key }) {
+      let list = group.querySelector('.field-list')
+      if (!list) {
+        list = group
       }
-    })
-  }
 
-  function applyConfigToEditableControls() {
-    if (!editableList) return
-    const checkboxes = editableList.querySelectorAll('input[type="checkbox"]')
-    const configSet = new Set((chartConfig.editableFields || []).map(normalizeFieldKey))
-    checkboxes.forEach(cb => {
-      cb.checked = configSet.has(normalizeFieldKey(cb.value))
-    })
-  }
+      if (list.querySelector(`[data-field-key="${escapeSelector(key)}"]`)) return
 
-  function applyConfigToDisplayControls() {
-    displayGroups.forEach(group => {
-      const row = group.dataset.displayRow
-      const checkboxes = group.querySelectorAll('input[type="checkbox"]')
-      const rowConfig = (chartConfig.cardDisplay || [])[parseInt(row) - 1] || []
-      const rowSet = new Set(rowConfig.map(normalizeFieldKey))
-      checkboxes.forEach(cb => {
-        cb.checked = rowSet.has(normalizeFieldKey(cb.value))
+      const item = document.createElement('div')
+      item.className = 'display-item'
+      item.dataset.fieldKey = key
+
+      const checkbox = document.createElement('input')
+      checkbox.type = 'checkbox'
+      checkbox.value = value
+      checkbox.addEventListener('change', () => {
+        updateCardDisplay()
       })
-    })
-  }
 
-  function applyEditableFields({ suppressSave = false } = {}) {
-    if (!editableList) return
-    const checkboxes = editableList.querySelectorAll('input[type="checkbox"]')
-    const selected = []
-    checkboxes.forEach(cb => {
-      if (cb.checked) selected.push(cb.value)
-    })
+      const labelSpan = document.createElement('span')
+      labelSpan.textContent = label
 
-    // Update config
-    const newEditable = sanitizeFieldValues(selected)
-    if (JSON.stringify(newEditable) !== JSON.stringify(chartConfig.editableFields)) {
-      chartConfig = { ...chartConfig, editableFields: newEditable }
-      if (!suppressSave) scheduleAutoSave()
+      item.append(checkbox, labelSpan)
+      list.append(item)
     }
 
-    // Sync display items
-    displayGroups.forEach(group => {
-      const list = group.querySelector('.field-list')
-      if (!list) return
-      // Clear existing
-      list.innerHTML = ''
-      // Re-populate based on editable fields
-      selected.forEach(field => {
-        const key = normalizeFieldKey(field)
-        const label = fieldLabelStore.get(key) || field
-        createDisplayItem(group, { value: field, label, key })
+    function createEditableItem({ value, label, checked, removable, selectRows = [] }) {
+      if (!editableList) return
+      const key = normalizeFieldKey(value)
+
+      if (editableList.querySelector(`[data-field-key="${escapeSelector(key)}"]`)) return
+
+      const li = document.createElement('div')
+      li.className = 'editable-item'
+      li.dataset.fieldKey = key
+
+      const labelEl = document.createElement('label')
+      const input = document.createElement('input')
+      input.type = 'checkbox'
+      input.value = value
+      input.checked = checked
+      input.addEventListener('change', () => {
+        applyEditableFields()
       })
-    })
 
-    // Re-apply display checks
-    applyConfigToDisplayControls()
+      labelEl.append(input, document.createTextNode(` ${label}`))
+      li.append(labelEl)
 
-    // Update chart
-    if (editTreeInstance) {
-      const descriptors = selected.map(field => {
+      if (removable) {
+        addRemoveButton(li)
+      }
+
+      editableList.append(li)
+
+      displayGroups.forEach(group => {
+        createDisplayItem(group, { value, label, key })
+      })
+    }
+
+    function ensureConfigEditableItems() {
+      if (!Array.isArray(chartConfig.editableFields)) return
+      chartConfig.editableFields.forEach(field => {
+        const key = normalizeFieldKey(field)
+        if (getUnionFieldKind(key)) return
+        if (!key) return
+        const label = ensureFieldLabel(field, fieldLabelStore.get(key))
+        const selector = `[data-field-key="${escapeSelector(key)}"]`
+        if (editableList?.querySelector(selector)) return
+        createEditableItem({
+          value: field,
+          label,
+          checked: true,
+          removable: true,
+          selectRows: getDisplayRowsForField(field)
+        })
+      })
+    }
+
+    function refreshConfigControls() {
+      if (ancestryDepthSelect) ancestryDepthSelect.value = chartConfig.ancestryDepth || '2'
+      if (progenyDepthSelect) progenyDepthSelect.value = chartConfig.progenyDepth || '2'
+      if (cardWidth) cardWidth.value = chartConfig.cardDim?.width ?? 240
+      if (cardHeight) cardHeight.value = chartConfig.cardDim?.height ?? 150
+      if (imgWidth) imgWidth.value = chartConfig.cardDim?.img_w ?? 80
+      if (imgHeight) imgHeight.value = chartConfig.cardDim?.img_h ?? 80
+      if (imgX) imgX.value = chartConfig.cardDim?.img_x ?? 16
+      if (imgY) imgY.value = chartConfig.cardDim?.img_y ?? 16
+      if (cardXSpacing) cardXSpacing.value = chartConfig.cardXSpacing
+      if (cardYSpacing) cardYSpacing.value = chartConfig.cardYSpacing
+      if (transitionInput) transitionInput.value = chartConfig.transitionTime
+      if (emptyLabel) emptyLabel.value = chartConfig.singleParentEmptyCardLabel
+      if (miniTreeToggle) miniTreeToggle.checked = chartConfig.miniTree
+      if (imageField) imageField.value = chartConfig.imageField || 'avatar'
+      if (cardStyle) cardStyle.value = chartConfig.cardStyle || 'main'
+
+      orientationButtons?.forEach(btn => {
+        if (btn.dataset.orientation === chartConfig.orientation) {
+          btn.classList.add('active')
+        } else {
+          btn.classList.remove('active')
+        }
+      })
+    }
+
+    function applyConfigToEditableControls() {
+      if (!editableList) return
+      const checkboxes = editableList.querySelectorAll('input[type="checkbox"]')
+      const configSet = new Set((chartConfig.editableFields || []).map(normalizeFieldKey))
+      checkboxes.forEach(cb => {
+        cb.checked = configSet.has(normalizeFieldKey(cb.value))
+      })
+    }
+
+    function applyConfigToDisplayControls() {
+      displayGroups.forEach(group => {
+        const row = group.dataset.displayRow
+        const checkboxes = group.querySelectorAll('input[type="checkbox"]')
+        const rowConfig = (chartConfig.cardDisplay || [])[parseInt(row) - 1] || []
+        const rowSet = new Set(rowConfig.map(normalizeFieldKey))
+        checkboxes.forEach(cb => {
+          cb.checked = rowSet.has(normalizeFieldKey(cb.value))
+        })
+      })
+    }
+
+    function applyEditableFields({ suppressSave = false } = {}) {
+      if (!editableList) return
+      const checkboxes = editableList.querySelectorAll('input[type="checkbox"]')
+      const selected = []
+      checkboxes.forEach(cb => {
+        if (cb.checked) selected.push(cb.value)
+      })
+
+      // Update config
+      const newEditable = sanitizeFieldValues(selected)
+      if (JSON.stringify(newEditable) !== JSON.stringify(chartConfig.editableFields)) {
+        chartConfig = { ...chartConfig, editableFields: newEditable }
+        if (!suppressSave) scheduleAutoSave()
+      }
+
+      // Sync display items
+      displayGroups.forEach(group => {
+        const list = group.querySelector('.field-list')
+        if (!list) return
+        // Clear existing
+        list.innerHTML = ''
+        // Re-populate based on editable fields
+        selected.forEach(field => {
+          const key = normalizeFieldKey(field)
+          const label = fieldLabelStore.get(key) || field
+          createDisplayItem(group, { value: field, label, key })
+        })
+      })
+
+      // Re-apply display checks
+      applyConfigToDisplayControls()
+
+      // Update chart
+      if (editTreeInstance) {
+        const descriptors = selected.map(field => {
+          const key = normalizeFieldKey(field)
+          return createFieldDescriptor(key, field, fieldLabelStore.get(key))
+        })
+        editTreeInstance.setFields(descriptors)
+        chart.updateTree({ initial: false, tree_position: 'inherit' })
+      }
+    }
+
+    function areFieldListsEqual(a = [], b = []) {
+      if (a.length !== b.length) return false
+      return a.every((value, index) => normalizeFieldKey(value) === normalizeFieldKey(b[index]))
+    }
+
+    function areCardDisplaysEqual(a = [], b = []) {
+      if (a.length !== b.length) return false
+      return a.every((row, index) => areFieldListsEqual(row, b[index]))
+    }
+
+    function syncDisplayItemsWithEditable(activeKeys) {
+      displayGroups.forEach(group => {
+        // Support dropdown items
+        const items = group.querySelectorAll('.dropdown-item, .display-item')
+        items.forEach(item => {
+          const key = item.dataset.fieldKey
+          const checkbox = item.querySelector('input[type="checkbox"]')
+          const isActive = activeKeys.has(key)
+
+          // Hide/Show item instead of disabling
+          item.style.display = isActive ? 'flex' : 'none'
+
+          if (!checkbox) return
+          checkbox.disabled = !isActive
+          if (!isActive && checkbox.checked) {
+            checkbox.checked = false
+          }
+        })
+
+        // Update anchor label after syncing
+        const dropdown = group.querySelector('.multi-select-dropdown')
+        if (dropdown) updateDropdownAnchorLabel(dropdown)
+      })
+    }
+
+    function getSelectedValues(container) {
+      if (!container) return []
+      const checkboxes = container.querySelectorAll('input[type="checkbox"]')
+      const values = []
+      checkboxes.forEach(cb => {
+        if (cb.checked) values.push(cb.value)
+      })
+      return values
+    }
+
+    function createFieldDescriptors(fields) {
+      return fields.map(field => {
         const key = normalizeFieldKey(field)
         return createFieldDescriptor(key, field, fieldLabelStore.get(key))
       })
-      editTreeInstance.setFields(descriptors)
-      chart.updateTree({ initial: false, tree_position: 'inherit' })
     }
-  }
 
-  function areFieldListsEqual(a = [], b = []) {
-    if (a.length !== b.length) return false
-    return a.every((value, index) => normalizeFieldKey(value) === normalizeFieldKey(b[index]))
-  }
+    // Tab Handling
+    const tabButtons = document.querySelectorAll('.tab-button')
+    const tabContents = document.querySelectorAll('.tab-content')
 
-  function areCardDisplaysEqual(a = [], b = []) {
-    if (a.length !== b.length) return false
-    return a.every((row, index) => areFieldListsEqual(row, b[index]))
-  }
+    function switchTab(tabId) {
+      tabButtons.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tabId)
+      })
+      tabContents.forEach(content => {
+        content.classList.toggle('active', content.dataset.tab === tabId)
+      })
+    }
 
-  function syncDisplayItemsWithEditable(activeKeys) {
-    displayGroups.forEach(group => {
-      // Support dropdown items
-      const items = group.querySelectorAll('.dropdown-item, .display-item')
-      items.forEach(item => {
-        const key = item.dataset.fieldKey
-        const checkbox = item.querySelector('input[type="checkbox"]')
-        const isActive = activeKeys.has(key)
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tabId = btn.dataset.tab
+        if (tabId) switchTab(tabId)
+      })
+    })
 
-        // Hide/Show item instead of disabling
-        item.style.display = isActive ? 'flex' : 'none'
+    function updateCardDisplay({ suppressSave = false } = {}) {
+      const row1Group = displayGroupMap.get('1')
+      const row2Group = displayGroupMap.get('2')
+      const row1 = sanitizeFieldValues(getSelectedValues(row1Group))
+      const row2 = sanitizeFieldValues(getSelectedValues(row2Group))
+      const fallback = (row1[0])
+        || (currentEditableFields.length ? currentEditableFields[0] : (DEFAULT_EDITABLE_FIELDS[0] || 'first name'))
+      const appliedRow1 = row1.length ? row1 : [fallback]
+      const appliedRows = [appliedRow1, row2]
 
-        if (!checkbox) return
-        checkbox.disabled = !isActive
-        if (!isActive && checkbox.checked) {
-          checkbox.checked = false
+      card.setCardDisplay(appliedRows)
+      chart.updateTree({ initial: false, tree_position: 'inherit' })
+
+      const displayChanged = !areCardDisplaysEqual(chartConfig.cardDisplay, appliedRows)
+      if (displayChanged) {
+        chartConfig = {
+          ...chartConfig,
+          cardDisplay: appliedRows.map(row => [...row])
         }
+        if (!suppressSave) {
+          lastSnapshotString = null
+          if (!isApplyingConfig) scheduleAutoSave()
+        }
+      }
+    }
+
+    function applyEditableFields({ suppressSave = false } = {}) {
+      if (!editTreeInstance || !editableList) return
+      const values = [...editableList.querySelectorAll('input[type="checkbox"]')]
+        .filter(input => input.checked)
+        .map(input => input.value)
+      let applied = values.length ? values : (chartConfig.editableFields.length ? [...chartConfig.editableFields] : ['first name'])
+      applied = sanitizeFieldValues(applied)
+      if (!applied.length) {
+        const fallbackField = DEFAULT_EDITABLE_FIELDS[0] || 'first name'
+        applied = [fallbackField]
+        if (editableList) {
+          const fallbackKey = normalizeFieldKey(fallbackField)
+          const selector = `[data-field-key="${escapeSelector(fallbackKey)}"] input[type="checkbox"]`
+          const fallbackInput = editableList.querySelector(selector)
+          if (fallbackInput) fallbackInput.checked = true
+        }
+      }
+      currentEditableFields = [...applied]
+      const fieldDescriptors = createFieldDescriptors(applied)
+      editTreeInstance.setFields(fieldDescriptors)
+
+      const activeKeys = new Set(applied.map(normalizeFieldKey))
+      syncDisplayItemsWithEditable(activeKeys)
+
+      const editableChanged = !areFieldListsEqual(chartConfig.editableFields, applied)
+      if (editableChanged) {
+        chartConfig = { ...chartConfig, editableFields: [...applied] }
+        if (!suppressSave) {
+          lastSnapshotString = null
+          if (!isApplyingConfig) scheduleAutoSave()
+        }
+      }
+
+      updateCardDisplay({ suppressSave })
+    }
+
+    function escapeSelector(value) {
+      return CSS.escape(value)
+    }
+
+    function ensureFieldLabel(field, storedLabel) {
+      return storedLabel || field
+    }
+
+    function createDisplayItem(group, { value, label, key }) {
+      let list = group.querySelector('.field-list')
+      if (!list) {
+        list = group
+      }
+
+      if (list.querySelector(`[data-field-key="${escapeSelector(key)}"]`)) return
+
+      const item = document.createElement('div')
+      item.className = 'display-item'
+      item.dataset.fieldKey = key
+
+      const checkbox = document.createElement('input')
+      checkbox.type = 'checkbox'
+      checkbox.value = value
+      checkbox.addEventListener('change', () => {
+        updateCardDisplay()
       })
 
-      // Update anchor label after syncing
-      const dropdown = group.querySelector('.multi-select-dropdown')
-      if (dropdown) updateDropdownAnchorLabel(dropdown)
-    })
-  }
+      const labelSpan = document.createElement('span')
+      labelSpan.textContent = label
 
-  function getSelectedValues(container) {
-    if (!container) return []
-    const checkboxes = container.querySelectorAll('input[type="checkbox"]')
-    const values = []
-    checkboxes.forEach(cb => {
-      if (cb.checked) values.push(cb.value)
-    })
-    return values
-  }
+      item.append(checkbox, labelSpan)
+      list.append(item)
+    }
 
-  function createFieldDescriptors(fields) {
-    return fields.map(field => {
-      const key = normalizeFieldKey(field)
-      return createFieldDescriptor(key, field, fieldLabelStore.get(key))
-    })
-  }
+    function createEditableItem({ value, label, checked, removable, selectRows = [] }) {
+      if (!editableList) return
+      const key = normalizeFieldKey(value)
 
-  // Tab Handling
-  const tabButtons = document.querySelectorAll('.tab-button')
-  const tabContents = document.querySelectorAll('.tab-content')
+      if (editableList.querySelector(`[data-field-key="${escapeSelector(key)}"]`)) return
 
-  function switchTab(tabId) {
-    tabButtons.forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.tab === tabId)
-    })
-    tabContents.forEach(content => {
-      content.classList.toggle('active', content.dataset.tab === tabId)
-    })
-  }
+      const li = document.createElement('div')
+      li.className = 'editable-item'
+      li.dataset.fieldKey = key
 
-  tabButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const tabId = btn.dataset.tab
-      if (tabId) switchTab(tabId)
-    })
-  })
+      const labelEl = document.createElement('label')
+      const input = document.createElement('input')
+      input.type = 'checkbox'
+      input.value = value
+      input.checked = checked
+      input.addEventListener('change', () => {
+        applyEditableFields()
+      })
 
-  function updateCardDisplay({ suppressSave = false } = {}) {
-    const row1Group = displayGroupMap.get('1')
-    const row2Group = displayGroupMap.get('2')
-    const row1 = sanitizeFieldValues(getSelectedValues(row1Group))
-    const row2 = sanitizeFieldValues(getSelectedValues(row2Group))
-    const fallback = (row1[0])
-      || (currentEditableFields.length ? currentEditableFields[0] : (DEFAULT_EDITABLE_FIELDS[0] || 'first name'))
-    const appliedRow1 = row1.length ? row1 : [fallback]
-    const appliedRows = [appliedRow1, row2]
+      labelEl.append(input, document.createTextNode(` ${label}`))
+      li.append(labelEl)
 
-    card.setCardDisplay(appliedRows)
-    chart.updateTree({ initial: false, tree_position: 'inherit' })
-
-    const displayChanged = !areCardDisplaysEqual(chartConfig.cardDisplay, appliedRows)
-    if (displayChanged) {
-      chartConfig = {
-        ...chartConfig,
-        cardDisplay: appliedRows.map(row => [...row])
+      if (removable) {
+        addRemoveButton(li)
       }
-      if (!suppressSave) {
-        lastSnapshotString = null
-        if (!isApplyingConfig) scheduleAutoSave()
-      }
-    }
-  }
 
-  function applyEditableFields({ suppressSave = false } = {}) {
-    if (!editTreeInstance || !editableList) return
-    const values = [...editableList.querySelectorAll('input[type="checkbox"]')]
-      .filter(input => input.checked)
-      .map(input => input.value)
-    let applied = values.length ? values : (chartConfig.editableFields.length ? [...chartConfig.editableFields] : ['first name'])
-    applied = sanitizeFieldValues(applied)
-    if (!applied.length) {
-      const fallbackField = DEFAULT_EDITABLE_FIELDS[0] || 'first name'
-      applied = [fallbackField]
-      if (editableList) {
-        const fallbackKey = normalizeFieldKey(fallbackField)
-        const selector = `[data-field-key="${escapeSelector(fallbackKey)}"] input[type="checkbox"]`
-        const fallbackInput = editableList.querySelector(selector)
-        if (fallbackInput) fallbackInput.checked = true
-      }
-    }
-    currentEditableFields = [...applied]
-    const fieldDescriptors = createFieldDescriptors(applied)
-    editTreeInstance.setFields(fieldDescriptors)
+      editableList.append(li)
 
-    const activeKeys = new Set(applied.map(normalizeFieldKey))
-    syncDisplayItemsWithEditable(activeKeys)
-
-    const editableChanged = !areFieldListsEqual(chartConfig.editableFields, applied)
-    if (editableChanged) {
-      chartConfig = { ...chartConfig, editableFields: [...applied] }
-      if (!suppressSave) {
-        lastSnapshotString = null
-        if (!isApplyingConfig) scheduleAutoSave()
-      }
+      displayGroups.forEach(group => {
+        createDisplayItem(group, { value, label, key })
+      })
     }
 
-    updateCardDisplay({ suppressSave })
-  }
-
-  function escapeSelector(value) {
-    return CSS.escape(value)
-  }
-
-  function ensureFieldLabel(field, storedLabel) {
-    return storedLabel || field
-  }
-
-  function createDisplayItem(group, { value, label, key }) {
-    let list = group.querySelector('.field-list')
-    if (!list) {
-      list = group
+    function ensureConfigEditableItems() {
+      if (!Array.isArray(chartConfig.editableFields)) return
+      chartConfig.editableFields.forEach(field => {
+        const key = normalizeFieldKey(field)
+        if (getUnionFieldKind(key)) return
+        if (!key) return
+        const label = ensureFieldLabel(field, fieldLabelStore.get(key))
+        const selector = `[data-field-key="${escapeSelector(key)}"]`
+        if (editableList?.querySelector(selector)) return
+        createEditableItem({
+          value: field,
+          label,
+          checked: true,
+          removable: true,
+          selectRows: getDisplayRowsForField(field)
+        })
+      })
     }
 
-    if (list.querySelector(`[data-field-key="${escapeSelector(key)}"]`)) return
+    function requestFieldDefinition() {
+      const rawValue = prompt('Nom du champ (clé dans vos données) ?')
+      if (!rawValue) return null
+      const value = rawValue.trim()
+      if (!value) return null
 
-    const item = document.createElement('div')
-    item.className = 'display-item'
-    item.dataset.fieldKey = key
+      const key = normalizeFieldKey(value)
+      const suggestedLabel = fieldLabelStore.get(key) || value
+      const labelInput = prompt('Libellé affiché pour ce champ ?', suggestedLabel)
+      const displayLabel = (labelInput ?? suggestedLabel).trim() || value
 
-    const checkbox = document.createElement('input')
-    checkbox.type = 'checkbox'
-    checkbox.value = value
-    checkbox.addEventListener('change', () => {
-      updateCardDisplay()
-    })
-
-    const labelSpan = document.createElement('span')
-    labelSpan.textContent = label
-
-    item.append(checkbox, labelSpan)
-    list.append(item)
-  }
-
-  function createEditableItem({ value, label, checked, removable, selectRows = [] }) {
-    if (!editableList) return
-    const key = normalizeFieldKey(value)
-
-    if (editableList.querySelector(`[data-field-key="${escapeSelector(key)}"]`)) return
-
-    const li = document.createElement('div')
-    li.className = 'editable-item'
-    li.dataset.fieldKey = key
-
-    const labelEl = document.createElement('label')
-    const input = document.createElement('input')
-    input.type = 'checkbox'
-    input.value = value
-    input.checked = checked
-    input.addEventListener('change', () => {
-      applyEditableFields()
-    })
-
-    labelEl.append(input, document.createTextNode(` ${label}`))
-    li.append(labelEl)
-
-    if (removable) {
-      addRemoveButton(li)
+      return { value, label: displayLabel, key }
     }
 
-    editableList.append(li)
+    function handleAddEditableField({ selectRows = [] } = {}) {
+      const definition = requestFieldDefinition()
+      if (!definition) return
+      const { value, label, key } = definition
+      const isDefault = EDITABLE_DEFAULTS.some(def => normalizeFieldKey(def.value) === key)
 
-    displayGroups.forEach(group => {
-      createDisplayItem(group, { value, label, key })
-    })
-  }
-
-  function ensureConfigEditableItems() {
-    if (!Array.isArray(chartConfig.editableFields)) return
-    chartConfig.editableFields.forEach(field => {
-      const key = normalizeFieldKey(field)
-      if (getUnionFieldKind(key)) return
-      if (!key) return
-      const label = ensureFieldLabel(field, fieldLabelStore.get(key))
-      const selector = `[data-field-key="${escapeSelector(key)}"]`
-      if (editableList?.querySelector(selector)) return
       createEditableItem({
-        value: field,
+        value,
         label,
         checked: true,
-        removable: true,
-        selectRows: getDisplayRowsForField(field)
+        removable: !isDefault,
+        selectRows
       })
-    })
-  }
 
-  function requestFieldDefinition() {
-    const rawValue = prompt('Nom du champ (clé dans vos données) ?')
-    if (!rawValue) return null
-    const value = rawValue.trim()
-    if (!value) return null
-
-    const key = normalizeFieldKey(value)
-    const suggestedLabel = fieldLabelStore.get(key) || value
-    const labelInput = prompt('Libellé affiché pour ce champ ?', suggestedLabel)
-    const displayLabel = (labelInput ?? suggestedLabel).trim() || value
-
-    return { value, label: displayLabel, key }
-  }
-
-  function handleAddEditableField({ selectRows = [] } = {}) {
-    const definition = requestFieldDefinition()
-    if (!definition) return
-    const { value, label, key } = definition
-    const isDefault = EDITABLE_DEFAULTS.some(def => normalizeFieldKey(def.value) === key)
-
-    createEditableItem({
-      value,
-      label,
-      checked: true,
-      removable: !isDefault,
-      selectRows
-    })
-
-    applyEditableFields()
-  }
-
-  EDITABLE_DEFAULTS.forEach(def => {
-    if (!HIDDEN_FIELD_KEYS.has(normalizeFieldKey(def.value))) {
-      createEditableItem({
-        value: def.value,
-        label: def.label,
-        checked: def.checked !== false,
-        removable: false
-      })
-    }
-  })
-
-  editableList?.addEventListener('change', (event) => {
-    if (event.target.matches('input[type="checkbox"]')) {
       applyEditableFields()
     }
-  })
 
-  addEditableBtn?.addEventListener('click', () => handleAddEditableField())
-
-  displayGroups.forEach(group => {
-    group.addEventListener('change', (event) => {
-      if (event.target.matches('input[type="checkbox"]')) {
-        updateCardDisplay()
+    EDITABLE_DEFAULTS.forEach(def => {
+      if (!HIDDEN_FIELD_KEYS.has(normalizeFieldKey(def.value))) {
+        createEditableItem({
+          value: def.value,
+          label: def.label,
+          checked: def.checked !== false,
+          removable: false
+        })
       }
     })
-  })
 
-  imageField?.addEventListener('change', () => {
-    card.setCardImageField(imageField.value)
-    chart.updateTree({ initial: false, tree_position: 'inherit' })
-    populateUploaderFromDatum()
-  })
-
-  cardStyle?.addEventListener('change', () => {
-    card.setStyle(cardStyle.value)
-    chart.updateTree({ initial: false, tree_position: 'inherit' })
-  })
-
-  transitionInput?.addEventListener('change', () => {
-    if (isApplyingConfig) return
-    const fallback = chartConfig.transitionTime ?? DEFAULT_CHART_CONFIG.transitionTime
-    const value = parseNumberInput(transitionInput, fallback)
-    const safeValue = Math.max(0, value)
-    if (safeValue === chartConfig.transitionTime) return
-    commitConfigUpdate({ transitionTime: safeValue })
-  })
-
-  cardYSpacing?.addEventListener('change', () => {
-    if (isApplyingConfig) return
-    const fallback = chartConfig.cardYSpacing ?? DEFAULT_CHART_CONFIG.cardYSpacing
-    const value = parseNumberInput(cardYSpacing, fallback)
-    const safeValue = value > 0 ? value : fallback
-    if (safeValue === chartConfig.cardYSpacing) return
-    commitConfigUpdate({ cardYSpacing: safeValue })
-  })
-
-  cardXSpacing?.addEventListener('change', () => {
-    if (isApplyingConfig) return
-    const fallback = chartConfig.cardXSpacing ?? DEFAULT_CHART_CONFIG.cardXSpacing
-    const value = parseNumberInput(cardXSpacing, fallback)
-    const safeValue = value > 0 ? value : fallback
-    if (safeValue === chartConfig.cardXSpacing) return
-    commitConfigUpdate({ cardXSpacing: safeValue })
-  })
-
-  ancestryDepthSelect?.addEventListener('change', () => {
-    if (isApplyingConfig) return
-    const fallback = chartConfig.ancestryDepth ?? DEFAULT_CHART_CONFIG.ancestryDepth ?? null
-    const value = parseDepthSelectValue(ancestryDepthSelect, fallback)
-    if (value === chartConfig.ancestryDepth) return
-    commitConfigUpdate({ ancestryDepth: value }, { treePosition: 'main_to_middle' })
-  })
-
-  progenyDepthSelect?.addEventListener('change', () => {
-    if (isApplyingConfig) return
-    const fallback = chartConfig.progenyDepth ?? DEFAULT_CHART_CONFIG.progenyDepth ?? null
-    const value = parseDepthSelectValue(progenyDepthSelect, fallback)
-    if (value === chartConfig.progenyDepth) return
-    commitConfigUpdate({ progenyDepth: value }, { treePosition: 'main_to_middle' })
-  })
-
-  miniTreeToggle?.addEventListener('change', () => {
-    if (isApplyingConfig) return
-    const enabled = miniTreeToggle.checked
-    const previous = chartConfig.miniTree !== false
-    if (enabled === previous) return
-    commitConfigUpdate({ miniTree: enabled })
-  })
-
-
-
-  emptyLabel?.addEventListener('change', () => {
-    if (isApplyingConfig) return
-    const label = (emptyLabel.value || '').trim() || DEFAULT_CHART_CONFIG.singleParentEmptyCardLabel
-    if (label === chartConfig.singleParentEmptyCardLabel) return
-    commitConfigUpdate({ singleParentEmptyCardLabel: label, singleParentEmptyCard: true })
-  })
-
-  orientationButtons?.forEach(button => {
-    button.addEventListener('click', () => {
-      const orientation = button.dataset.orientation
-      const nextOrientation = orientation === 'horizontal' ? 'horizontal' : 'vertical'
-      if (chartConfig.orientation === nextOrientation) return
-      commitConfigUpdate({ orientation: nextOrientation }, { treePosition: 'fit' })
+    editableList?.addEventListener('change', (event) => {
+      if (event.target.matches('input[type="checkbox"]')) {
+        applyEditableFields()
+      }
     })
-  })
 
-  function applyCardDimensions() {
-    const dims = {}
-    add('width', cardWidth)
-    add('height', cardHeight)
-    add('img_w', imgWidth)
-    add('img_h', imgHeight)
-    add('img_x', imgX)
-    add('img_y', imgY)
+    addEditableBtn?.addEventListener('click', () => handleAddEditableField())
 
-    card.resetCardDim()
-    if (Object.keys(dims).length > 0) {
-      card.setCardDim(dims)
+    displayGroups.forEach(group => {
+      group.addEventListener('change', (event) => {
+        if (event.target.matches('input[type="checkbox"]')) {
+          updateCardDisplay()
+        }
+      })
+    })
+
+    imageField?.addEventListener('change', () => {
+      card.setCardImageField(imageField.value)
+      chart.updateTree({ initial: false, tree_position: 'inherit' })
+      populateUploaderFromDatum()
+    })
+
+    cardStyle?.addEventListener('change', () => {
+      card.setStyle(cardStyle.value)
+      chart.updateTree({ initial: false, tree_position: 'inherit' })
+    })
+
+    transitionInput?.addEventListener('change', () => {
+      if (isApplyingConfig) return
+      const fallback = chartConfig.transitionTime ?? DEFAULT_CHART_CONFIG.transitionTime
+      const value = parseNumberInput(transitionInput, fallback)
+      const safeValue = Math.max(0, value)
+      if (safeValue === chartConfig.transitionTime) return
+      commitConfigUpdate({ transitionTime: safeValue })
+    })
+
+    cardYSpacing?.addEventListener('change', () => {
+      if (isApplyingConfig) return
+      const fallback = chartConfig.cardYSpacing ?? DEFAULT_CHART_CONFIG.cardYSpacing
+      const value = parseNumberInput(cardYSpacing, fallback)
+      const safeValue = value > 0 ? value : fallback
+      if (safeValue === chartConfig.cardYSpacing) return
+      commitConfigUpdate({ cardYSpacing: safeValue })
+    })
+
+    cardXSpacing?.addEventListener('change', () => {
+      if (isApplyingConfig) return
+      const fallback = chartConfig.cardXSpacing ?? DEFAULT_CHART_CONFIG.cardXSpacing
+      const value = parseNumberInput(cardXSpacing, fallback)
+      const safeValue = value > 0 ? value : fallback
+      if (safeValue === chartConfig.cardXSpacing) return
+      commitConfigUpdate({ cardXSpacing: safeValue })
+    })
+
+    ancestryDepthSelect?.addEventListener('change', () => {
+      if (isApplyingConfig) return
+      const fallback = chartConfig.ancestryDepth ?? DEFAULT_CHART_CONFIG.ancestryDepth ?? null
+      const value = parseDepthSelectValue(ancestryDepthSelect, fallback)
+      if (value === chartConfig.ancestryDepth) return
+      commitConfigUpdate({ ancestryDepth: value }, { treePosition: 'main_to_middle' })
+    })
+
+    progenyDepthSelect?.addEventListener('change', () => {
+      if (isApplyingConfig) return
+      const fallback = chartConfig.progenyDepth ?? DEFAULT_CHART_CONFIG.progenyDepth ?? null
+      const value = parseDepthSelectValue(progenyDepthSelect, fallback)
+      if (value === chartConfig.progenyDepth) return
+      commitConfigUpdate({ progenyDepth: value }, { treePosition: 'main_to_middle' })
+    })
+
+    miniTreeToggle?.addEventListener('change', () => {
+      if (isApplyingConfig) return
+      const enabled = miniTreeToggle.checked
+      const previous = chartConfig.miniTree !== false
+      if (enabled === previous) return
+      commitConfigUpdate({ miniTree: enabled })
+    })
+
+
+
+    emptyLabel?.addEventListener('change', () => {
+      if (isApplyingConfig) return
+      const label = (emptyLabel.value || '').trim() || DEFAULT_CHART_CONFIG.singleParentEmptyCardLabel
+      if (label === chartConfig.singleParentEmptyCardLabel) return
+      commitConfigUpdate({ singleParentEmptyCardLabel: label, singleParentEmptyCard: true })
+    })
+
+    orientationButtons?.forEach(button => {
+      button.addEventListener('click', () => {
+        const orientation = button.dataset.orientation
+        const nextOrientation = orientation === 'horizontal' ? 'horizontal' : 'vertical'
+        if (chartConfig.orientation === nextOrientation) return
+        commitConfigUpdate({ orientation: nextOrientation }, { treePosition: 'fit' })
+      })
+    })
+
+    function applyCardDimensions() {
+      const dims = {}
+      add('width', cardWidth)
+      add('height', cardHeight)
+      add('img_w', imgWidth)
+      add('img_h', imgHeight)
+      add('img_x', imgX)
+      add('img_y', imgY)
+
+      card.resetCardDim()
+      if (Object.keys(dims).length > 0) {
+        card.setCardDim(dims)
+      }
+      chart.updateTree({ initial: false, tree_position: 'inherit' })
+
+      function add(key, input) {
+        if (!input) return
+        const value = Number(input.value)
+        if (Number.isFinite(value)) dims[key] = value
+      }
     }
-    chart.updateTree({ initial: false, tree_position: 'inherit' })
 
-    function add(key, input) {
-      if (!input) return
-      const value = Number(input.value)
-      if (Number.isFinite(value)) dims[key] = value
+    ;[
+      cardWidth,
+      cardHeight,
+      imgWidth,
+      imgHeight,
+      imgX,
+      imgY
+    ].forEach(input => input?.addEventListener('change', applyCardDimensions))
+
+    resetDimensions?.addEventListener('click', () => {
+      ;[
+        [cardWidth, 240],
+        [cardHeight, 150],
+        [imgWidth, 80],
+        [imgHeight, 80],
+        [imgX, 16],
+        [imgY, 16]
+      ].forEach(([input, value]) => {
+        if (input) input.value = value
+      })
+      applyCardDimensions()
+    })
+
+    assetUploadInput?.addEventListener('change', (event) => {
+      const file = event.target.files && event.target.files[0]
+      if (file) handleFileUpload(file)
+      event.target.value = ''
+    })
+
+    // Make the visible label open the hidden file input (we hide filename text via CSS)
+    fileLabel?.addEventListener('click', (e) => {
+      e.preventDefault()
+      if (assetUploadInput) assetUploadInput.click()
+    })
+
+    copyUploadUrlBtn?.addEventListener('click', () => {
+      const storedUrl = assetUploadResult?.dataset?.url || assetUploadUrlOutput?.textContent?.trim()
+      if (storedUrl) applyImageToActiveProfile(storedUrl, { origin: 'manual' })
+      copyToClipboard(storedUrl, {
+        successMessage: 'URL du téléversement copiée ✅',
+        errorMessage: 'Impossible de copier l’URL du téléversement.'
+      })
+    })
+
+    deleteUploadBtn?.addEventListener('click', async () => {
+      const datum = getActiveDatum()
+      const personId = imageUploaderCurrentDatumId || (datum && datum.id)
+      if (!personId) {
+        setUploadFeedback('Sélectionnez un profil éditable pour supprimer sa photo.', 'error')
+        return
+      }
+
+      const confirmText = `Supprimer la photo de profil pour ${personId} ?`
+      if (!confirm(confirmText)) return
+
+      setUploadFeedback('Suppression en cours…', 'saving')
+      try {
+        const url = `/api/document?personId=${encodeURIComponent(personId)}`
+        const resp = await fetch(url, { method: 'DELETE' })
+        if (!resp.ok) {
+          let message = `Erreur serveur (${resp.status})`
+          try {
+            const payload = await resp.json()
+            if (payload?.message) message = payload.message
+          } catch (e) { }
+          throw new Error(message)
+        }
+
+        // Clear uploader UI and remove image from active datum
+        clearUploadResult()
+        setUploadFeedback('Photo supprimée.', 'success')
+        // If the active datum had the image URL in its data, remove it
+        try {
+          const targetFieldId = getActiveImageFieldId()
+          if (datum && datum.data && datum.data[targetFieldId]) {
+            delete datum.data[targetFieldId]
+            chart.updateTree({ initial: false, tree_position: 'inherit' })
+            scheduleAutoSave()
+          }
+        } catch (e) {
+          /* ignore */
+        }
+      } catch (error) {
+        console.error(error)
+        setUploadFeedback(error.message || 'Échec de la suppression.', 'error')
+      }
+    })
+
+    // manual URL input removed: no manual apply/copy behavior
+
+    const previousApplyingState = isApplyingConfig
+    isApplyingConfig = true
+    ensureConfigEditableItems()
+    refreshConfigControls()
+    applyConfigToEditableControls()
+    applyConfigToDisplayControls()
+    isApplyingConfig = previousApplyingState
+
+    applyEditableFields({ suppressSave: true })
+
+    setMainProfileHandler = setMainProfile
+
+    return {
+      refreshMainProfileOptions,
+      syncMainProfileSelection,
+      handleFormCreation,
+      teardown: teardownImageUploader
     }
   }
 
-  ;[
-    cardWidth,
-    cardHeight,
-    imgWidth,
-    imgHeight,
-    imgX,
-    imgY
-  ].forEach(input => input?.addEventListener('change', applyCardDimensions))
+  function removeUnionParagraphField(values = []) {
+    return values.filter(value => normalizeFieldKey(value) !== UNION_PARAGRAPH_KEY)
+  }
 
-  resetDimensions?.addEventListener('click', () => {
-    ;[
-      [cardWidth, 240],
-      [cardHeight, 150],
-      [imgWidth, 80],
-      [imgHeight, 80],
-      [imgX, 16],
-      [imgY, 16]
-    ].forEach(([input, value]) => {
-      if (input) input.value = value
-    })
-    applyCardDimensions()
-  })
+  async function initialise() {
+    destroyTimer()
+    editTreeInstance = null
+    lastSnapshotString = null
 
-  assetUploadInput?.addEventListener('change', (event) => {
-    const file = event.target.files && event.target.files[0]
-    if (file) handleFileUpload(file)
-    event.target.value = ''
-  })
-
-  // Make the visible label open the hidden file input (we hide filename text via CSS)
-  fileLabel?.addEventListener('click', (e) => {
-    e.preventDefault()
-    if (assetUploadInput) assetUploadInput.click()
-  })
-
-  copyUploadUrlBtn?.addEventListener('click', () => {
-    const storedUrl = assetUploadResult?.dataset?.url || assetUploadUrlOutput?.textContent?.trim()
-    if (storedUrl) applyImageToActiveProfile(storedUrl, { origin: 'manual' })
-    copyToClipboard(storedUrl, {
-      successMessage: 'URL du téléversement copiée ✅',
-      errorMessage: 'Impossible de copier l’URL du téléversement.'
-    })
-  })
-
-  deleteUploadBtn?.addEventListener('click', async () => {
-    const datum = getActiveDatum()
-    const personId = imageUploaderCurrentDatumId || (datum && datum.id)
-    if (!personId) {
-      setUploadFeedback('Sélectionnez un profil éditable pour supprimer sa photo.', 'error')
-      return
-    }
-
-    const confirmText = `Supprimer la photo de profil pour ${personId} ?`
-    if (!confirm(confirmText)) return
-
-    setUploadFeedback('Suppression en cours…', 'saving')
     try {
-      const url = `/api/document?personId=${encodeURIComponent(personId)}`
-      const resp = await fetch(url, { method: 'DELETE' })
-      if (!resp.ok) {
-        let message = `Erreur serveur (${resp.status})`
-        try {
-          const payload = await resp.json()
-          if (payload?.message) message = payload.message
-        } catch (e) { }
-        throw new Error(message)
-      }
-
-      // Clear uploader UI and remove image from active datum
-      clearUploadResult()
-      setUploadFeedback('Photo supprimée.', 'success')
-      // If the active datum had the image URL in its data, remove it
-      try {
-        const targetFieldId = getActiveImageFieldId()
-        if (datum && datum.data && datum.data[targetFieldId]) {
-          delete datum.data[targetFieldId]
-          chart.updateTree({ initial: false, tree_position: 'inherit' })
-          scheduleAutoSave()
-        }
-      } catch (e) {
-        /* ignore */
-      }
+      const data = await loadTree()
+      setupChart(data)
     } catch (error) {
       console.error(error)
-      setUploadFeedback(error.message || 'Échec de la suppression.', 'error')
+      setStatus(`Erreur: ${error.message}`, 'error')
+      setChartLoading(false, 'Erreur')
     }
+  }
+
+  saveBtn?.addEventListener('click', () => {
+    const snapshot = getSnapshot()
+    if (!snapshot) return
+    persistChanges(snapshot, { immediate: true })
   })
 
-  // manual URL input removed: no manual apply/copy behavior
+  reloadBtn?.addEventListener('click', () => {
+    initialise()
+  })
 
-  const previousApplyingState = isApplyingConfig
-  isApplyingConfig = true
-  ensureConfigEditableItems()
-  refreshConfigControls()
-  applyConfigToEditableControls()
-  applyConfigToDisplayControls()
-  isApplyingConfig = previousApplyingState
-
-  applyEditableFields({ suppressSave: true })
-
-  setMainProfileHandler = setMainProfile
-
-  return {
-    refreshMainProfileOptions,
-    syncMainProfileSelection,
-    handleFormCreation,
-    teardown: teardownImageUploader
+  function hasUnsavedChanges() {
+    const snapshot = getSnapshot()
+    if (!snapshot) return false
+    const currentString = JSON.stringify(snapshot)
+    return currentString !== lastSnapshotString
   }
-}
 
-function removeUnionParagraphField(values = []) {
-  return values.filter(value => normalizeFieldKey(value) !== UNION_PARAGRAPH_KEY)
-}
+  window.addEventListener('beforeunload', (event) => {
+    if (!hasUnsavedChanges()) return
+    event.preventDefault()
+    event.returnValue = ''
+  })
 
-async function initialise() {
-  destroyTimer()
-  editTreeInstance = null
-  lastSnapshotString = null
-
-  try {
-    const data = await loadTree()
-    setupChart(data)
-  } catch (error) {
-    console.error(error)
-    setStatus(`Erreur: ${error.message}`, 'error')
-    setChartLoading(false, 'Erreur')
-  }
-}
-
-saveBtn?.addEventListener('click', () => {
-  const snapshot = getSnapshot()
-  if (!snapshot) return
-  persistChanges(snapshot, { immediate: true })
-})
-
-reloadBtn?.addEventListener('click', () => {
   initialise()
-})
-
-function hasUnsavedChanges() {
-  const snapshot = getSnapshot()
-  if (!snapshot) return false
-  const currentString = JSON.stringify(snapshot)
-  return currentString !== lastSnapshotString
-}
-
-window.addEventListener('beforeunload', (event) => {
-  if (!hasUnsavedChanges()) return
-  event.preventDefault()
-  event.returnValue = ''
-})
-
-initialise()
