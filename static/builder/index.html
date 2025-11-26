@@ -16,6 +16,24 @@
   <script type="importmap">
     {
       "imports": {
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Family Tree &ndash; Éditeur</title>
+  <link rel="icon" href="/static/logo.svg" type="image/svg+xml">
+  <link rel="shortcut icon" href="/static/logo.svg">
+  <link rel="icon" type="image/png" sizes="48x48" href="/static/logo-48.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/logo-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/logo-16.png">
+  <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+  <link rel="stylesheet" href="/lib/styles/family-tree.css">
+  <link rel="stylesheet" href="/builder.css">
+  <script type="importmap">
+    {
+      "imports": {
         "d3": "https://cdn.jsdelivr.net/npm/d3@7.9.0/+esm",
         "d3-selection": "https://cdn.jsdelivr.net/npm/d3-selection@3.0.0/+esm",
         "d3-shape": "https://cdn.jsdelivr.net/npm/d3-shape@3.2.0/+esm",
@@ -76,7 +94,20 @@
           <div class="tab-content" data-tab="appearance">
             <fieldset class="display-fields">
               <legend>Champs affichés</legend>
-              <div class="display-group" data-display-row="1">
+
+              <div class="display-group-config">
+                <h4>Ligne 1</h4>
+                <p class="hint">Cochez les champs à afficher pour la première ligne.</p>
+                <div class="display-group" data-display-row="1"></div>
+              </div>
+
+              <div class="display-group-config">
+                <h4>Ligne 2</h4>
+                <p class="hint">Les champs cochés s’affichent en dessous de la ligne principale.</p>
+                <div class="display-group" data-display-row="2"></div>
+              </div>
+
+              <div class="display-settings">
                 <label for="cardStyle">Style de carte</label>
                 <select id="cardStyle">
                   <option value="default" selected>Défaut</option>
@@ -175,45 +206,47 @@
           </div>
 
           <div class="tab-content" data-tab="tools">
-            <div class="tool-group">
-              <h3>GEDCOM</h3>
-              <div class="button-group-vertical">
-                <label class="button ghost small">
-                  Importer GEDCOM
-                  <input type="file" class="hidden" accept=".ged" onchange="importGedcom(this.files[0])">
-                </label>
-                <button type="button" class="ghost small" onclick="exportGedcom()">Exporter tout (GEDCOM)</button>
+            <div class="tools-grid">
+              <div class="tool-card">
+                <h3>GEDCOM</h3>
+                <p class="tool-desc">Import et export de données.</p>
+                <div class="tool-actions">
+                  <label class="button ghost small full-width">
+                    Importer GEDCOM
+                    <input type="file" class="hidden" accept=".ged" onchange="importGedcom(this.files[0])">
+                  </label>
+                  <button type="button" class="ghost small full-width" onclick="exportGedcom()">Exporter tout</button>
+                </div>
+              </div>
+
+              <div class="tool-card">
+                <h3>Actions Profil</h3>
+                <p class="tool-desc">Actions sur la personne sélectionnée.</p>
+                <div class="tool-actions">
+                  <button type="button" class="ghost small full-width"
+                    onclick="if(activePersonId) exportGedcom(activePersonId, 'ascending')">Exporter Ascendance</button>
+                  <button type="button" class="ghost small full-width"
+                    onclick="if(activePersonId) exportGedcom(activePersonId, 'descending')">Exporter
+                    Descendance</button>
+                  <hr class="tool-divider">
+                  <button type="button" class="ghost small full-width text-danger"
+                    onclick="if(activePersonId) deleteBranch(activePersonId, 'ascending')">Supprimer Ascendance
+                    ⚠️</button>
+                  <button type="button" class="ghost small full-width text-danger"
+                    onclick="if(activePersonId) deleteBranch(activePersonId, 'descending')">Supprimer Descendance
+                    ⚠️</button>
+                </div>
+              </div>
+
+              <div class="tool-card">
+                <h3>Ressources</h3>
+                <p class="tool-desc">Liens utiles.</p>
+                <div class="tool-actions">
+                  <a href="https://github.com/maelmoreau21/family-tree" target="_blank" rel="noopener"
+                    class="button ghost small full-width">Dépôt GitHub</a>
+                </div>
               </div>
             </div>
-
-            <div class="tool-group" style="margin-top: 1rem;">
-              <h3>Actions sur le profil actif</h3>
-              <p class="hint">Sélectionnez une personne pour activer ces options.</p>
-              <div class="button-group-vertical">
-                <button type="button" class="ghost small"
-                  onclick="if(activePersonId) exportGedcom(activePersonId, 'ascending')">Exporter Ascendance</button>
-                <button type="button" class="ghost small"
-                  onclick="if(activePersonId) exportGedcom(activePersonId, 'descending')">Exporter Descendance</button>
-                <hr>
-                <button type="button" class="ghost small text-danger"
-                  onclick="if(activePersonId) deleteBranch(activePersonId, 'ascending')">Supprimer Ascendance
-                  ⚠️</button>
-                <button type="button" class="ghost small text-danger"
-                  onclick="if(activePersonId) deleteBranch(activePersonId, 'descending')">Supprimer Descendance
-                  ⚠️</button>
-              </div>
-            </div>
-
-            <details class="panel resources" open style="margin-top: 2rem;">
-              <summary>Ressources</summary>
-              <div class="panel-body">
-                <ul>
-                  <li><a href="https://github.com/maelmoreau21/family-tree" target="_blank" rel="noopener">Dépôt GitHub
-                      du
-                      projet</a></li>
-                </ul>
-              </div>
-            </details>
           </div>
         </div>
         <div class="builder-status" id="status" role="status" aria-live="assertive"></div>

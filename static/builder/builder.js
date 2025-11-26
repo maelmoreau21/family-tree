@@ -2235,540 +2235,454 @@ function attachPanelControls({ chart, card }) {
   }
 
   function handleFormCreation({ cont, form_creator }) {
-    if (!imageUploader) return
-    const form = cont?.querySelector?.('form')
-    if (!form) {
+    if (!cont) return
+    const form = cont.querySelector('form')
+
+    if (imageUploader && imageUploaderHome?.parent && imageUploader.parentElement !== imageUploaderHome.parent) {
       restoreImageUploaderToPanel()
-      return
     }
 
-    try {
+    const MAX_UPLOAD_SIZE = 5 * 1024 * 1024
 
-      console.debug('builder: handleFormCreation form_creator.editable=', form_creator?.editable, 'datum_id=', form_creator?.datum_id)
-      console.debug('builder: form_creator.fields', form_creator?.fields)
-    } catch (e) {
+    function formatBytes(bytes) {
+      if (!Number.isFinite(bytes)) return ''
+      if (bytes < 1024) return `${bytes} o`
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`
+      return `${(bytes / (1024 * 1024)).toFixed(2)} Mo`
     }
 
-    const isEditable = form_creator?.editable !== false && !form_creator?.no_edit
-    if (!isEditable) {
-      if (form.contains(imageUploader)) {
-        restoreImageUploaderToPanel()
-      }
-      return
+    function setUploadFeedback(message, status = 'info') {
+      if (!assetUploadFeedback) return
+      assetUploadFeedback.textContent = message
+      assetUploadFeedback.dataset.status = status
     }
 
-    injectImageUploaderIntoForm(form)
-    imageUploaderCurrentDatumId = form_creator?.datum_id || null
-    populateUploaderFromDatum()
-
-
-    try {
-      const datePlaceholder = 'ex : 30.12.2000'
-      const inputs = [...form.querySelectorAll('input[name], textarea[name]')]
-      inputs.forEach(el => {
-        const name = (el.getAttribute('name') || '').toLowerCase()
-
-        let labelText = ''
-        try {
-          const id = el.getAttribute('id')
-          if (id) {
-            const lbl = form.querySelector(`label[for="${escapeSelector(id)}"]`)
-            if (lbl && lbl.textContent) labelText = lbl.textContent.trim().toLowerCase()
-          }
-        } catch (e) {
-          /* ignore */
-        }
-
-        const combined = `${name} ${labelText}`
-
-        if (/\b(birth|birthday|death|union|marri|wedding|anniv|date)\b/.test(combined)) {
-          if (!el.getAttribute('placeholder') || el.getAttribute('placeholder').trim() === '') {
-            el.setAttribute('placeholder', datePlaceholder)
-          }
-        }
-      })
-    } catch (e) {
-    }
-  }
-
-  function teardownImageUploader() {
-    restoreImageUploaderToPanel()
-  }
-
-  if (imageUploader && imageUploaderHome?.parent && imageUploader.parentElement !== imageUploaderHome.parent) {
-    restoreImageUploaderToPanel()
-  }
-
-  const MAX_UPLOAD_SIZE = 5 * 1024 * 1024
-
-  function formatBytes(bytes) {
-    if (!Number.isFinite(bytes)) return ''
-    if (bytes < 1024) return `${bytes} o`
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`
-    return `${(bytes / (1024 * 1024)).toFixed(2)} Mo`
-  }
-
-  function setUploadFeedback(message, status = 'info') {
-    if (!assetUploadFeedback) return
-    assetUploadFeedback.textContent = message
-    assetUploadFeedback.dataset.status = status
-  }
-
-  function clearUploadResult() {
-    if (!assetUploadResult) return
-    assetUploadResult.classList.add('hidden')
-    assetUploadResult.dataset.url = ''
-    if (assetUploadUrlOutput) assetUploadUrlOutput.textContent = ''
-    if (assetUploadOpenLink) {
-      assetUploadOpenLink.href = '#'
-      assetUploadOpenLink.classList.add('hidden')
-    }
-  }
-
-  function showUploadResult(url, { silent = false } = {}) {
-    if (!assetUploadResult) return ''
-    const absoluteUrl = normaliseUrl(url)
-
-    assetUploadResult.dataset.url = absoluteUrl
-    if (assetUploadUrlOutput) assetUploadUrlOutput.textContent = absoluteUrl
-    if (assetUploadOpenLink) {
-      if (isSafeAbsoluteUrl(absoluteUrl)) {
-        assetUploadOpenLink.href = absoluteUrl
-        assetUploadOpenLink.classList.remove('hidden')
-      } else {
+    function clearUploadResult() {
+      if (!assetUploadResult) return
+      assetUploadResult.classList.add('hidden')
+      assetUploadResult.dataset.url = ''
+      if (assetUploadUrlOutput) assetUploadUrlOutput.textContent = ''
+      if (assetUploadOpenLink) {
         assetUploadOpenLink.href = '#'
         assetUploadOpenLink.classList.add('hidden')
       }
     }
-    assetUploadResult.classList.remove('hidden')
-    // manual URL input removed — nothing to update
-    if (!silent) setUploadFeedback('Image prête à être appliquée.', 'info')
 
-    return absoluteUrl
-  }
+    function showUploadResult(url, { silent = false } = {}) {
+      if (!assetUploadResult) return ''
+      const absoluteUrl = normaliseUrl(url)
 
-  async function copyToClipboard(value, { successMessage = 'Copié dans le presse-papiers ✅', errorMessage = 'Impossible de copier.' } = {}) {
-    if (!value) {
-      setUploadFeedback('Aucune URL à copier.', 'error')
-      return
-    }
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(value)
-      } else {
-        const temp = document.createElement('textarea')
-        temp.value = value
-        temp.setAttribute('readonly', '')
-        temp.style.position = 'absolute'
-        temp.style.left = '-9999px'
-        document.body.append(temp)
-        temp.select()
-        document.execCommand('copy')
-        temp.remove()
-      }
-      setStatus(successMessage, 'success')
-      setUploadFeedback(successMessage, 'success')
-    } catch (error) {
-      console.error(error)
-      setStatus(errorMessage, 'error')
-      setUploadFeedback(errorMessage, 'error')
-    }
-  }
-
-  async function handleFileUpload(file) {
-    if (!file) return
-    clearUploadResult()
-
-    if (!file.type || !file.type.startsWith('image/')) {
-      setUploadFeedback('Format non pris en charge. Sélectionnez une image (JPEG, PNG, WebP…).', 'error')
-      return
-    }
-
-    if (file.size > MAX_UPLOAD_SIZE) {
-      setUploadFeedback(`Fichier trop volumineux (${formatBytes(file.size)}). Limite 5 Mo.`, 'error')
-      return
-    }
-
-    setUploadFeedback('Téléversement en cours…', 'saving')
-    setStatus('Téléversement de l’image…', 'saving')
-
-    const formData = new FormData()
-    formData.append('file', file, file.name)
-    if (imageUploaderCurrentDatumId) {
-      formData.append('personId', imageUploaderCurrentDatumId)
-    }
-    // No need to send field anymore — server will store the upload as /document/<personId>/profil.<ext>
-
-    try {
-      const response = await fetch('/api/document', {
-        method: 'POST',
-        body: formData
-      })
-
-      if (!response.ok) {
-        let message = `Erreur serveur (${response.status})`
-        try {
-          const payload = await response.json()
-          if (payload?.message) message = payload.message
-        } catch (error) {
-
+      assetUploadResult.dataset.url = absoluteUrl
+      if (assetUploadUrlOutput) assetUploadUrlOutput.textContent = absoluteUrl
+      if (assetUploadOpenLink) {
+        if (isSafeAbsoluteUrl(absoluteUrl)) {
+          assetUploadOpenLink.href = absoluteUrl
+          assetUploadOpenLink.classList.remove('hidden')
+        } else {
+          assetUploadOpenLink.href = '#'
+          assetUploadOpenLink.classList.add('hidden')
         }
-        throw new Error(message)
       }
+      assetUploadResult.classList.remove('hidden')
+      // manual URL input removed — nothing to update
+      if (!silent) setUploadFeedback('Image prête à être appliquée.', 'info')
 
-      const payload = await response.json()
-      const uploadedUrl = payload?.url
-      if (!uploadedUrl) {
-        throw new Error('Réponse du serveur invalide (URL manquante).')
+      return absoluteUrl
+    }
+
+    async function copyToClipboard(value, { successMessage = 'Copié dans le presse-papiers ✅', errorMessage = 'Impossible de copier.' } = {}) {
+      if (!value) {
+        setUploadFeedback('Aucune URL à copier.', 'error')
+        return
       }
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(value)
+        } else {
+          const temp = document.createElement('textarea')
+          temp.value = value
+          temp.setAttribute('readonly', '')
+          temp.style.position = 'absolute'
+          temp.style.left = '-9999px'
+          document.body.append(temp)
+          temp.select()
+          document.execCommand('copy')
+          temp.remove()
+        }
+        setStatus(successMessage, 'success')
+        setUploadFeedback(successMessage, 'success')
+      } catch (error) {
+        console.error(error)
+        setStatus(errorMessage, 'error')
+        setUploadFeedback(errorMessage, 'error')
+      }
+    }
 
-      const absoluteUrl = showUploadResult(uploadedUrl)
-      applyImageToActiveProfile(absoluteUrl, { origin: 'upload', sizeBytes: file.size })
-    } catch (error) {
-      console.error(error)
-      setUploadFeedback(error.message || 'Échec du téléversement.', 'error')
-      setStatus(`Téléversement échoué: ${error.message || 'Erreur inconnue'}`, 'error')
+    async function handleFileUpload(file) {
+      if (!file) return
       clearUploadResult()
-    }
-  }
 
-  clearUploadResult()
-  if (assetUploadFeedback) {
-    setUploadFeedback(assetUploadFeedback.textContent || 'Formats recommandés : JPG, PNG, WebP.', 'info')
-  }
-
-  function setOrientationButtonsState(orientation) {
-    orientationButtons.forEach(button => {
-      const isActive = button.dataset.orientation === orientation
-      button.classList.toggle('active', isActive)
-    })
-  }
-
-  function refreshConfigControls() {
-    if (transitionInput) transitionInput.value = chartConfig.transitionTime?.toString() ?? ''
-    if (cardXSpacing) cardXSpacing.value = chartConfig.cardXSpacing?.toString() ?? ''
-    if (cardYSpacing) cardYSpacing.value = chartConfig.cardYSpacing?.toString() ?? ''
-    if (emptyLabel) {
-      const label = chartConfig.singleParentEmptyCardLabel ?? DEFAULT_CHART_CONFIG.singleParentEmptyCardLabel
-      emptyLabel.value = label
-    }
-    if (ancestryDepthSelect) ancestryDepthSelect.value = depthToSelectValue(chartConfig.ancestryDepth, DEFAULT_CHART_CONFIG.ancestryDepth)
-    if (progenyDepthSelect) progenyDepthSelect.value = depthToSelectValue(chartConfig.progenyDepth, DEFAULT_CHART_CONFIG.progenyDepth)
-    if (miniTreeToggle) miniTreeToggle.checked = chartConfig.miniTree !== false
-
-    setOrientationButtonsState(chartConfig.orientation || DEFAULT_CHART_CONFIG.orientation)
-  }
-
-  function commitConfigUpdate(partialConfig = {}, { treePosition = 'inherit', refresh = true } = {}) {
-    chartConfig = { ...chartConfig, ...partialConfig }
-    applyChartConfigToChart(chart)
-    if (card && typeof card.setMiniTree === 'function') {
-      card.setMiniTree(chartConfig.miniTree !== false)
-    }
-    if (refresh) {
-      const prevState = isApplyingConfig
-      isApplyingConfig = true
-      refreshConfigControls()
-      isApplyingConfig = prevState
-    }
-    chart.updateTree({ initial: false, tree_position: treePosition })
-    lastSnapshotString = null
-    if (!isApplyingConfig) {
-      scheduleAutoSave()
-    }
-  }
-
-  function parseNumberInput(input, fallback) {
-    if (!input) return fallback
-    const value = Number(input.value)
-    return Number.isFinite(value) ? value : fallback
-  }
-
-  function depthToSelectValue(value, fallback) {
-    if (value === null) return ''
-    if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
-      return String(Math.floor(value))
-    }
-    if (typeof fallback === 'number' && Number.isFinite(fallback) && fallback >= 0) {
-      return String(Math.floor(fallback))
-    }
-    return ''
-  }
-
-  function parseDepthSelectValue(select, fallback) {
-    if (!select) return fallback
-    if (select.value === '') return null
-    const value = Number(select.value)
-    if (Number.isFinite(value) && value >= 0) {
-      return Math.floor(value)
-    }
-    return fallback
-  }
-
-  function ensureFieldLabel(value, label) {
-    const key = normalizeFieldKey(value)
-    if (label) {
-      fieldLabelStore.set(key, label.trim() || value)
-    } else if (!fieldLabelStore.has(key)) {
-      fieldLabelStore.set(key, value)
-    }
-    return fieldLabelStore.get(key) || value
-  }
-
-  function createFieldDescriptors(fieldValues) {
-    const descriptors = sanitizeFieldValues(fieldValues)
-      .map(value => ({ value, key: normalizeFieldKey(value) }))
-      .filter(item => !HIDDEN_FIELD_KEYS.has(item.key))
-      .map(item => {
-        const label = ensureFieldLabel(item.value, fieldLabelStore.get(item.key))
-        return createFieldDescriptor(item.key, item.value, label)
-      })
-    return appendUnionFieldDescriptors(descriptors, fieldLabelStore)
-  }
-
-  function updateMainProfileDisplay(id) {
-    if (!mainProfileName) return
-    if (!id) {
-      mainProfileName.textContent = '—'
-      return
-    }
-    const datum = editTreeInstance?.store?.getDatum?.(id)
-    if (!datum) {
-      mainProfileName.textContent = '—'
-      return
-    }
-    mainProfileName.textContent = buildPersonLabel(datum)
-  }
-
-  function refreshMainProfileOptions({ keepSelection = true } = {}) {
-    // No-op for text input, but we might want to ensure the value is correct if it's empty
-    if (!mainProfileInput) return
-
-    // If we want to validate or auto-fill, we can do it here, but for now just leave it.
-    // The syncMainProfileSelection function handles setting the value from the store/config.
-  }
-
-  function syncMainProfileSelection({ scheduleSaveIfChanged = false } = {}) {
-    if (!chart.store || typeof chart.store.getMainId !== 'function') {
-      return
-    }
-
-    const storeMainId = chart.store.getMainId()
-    const persons = getAllPersons()
-    const availableIds = new Set(persons.map(d => d && d.id).filter(Boolean))
-    const currentConfigMain = typeof chartConfig.mainId === 'string' && chartConfig.mainId.trim() ? chartConfig.mainId.trim() : null
-
-    let nextConfigMain = currentConfigMain
-
-    if (nextConfigMain && !availableIds.has(nextConfigMain)) {
-      nextConfigMain = null
-    }
-
-    const configMissing = !nextConfigMain
-    const shouldAdoptStoreMain = configMissing && !ignoreNextMainSync && storeMainId && availableIds.has(storeMainId)
-
-    if (shouldAdoptStoreMain) {
-      nextConfigMain = storeMainId
-    }
-
-    if (!nextConfigMain && persons.length) {
-      const fallbackId = persons[0]?.id || null
-      if (fallbackId && availableIds.has(fallbackId)) {
-        nextConfigMain = fallbackId
+      if (!file.type || !file.type.startsWith('image/')) {
+        setUploadFeedback('Format non pris en charge. Sélectionnez une image (JPEG, PNG, WebP…).', 'error')
+        return
       }
-    }
 
-    if (nextConfigMain !== currentConfigMain) {
-      chartConfig = { ...chartConfig, mainId: nextConfigMain }
-      lastSnapshotString = null
-      if (scheduleSaveIfChanged && !isApplyingConfig) {
-        scheduleAutoSave()
+      if (file.size > MAX_UPLOAD_SIZE) {
+        setUploadFeedback(`Fichier trop volumineux (${formatBytes(file.size)}). Limite 5 Mo.`, 'error')
+        return
       }
-    }
 
-    if (mainProfileInput) {
-      if (nextConfigMain) {
-        if (mainProfileInput.value !== nextConfigMain) {
-          mainProfileInput.value = nextConfigMain
+      setUploadFeedback('Téléversement en cours…', 'saving')
+      setStatus('Téléversement de l’image…', 'saving')
+
+      const formData = new FormData()
+      formData.append('file', file, file.name)
+      if (imageUploaderCurrentDatumId) {
+        formData.append('personId', imageUploaderCurrentDatumId)
+      }
+      // No need to send field anymore — server will store the upload as /document/<personId>/profil.<ext>
+
+      try {
+        const response = await fetch('/api/document', {
+          method: 'POST',
+          body: formData
+        })
+
+        if (!response.ok) {
+          let message = `Erreur serveur (${response.status})`
+          try {
+            const payload = await response.json()
+            if (payload?.message) message = payload.message
+          } catch (error) {
+
+          }
+          throw new Error(message)
         }
-      } else if (mainProfileInput.value) {
-        // If config is null but input has value, maybe we should keep it or clear it?
-        // Let's clear it if the ID is invalid, but syncMainProfileSelection is usually called with valid IDs or to sync.
-        // If we are here, nextConfigMain is what we should show.
-        mainProfileInput.value = ''
+
+        const payload = await response.json()
+        const uploadedUrl = payload?.url
+        if (!uploadedUrl) {
+          throw new Error('Réponse du serveur invalide (URL manquante).')
+        }
+
+        const absoluteUrl = showUploadResult(uploadedUrl)
+        applyImageToActiveProfile(absoluteUrl, { origin: 'upload', sizeBytes: file.size })
+      } catch (error) {
+        console.error(error)
+        setUploadFeedback(error.message || 'Échec du téléversement.', 'error')
+        setStatus(`Téléversement échoué: ${error.message || 'Erreur inconnue'}`, 'error')
+        clearUploadResult()
       }
     }
 
-    updateMainProfileDisplay(nextConfigMain || null)
-    ignoreNextMainSync = false
-  }
-
-  function setMainProfile(id, {
-    openEditor = true,
-    suppressSave = false,
-    focusSearch = false,
-    highlightCard = true,
-    source = 'manual',
-    persistConfig = true
-  } = {}) {
-    if (!id) return
-    if (persistConfig) {
-      transientMainSelection = false
-    }
-    const persons = getAllPersons()
-    if (!persons.some(person => person.id === id)) {
-      refreshMainProfileOptions({ keepSelection: false })
-      return
+    clearUploadResult()
+    if (assetUploadFeedback) {
+      setUploadFeedback(assetUploadFeedback.textContent || 'Formats recommandés : JPG, PNG, WebP.', 'info')
     }
 
-    const configChanged = persistConfig && chartConfig.mainId !== id
-    if (configChanged) {
-      chartConfig = { ...chartConfig, mainId: id }
+    function setOrientationButtonsState(orientation) {
+      orientationButtons.forEach(button => {
+        const isActive = button.dataset.orientation === orientation
+        button.classList.toggle('active', isActive)
+      })
     }
 
-    if (configChanged && !suppressSave) {
+    function refreshConfigControls() {
+      if (transitionInput) transitionInput.value = chartConfig.transitionTime?.toString() ?? ''
+      if (cardXSpacing) cardXSpacing.value = chartConfig.cardXSpacing?.toString() ?? ''
+      if (cardYSpacing) cardYSpacing.value = chartConfig.cardYSpacing?.toString() ?? ''
+      if (emptyLabel) {
+        const label = chartConfig.singleParentEmptyCardLabel ?? DEFAULT_CHART_CONFIG.singleParentEmptyCardLabel
+        emptyLabel.value = label
+      }
+      if (ancestryDepthSelect) ancestryDepthSelect.value = depthToSelectValue(chartConfig.ancestryDepth, DEFAULT_CHART_CONFIG.ancestryDepth)
+      if (progenyDepthSelect) progenyDepthSelect.value = depthToSelectValue(chartConfig.progenyDepth, DEFAULT_CHART_CONFIG.progenyDepth)
+      if (miniTreeToggle) miniTreeToggle.checked = chartConfig.miniTree !== false
+
+      setOrientationButtonsState(chartConfig.orientation || DEFAULT_CHART_CONFIG.orientation)
+    }
+
+    function commitConfigUpdate(partialConfig = {}, { treePosition = 'inherit', refresh = true } = {}) {
+      chartConfig = { ...chartConfig, ...partialConfig }
+      applyChartConfigToChart(chart)
+      if (card && typeof card.setMiniTree === 'function') {
+        card.setMiniTree(chartConfig.miniTree !== false)
+      }
+      if (refresh) {
+        const prevState = isApplyingConfig
+        isApplyingConfig = true
+        refreshConfigControls()
+        isApplyingConfig = prevState
+      }
+      chart.updateTree({ initial: false, tree_position: treePosition })
       lastSnapshotString = null
       if (!isApplyingConfig) {
         scheduleAutoSave()
       }
     }
 
-    const storeMainBefore = chart.store && typeof chart.store.getMainId === 'function'
-      ? chart.store.getMainId()
-      : null
-
-    if (!persistConfig && storeMainBefore !== id) {
-      ignoreNextMainSync = true
+    function parseNumberInput(input, fallback) {
+      if (!input) return fallback
+      const value = Number(input.value)
+      return Number.isFinite(value) ? value : fallback
     }
 
-    const shouldUpdateMainId = chart && typeof chart.updateMainId === 'function'
-    let recenterAlreadyScheduled = false
-
-
-    if (persistConfig && shouldUpdateMainId && storeMainBefore !== id) {
-      chart.updateMainId(id)
-      chart.updateTree({ initial: false, tree_position: 'main_to_middle' })
-      recenterAlreadyScheduled = true
-    }
-
-    if (persistConfig && mainProfileInput && mainProfileInput.value !== id) {
-      mainProfileInput.value = id
-    }
-
-    if (persistConfig) {
-      updateMainProfileDisplay(id)
-    } else {
-      updateMainProfileDisplay(chartConfig.mainId || null)
-    }
-
-
-    try {
-      if (!recenterAlreadyScheduled && chart && typeof chart.updateTree === 'function') {
-        chart.updateTree({ initial: false, tree_position: 'main_to_middle' })
+    function depthToSelectValue(value, fallback) {
+      if (value === null) return ''
+      if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+        return String(Math.floor(value))
       }
-    } catch (error) {
-      console.error('Impossible de recentrer le graphique après sélection du profil', error)
+      if (typeof fallback === 'number' && Number.isFinite(fallback) && fallback >= 0) {
+        return String(Math.floor(fallback))
+      }
+      return ''
     }
-    const datum = editTreeInstance?.store?.getDatum?.(id) || null
-    if (focusSearch) {
-      const label = datum ? buildPersonLabel(datum) : `Profil ${id}`
-      focusBuilderSearch({ label, select: true, flash: true, preventScroll: source === 'search' })
+
+    function parseDepthSelectValue(select, fallback) {
+      if (!select) return fallback
+      if (select.value === '') return null
+      const value = Number(select.value)
+      if (Number.isFinite(value) && value >= 0) {
+        return Math.floor(value)
+      }
+      return fallback
     }
-    if (highlightCard) {
-      highlightCardById(id, { animate: true })
+
+    function ensureFieldLabel(value, label) {
+      const key = normalizeFieldKey(value)
+      if (label) {
+        fieldLabelStore.set(key, label.trim() || value)
+      } else if (!fieldLabelStore.has(key)) {
+        fieldLabelStore.set(key, value)
+      }
+      return fieldLabelStore.get(key) || value
     }
-    renderBreadcrumbTrail(id)
-    if (openEditor && editTreeInstance && datum) {
-      editTreeInstance.open(datum)
+
+    function createFieldDescriptors(fieldValues) {
+      const descriptors = sanitizeFieldValues(fieldValues)
+        .map(value => ({ value, key: normalizeFieldKey(value) }))
+        .filter(item => !HIDDEN_FIELD_KEYS.has(item.key))
+        .map(item => {
+          const label = ensureFieldLabel(item.value, fieldLabelStore.get(item.key))
+          return createFieldDescriptor(item.key, item.value, label)
+        })
+      return appendUnionFieldDescriptors(descriptors, fieldLabelStore)
     }
-  }
 
-  if (mainProfileInput) {
-    mainProfileInput.addEventListener('change', event => {
-      const { value } = event.target
-      if (!value) return
-      setMainProfile(value)
-    })
-  }
+    function updateMainProfileDisplay(id) {
+      if (!mainProfileName) return
+      if (!id) {
+        mainProfileName.textContent = '—'
+        return
+      }
+      const datum = editTreeInstance?.store?.getDatum?.(id)
+      if (!datum) {
+        mainProfileName.textContent = '—'
+        return
+      }
+      mainProfileName.textContent = buildPersonLabel(datum)
+    }
 
-  function escapeSelector(value) {
-    return cssEscape(value)
-  }
+    function refreshMainProfileOptions({ keepSelection = true } = {}) {
+      // No-op for text input, but we might want to ensure the value is correct if it's empty
+      if (!mainProfileInput) return
 
-  function addRemoveButton(item) {
-    if (item.querySelector('.remove-field')) return
-    const removeBtn = document.createElement('button')
-    removeBtn.type = 'button'
-    removeBtn.className = 'remove-field'
-    removeBtn.textContent = 'Retirer'
-    removeBtn.addEventListener('click', () => {
-      item.remove()
-      updateCardDisplay()
-    })
-    item.append(removeBtn)
-  }
+      // If we want to validate or auto-fill, we can do it here, but for now just leave it.
+      // The syncMainProfileSelection function handles setting the value from the store/config.
+    }
 
-  function removeDisplayFieldEntries(fieldKey) {
-    displayGroups.forEach(group => {
-      const list = group.querySelector('.field-list')
-      if (!list) return
-      const selector = `[data-field-key="${escapeSelector(fieldKey)}"]`
-      const item = list.querySelector(selector)
-      if (!item) return
+    function syncMainProfileSelection({ scheduleSaveIfChanged = false } = {}) {
+      if (!chart.store || typeof chart.store.getMainId !== 'function') {
+        return
+      }
 
-      if (item.dataset.custom === 'true') {
-        item.remove()
-      } else {
-        const defaults = displayDefaultsByRow.get(group.dataset.displayRow)
-        const defaultChecked = defaults?.get(fieldKey)
-        const checkbox = item.querySelector('input[type="checkbox"]')
-        if (checkbox && typeof defaultChecked === 'boolean') {
-          checkbox.checked = defaultChecked
+      const storeMainId = chart.store.getMainId()
+      const persons = getAllPersons()
+      const availableIds = new Set(persons.map(d => d && d.id).filter(Boolean))
+      const currentConfigMain = typeof chartConfig.mainId === 'string' && chartConfig.mainId.trim() ? chartConfig.mainId.trim() : null
+
+      let nextConfigMain = currentConfigMain
+
+      if (nextConfigMain && !availableIds.has(nextConfigMain)) {
+        nextConfigMain = null
+      }
+
+      const configMissing = !nextConfigMain
+      const shouldAdoptStoreMain = configMissing && !ignoreNextMainSync && storeMainId && availableIds.has(storeMainId)
+
+      if (shouldAdoptStoreMain) {
+        nextConfigMain = storeMainId
+      }
+
+      if (!nextConfigMain && persons.length) {
+        const fallbackId = persons[0]?.id || null
+        if (fallbackId && availableIds.has(fallbackId)) {
+          nextConfigMain = fallbackId
         }
       }
-    })
-  }
 
-  function getDisplayRowsForField(field) {
-    if (!chartConfig.cardDisplay) return []
-    const key = normalizeFieldKey(field)
-    const rows = []
-    chartConfig.cardDisplay.forEach((row, index) => {
-      if (row.some(value => normalizeFieldKey(value) === key)) {
-        rows.push(String(index + 1))
+      if (nextConfigMain !== currentConfigMain) {
+        chartConfig = { ...chartConfig, mainId: nextConfigMain }
+        lastSnapshotString = null
+        if (scheduleSaveIfChanged && !isApplyingConfig) {
+          scheduleAutoSave()
+        }
       }
-    })
-    return rows
-  }
 
-  function createFieldDescriptor(key, value, label) {
-    return { id: key, type: 'text', label: label || value, value: key }
-  }
+      if (mainProfileInput) {
+        if (nextConfigMain) {
+          if (mainProfileInput.value !== nextConfigMain) {
+            mainProfileInput.value = nextConfigMain
+          }
+        } else if (mainProfileInput.value) {
+          // If config is null but input has value, maybe we should keep it or clear it?
+          // Let's clear it if the ID is invalid, but syncMainProfileSelection is usually called with valid IDs or to sync.
+          // If we are here, nextConfigMain is what we should show.
+          mainProfileInput.value = ''
+        }
+      }
 
-  function createDisplayItem(group, { value, label, key }) {
-    const list = group.querySelector('.field-list')
-    if (!list) return
+      updateMainProfileDisplay(nextConfigMain || null)
+      ignoreNextMainSync = false
+    }
 
-    if (list.querySelector(`[data-field-key="${escapeSelector(key)}"]`)) return
+    function setMainProfile(id, {
+      openEditor = true,
+      suppressSave = false,
+      focusSearch = false,
+      highlightCard = true,
+      source = 'manual',
+      persistConfig = true
+    } = {}) {
+      if (!id) return
+      if (persistConfig) {
+        transientMainSelection = false
+      }
+      const persons = getAllPersons()
+      if (!persons.some(person => person.id === id)) {
+        refreshMainProfileOptions({ keepSelection: false })
+        return
+      }
 
-    const item = document.createElement('div')
-    item.className = 'display-item'
-    item.dataset.fieldKey = key
+      const configChanged = persistConfig && chartConfig.mainId !== id
+      if (configChanged) {
+        chartConfig = { ...chartConfig, mainId: id }
+      }
 
-    const checkbox = document.createElement('input')
-    checkbox.type = 'checkbox'
-    checkbox.value = value
+      if (configChanged && !suppressSave) {
+        lastSnapshotString = null
+        if (!isApplyingConfig) {
+          scheduleAutoSave()
+        }
+      }
 
-    const labelSpan = document.createElement('span')
-    labelSpan.textContent = label
+      const storeMainBefore = chart.store && typeof chart.store.getMainId === 'function'
+        ? chart.store.getMainId()
+        : null
 
-    item.append(checkbox, labelSpan)
-    list.append(item)
-  }
+      if (!persistConfig && storeMainBefore !== id) {
+        ignoreNextMainSync = true
+      }
 
-  function createEditableItem({ value, label, checked, removable, selectRows = [] }) {
-    if (!editableList) return
-    const key = normalizeFieldKey(value)
+      const shouldUpdateMainId = chart && typeof chart.updateMainId === 'function'
+      let recenterAlreadyScheduled = false
+
+
+      if (persistConfig && shouldUpdateMainId && storeMainBefore !== id) {
+        chart.updateMainId(id)
+        chart.updateTree({ initial: false, tree_position: 'main_to_middle' })
+        recenterAlreadyScheduled = true
+      }
+
+      if (persistConfig && mainProfileInput && mainProfileInput.value !== id) {
+        mainProfileInput.value = id
+      }
+
+      if (persistConfig) {
+        updateMainProfileDisplay(id)
+      } else {
+        updateMainProfileDisplay(chartConfig.mainId || null)
+      }
+
+
+      try {
+        if (!recenterAlreadyScheduled && chart && typeof chart.updateTree === 'function') {
+          chart.updateTree({ initial: false, tree_position: 'main_to_middle' })
+        }
+      } catch (error) {
+        console.error('Impossible de recentrer le graphique après sélection du profil', error)
+      }
+      const datum = editTreeInstance?.store?.getDatum?.(id) || null
+      if (focusSearch) {
+        const label = datum ? buildPersonLabel(datum) : `Profil ${id}`
+        focusBuilderSearch({ label, select: true, flash: true, preventScroll: source === 'search' })
+      }
+      if (highlightCard) {
+        highlightCardById(id, { animate: true })
+      }
+      renderBreadcrumbTrail(id)
+      if (openEditor && editTreeInstance && datum) {
+        editTreeInstance.open(datum)
+      }
+    }
+
+    if (mainProfileInput) {
+      mainProfileInput.addEventListener('change', event => {
+        const { value } = event.target
+        if (!value) return
+        setMainProfile(value)
+      })
+    }
+
+    function escapeSelector(value) {
+      return cssEscape(value)
+    }
+
+    function addRemoveButton(item) {
+      if (item.querySelector('.remove-field')) return
+      const removeBtn = document.createElement('button')
+      removeBtn.type = 'button'
+      removeBtn.className = 'remove-field'
+      removeBtn.textContent = 'Retirer'
+      removeBtn.addEventListener('click', () => {
+        item.remove()
+        updateCardDisplay()
+      })
+      item.append(removeBtn)
+    }
+
+    function removeDisplayFieldEntries(fieldKey) {
+      displayGroups.forEach(group => {
+        const list = group.querySelector('.field-list')
+        if (!list) return
+        const selector = `[data-field-key="${escapeSelector(fieldKey)}"]`
+        const item = list.querySelector(selector)
+        if (!item) return
+
+        if (item.dataset.custom === 'true') {
+          item.remove()
+        } else {
+          const defaults = displayDefaultsByRow.get(group.dataset.displayRow)
+          const defaultChecked = defaults?.get(fieldKey)
+          const checkbox = item.querySelector('input[type="checkbox"]')
+          if (checkbox && typeof defaultChecked === 'boolean') {
+            checkbox.checked = defaultChecked
+          }
+        }
+      })
+    }
+
+    function getDisplayRowsForField(field) {
+      if (!chartConfig.cardDisplay) return []
+      const key = normalizeFieldKey(field)
+      const rows = []
+      chartConfig.cardDisplay.forEach((row, index) => {
+        if (row.some(value => normalizeFieldKey(value) === key)) {
+          rows.push(String(index + 1))
+        }
+      })
+      return rows
+    }
 
     if (editableList.querySelector(`[data-field-key="${escapeSelector(key)}"]`)) return
 
