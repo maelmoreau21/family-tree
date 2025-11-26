@@ -2960,6 +2960,10 @@ function attachPanelControls({ chart, card }) {
     return CSS.escape(value)
   }
 
+  function ensureFieldLabel(field, storedLabel) {
+    return storedLabel || field
+  }
+
   function createDisplayItem(group, { value, label, key }) {
     let list = group.querySelector('.field-list')
     if (!list) {
