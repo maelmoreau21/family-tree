@@ -3419,3 +3419,4 @@ function attachPanelControls({ chart, card }) {
   })
 
   initialise()
+}
