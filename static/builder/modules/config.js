@@ -162,7 +162,8 @@ export const DEFAULT_CHART_CONFIG = Object.freeze({
     linkStyle: 'legacy',
     editableFields: [...DEFAULT_EDITABLE_FIELDS],
     cardDisplay: DEFAULT_CARD_DISPLAY.map(row => [...row]),
-    mainId: null
+    mainId: null,
+    cardDim: { w: 240, h: 150, text_x: 100, text_y: 15, img_w: 80, img_h: 80, img_x: 16, img_y: 16 }
 })
 
 export function normalizeCardDisplay(rows) {
@@ -209,7 +210,8 @@ export function buildChartConfig(overrides = {}) {
 
         editableFields: [...DEFAULT_EDITABLE_FIELDS],
         cardDisplay: cloneCardDisplay(DEFAULT_CARD_DISPLAY),
-        mainId: DEFAULT_CHART_CONFIG.mainId
+        mainId: DEFAULT_CHART_CONFIG.mainId,
+        cardDim: { ...DEFAULT_CHART_CONFIG.cardDim }
     }
 
     if (typeof overrides.transitionTime === 'number' && Number.isFinite(overrides.transitionTime)) {
@@ -277,6 +279,10 @@ export function buildChartConfig(overrides = {}) {
     if (typeof overrides.mainId === 'string') {
         const trimmed = overrides.mainId.trim()
         if (trimmed) base.mainId = trimmed
+    }
+
+    if (overrides.cardDim && typeof overrides.cardDim === 'object') {
+        base.cardDim = { ...base.cardDim, ...overrides.cardDim }
     }
 
     return base

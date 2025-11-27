@@ -84,9 +84,9 @@ function setupChart() {
   // Set up the card using the cardSvg factory
   card = chart.setCard(f3.cardSvg)
 
-  // Configure initial card dimensions with both sets of keys to be safe
+  // Configure initial card dimensions using config defaults
   if (card && card.setCardDim) {
-    const initialDim = {
+    const dim = chartConfig.cardDim || {
       width: 240, height: 150,
       w: 240, h: 150,
       img_w: 80, img_h: 80,
@@ -94,8 +94,12 @@ function setupChart() {
       img_x: 16, img_y: 16,
       text_x: 100, text_y: 15
     }
-    console.log('Setting initial card dim:', initialDim)
-    card.setCardDim(initialDim)
+
+    const sanitizedDim = sanitizeCardDim(dim)
+    if (sanitizedDim) {
+      console.log('Setting initial card dim:', sanitizedDim)
+      card.setCardDim(sanitizedDim)
+    }
 
     // Set card click handler to open edit panel
     if (card.setOnCardClick) {
