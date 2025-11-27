@@ -53,19 +53,25 @@ async function initialise() {
 }
 
 function setupChart() {
+  console.log('Setting up chart...')
   // Use createChart from the library
   chart = f3.createChart('#FamilyChart', dataArray)
 
   // Set up the card using the cardSvg factory
   card = chart.setCard(f3.cardSvg)
 
-  // Configure initial card dimensions
+  // Configure initial card dimensions with both sets of keys to be safe
   if (card && card.setCardDim) {
-    card.setCardDim({
+    const initialDim = {
       width: 240, height: 150,
+      w: 240, h: 150,
       img_w: 80, img_h: 80,
-      img_x: 16, img_y: 16
-    })
+      img_width: 80, img_height: 80,
+      img_x: 16, img_y: 16,
+      text_x: 100, text_y: 15 // Ensure text position is set
+    }
+    console.log('Setting initial card dim:', initialDim)
+    card.setCardDim(initialDim)
   }
 
   // Apply configuration
@@ -100,6 +106,7 @@ function setupChart() {
   setStatus(`Éditeur prêt ✅ – ${dataArray.length} personne(s) chargée(s)`, 'success')
 
   // Initial update
+  console.log('Updating tree...')
   chart.updateTree({ initial: true })
 }
 
@@ -125,8 +132,12 @@ function applyChartConfigToChart(chart, card) {
   if (card) {
     if (card.setCardDisplay) card.setCardDisplay(chartConfig.cardDisplay || DEFAULT_CHART_CONFIG.cardDisplay)
     if (card.setMiniTree) card.setMiniTree(chartConfig.miniTree)
-    // If we had card style or image field config, we would apply it here
-    // e.g. card.setCardImageField(chartConfig.imageField)
+
+    // Apply card dimensions from config if present
+    if (chartConfig.cardDim && card.setCardDim) {
+      console.log('Applying card dim from config:', chartConfig.cardDim)
+      card.setCardDim(chartConfig.cardDim)
+    }
   }
 }
 
