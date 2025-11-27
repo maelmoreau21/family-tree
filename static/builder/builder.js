@@ -1,7 +1,7 @@
 
 import * as f3 from '/lib/family-tree.esm.js'
 import { buildChartConfig, DEFAULT_CHART_CONFIG } from './modules/config.js'
-import { setStatus, setChartLoading, showEmptyTreeModal, hideEmptyTreeModal } from './modules/ui.js'
+import { setStatus, setChartLoading, showEmptyTreeModal, hideEmptyTreeModal, initPanelToggle } from './modules/ui.js'
 import { initData, loadTree, scheduleAutoSave, hasUnsavedChanges, setLastSnapshotString } from './modules/data.js'
 import { initEditPanel, createEditPanel, openEditPanel, closeEditPanel } from './modules/edit-panel.js'
 import { initBuilderSearch } from './modules/search.js'
@@ -52,8 +52,32 @@ async function initialise() {
   setupChart()
 }
 
+function sanitizeCardDim(dim) {
+  if (!dim || typeof dim !== 'object') return null
+  const newDim = {}
+  for (const key in dim) {
+    const val = Number(dim[key])
+    if (!isNaN(val)) {
+      newDim[key] = val
+    }
+  }
+  // Ensure w/h aliases exist
+  if (newDim.width && !newDim.w) newDim.w = newDim.width
+  if (newDim.height && !newDim.h) newDim.h = newDim.height
+  if (newDim.w && !newDim.width) newDim.width = newDim.w
+  if (newDim.h && !newDim.height) newDim.height = newDim.h
+
+  // Ensure img aliases
+  if (newDim.img_width && !newDim.img_w) newDim.img_w = newDim.img_width
+  if (newDim.img_height && !newDim.img_h) newDim.img_h = newDim.img_height
+
+  return newDim
+}
+
 function setupChart() {
   console.log('Setting up chart...')
+  initPanelToggle() // Initialize panel toggle
+
   // Use createChart from the library
   chart = f3.createChart('#FamilyChart', dataArray)
 
@@ -68,10 +92,21 @@ function setupChart() {
       img_w: 80, img_h: 80,
       img_width: 80, img_height: 80,
       img_x: 16, img_y: 16,
-      text_x: 100, text_y: 15 // Ensure text position is set
+      text_x: 100, text_y: 15
     }
     console.log('Setting initial card dim:', initialDim)
     card.setCardDim(initialDim)
+
+    // Set card click handler to open edit panel
+    if (card.setOnCardClick) {
+      card.setOnCardClick((e, d) => {
+        if (activePanelControlAPI) {
+          activePanelControlAPI.setMainProfile(d.data.id, { source: 'card-click', openEditor: true })
+        } else {
+          openEditPanel(d)
+        }
+      })
+    }
   }
 
   // Apply configuration
@@ -135,8 +170,11 @@ function applyChartConfigToChart(chart, card) {
 
     // Apply card dimensions from config if present
     if (chartConfig.cardDim && card.setCardDim) {
-      console.log('Applying card dim from config:', chartConfig.cardDim)
-      card.setCardDim(chartConfig.cardDim)
+      const sanitizedDim = sanitizeCardDim(chartConfig.cardDim)
+      if (sanitizedDim) {
+        console.log('Applying sanitized card dim from config:', sanitizedDim)
+        card.setCardDim(sanitizedDim)
+      }
     }
   }
 }

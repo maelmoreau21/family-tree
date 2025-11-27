@@ -87,7 +87,25 @@ export function setSearchPanelFocusState(isFocused) {
     }
 }
 
+
 export function escapeSelector(str) {
     if (!str) return ''
     return CSS.escape(str)
+}
+
+export function initPanelToggle() {
+    const toggleBtn = document.querySelector('[data-action="toggle-panel"]')
+    const panel = document.getElementById('controlPanel')
+
+    if (toggleBtn && panel) {
+        toggleBtn.addEventListener('click', () => {
+            const isExpanded = toggleBtn.getAttribute('aria-expanded') === 'true'
+            toggleBtn.setAttribute('aria-expanded', !isExpanded)
+            document.body.classList.toggle('controls-collapsed', isExpanded)
+
+            // Update icon or text if needed
+            const span = toggleBtn.querySelector('span')
+            if (span) span.textContent = isExpanded ? 'Afficher' : 'Masquer'
+        })
+    }
 }
