@@ -8,6 +8,7 @@ import { initBuilderSearch } from './modules/search.js'
 import { initSettings, attachPanelControls } from './modules/settings.js'
 
 let chart = null
+let card = null
 let dataArray = []
 let chartConfig = buildChartConfig()
 let activePanelControlAPI = null
@@ -19,7 +20,7 @@ const context = {
   getChartConfig: () => chartConfig,
   updateChartConfig: (newConfig) => {
     chartConfig = { ...chartConfig, ...newConfig }
-    if (chart) applyChartConfigToChart(chart)
+    if (chart) applyChartConfigToChart(chart, card)
   }
 }
 
@@ -52,40 +53,28 @@ async function initialise() {
 }
 
 function setupChart() {
-  const store = new f3.Store({
-    data: dataArray,
-    node_id: 'id',
-    node_label: 'data.label'
-  })
+  // Use createChart from the library
+  chart = f3.createChart('#FamilyChart', dataArray)
 
-  const view = new f3.View({
-    store,
-    cont: document.querySelector('#FamilyChart'),
-    card_display: chartConfig.cardDisplay || DEFAULT_CHART_CONFIG.cardDisplay,
-    mini_tree: chartConfig.miniTree,
-    node_separation: chartConfig.cardXSpacing,
-    level_separation: chartConfig.cardYSpacing,
-    duration: chartConfig.transitionTime,
-  })
+  // Set up the card using the cardSvg factory
+  card = chart.setCard(f3.cardSvg)
 
-  const card = f3.elements.Card({
-    store,
-    svg: view.svg,
-    card_dim: { width: 240, height: 150, img_w: 80, img_h: 80, img_x: 16, img_y: 16 },
-    card_display: chartConfig.cardDisplay || DEFAULT_CHART_CONFIG.cardDisplay,
-    mini_tree: chartConfig.miniTree,
-    link_break: false,
-    card_break: false,
-    scale_initial: f3.elements.Card.SCALE_INITIAL.FIT,
-  })
+  // Configure initial card dimensions
+  if (card && card.setCardDim) {
+    card.setCardDim({
+      width: 240, height: 150,
+      img_w: 80, img_h: 80,
+      img_x: 16, img_y: 16
+    })
+  }
 
-  view.setCard(card)
-  chart = view
+  // Apply configuration
+  applyChartConfigToChart(chart, card)
 
-  applyChartConfigToChart(chart)
-
+  // Initialize Edit Panel
   createEditPanel()
 
+  // Initialize Search
   searchControlAPI = initBuilderSearch(chart, {
     getAllPersons: () => dataArray,
     onSelect: (id) => {
@@ -93,14 +82,16 @@ function setupChart() {
     }
   })
 
+  // Initialize Settings Panel
   activePanelControlAPI = attachPanelControls()
 
+  // Set Initial Main Profile
   if (activePanelControlAPI) {
     activePanelControlAPI.syncMainProfileSelection()
     if (chartConfig.mainId) {
       activePanelControlAPI.setMainProfile(chartConfig.mainId, { persistConfig: false, openEditor: false })
     } else {
-      const mainId = store.getMainId() || (dataArray[0] ? dataArray[0].id : null)
+      const mainId = (chart.store && chart.store.getMainId()) || (dataArray[0] ? dataArray[0].id : null)
       if (mainId) activePanelControlAPI.setMainProfile(mainId, { persistConfig: false, openEditor: false })
     }
   }
@@ -108,23 +99,35 @@ function setupChart() {
   setChartLoading(false)
   setStatus(`Éditeur prêt ✅ – ${dataArray.length} personne(s) chargée(s)`, 'success')
 
+  // Initial update
   chart.updateTree({ initial: true })
 }
 
-function applyChartConfigToChart(chart) {
+function applyChartConfigToChart(chart, card) {
   if (!chart) return
+
   if (chart.setTransitionTime) chart.setTransitionTime(chartConfig.transitionTime)
   if (chart.setCardXSpacing) chart.setCardXSpacing(chartConfig.cardXSpacing)
   if (chart.setCardYSpacing) chart.setCardYSpacing(chartConfig.cardYSpacing)
   if (chart.setShowSiblingsOfMain) chart.setShowSiblingsOfMain(chartConfig.showSiblingsOfMain)
   if (chart.setLinkStyle) chart.setLinkStyle(chartConfig.linkStyle || 'legacy')
+
   if (chart.setOrientation) {
     if (chartConfig.orientation === 'horizontal') chart.setOrientationHorizontal()
     else chart.setOrientationVertical()
   }
+
   if (chart.setAncestryDepth) chart.setAncestryDepth(chartConfig.ancestryDepth)
   if (chart.setProgenyDepth) chart.setProgenyDepth(chartConfig.progenyDepth)
   if (chart.setMiniTree) chart.setMiniTree(chartConfig.miniTree)
+
+  // Card specific updates
+  if (card) {
+    if (card.setCardDisplay) card.setCardDisplay(chartConfig.cardDisplay || DEFAULT_CHART_CONFIG.cardDisplay)
+    if (card.setMiniTree) card.setMiniTree(chartConfig.miniTree)
+    // If we had card style or image field config, we would apply it here
+    // e.g. card.setCardImageField(chartConfig.imageField)
+  }
 }
 
 window.addEventListener('beforeunload', (e) => {
