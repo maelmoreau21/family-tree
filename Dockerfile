@@ -1,8 +1,12 @@
 # syntax=docker/dockerfile:1
 
 FROM node:20-alpine AS deps
+# Install dependencies for building sharp from source if needed
+RUN apk add --no-cache libc6-compat vips-dev build-base python3
 WORKDIR /app
 COPY package.json package-lock.json ./
+# Tell sharp to use the system libvips
+ENV SHARP_IGNORE_GLOBAL_LIBVIPS=0
 RUN npm ci
 
 FROM deps AS build
@@ -10,8 +14,12 @@ COPY . .
 RUN npm run build
 
 FROM node:20-alpine AS runtime
+# Install runtime dependencies for sharp
+RUN apk add --no-cache vips
 WORKDIR /app
 COPY package.json package-lock.json ./
+# Tell sharp to use the system libvips
+ENV SHARP_IGNORE_GLOBAL_LIBVIPS=0
 RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/server ./server
