@@ -1,0 +1,44 @@
+/* Generic Tabs Styles */
+.tabs-nav {
+  display: flex;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border-color, #ddd);
+  margin-bottom: 1rem;
+  gap: 0.5rem;
+}
+
+.tabs-nav button[data-tab] {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted, #666);
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.tabs-nav button[data-tab]:hover {
+  color: var(--text-color, #333);
+  background-color: var(--bg-hover, rgba(0,0,0,0.05));
+}
+
+.tabs-nav button[data-tab].active {
+  color: var(--primary-color, #2563eb);
+  border-bottom-color: var(--primary-color, #2563eb);
+  font-weight: 600;
+}
+
+[data-tab-content] {
+  display: none;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+[data-tab-content].active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}

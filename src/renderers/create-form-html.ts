@@ -26,27 +26,39 @@ export function getHtmlEdit(form_creator: EditDatumFormCreator) {
   return (` 
     <form id="familyForm" class="f3-form ${form_creator.editable ? '' : 'non-editable'}">
       ${closeBtn()}
-      <div style="text-align: right; display: 'block'">
-        ${!form_creator.no_edit ? addRelativeBtn(form_creator) : ''}
-      </div>
-
-      ${fields(form_creator)}
       
-      <div class="f3-form-buttons">
-        <button type="button" class="f3-cancel-btn">${escapeHtml(fr.form.cancel)}</button>
-        <button type="submit">${escapeHtml(fr.form.save)}</button>
+      <div class="tabs-nav" style="margin-top: 20px;">
+        <button type="button" class="active" data-tab="details">Détails</button>
+        <button type="button" data-tab="files">Fichiers</button>
       </div>
 
-      ${form_creator.linkExistingRelative ? addLinkExistingRelative(form_creator) : ''}
+      <div class="tab-content active" data-tab-content="details">
+        <div style="text-align: right; display: 'block'">
+          ${!form_creator.no_edit ? addRelativeBtn(form_creator) : ''}
+        </div>
 
-      <hr>
-      ${deleteBtn(form_creator)}
+        ${fields(form_creator)}
+        
+        <div class="f3-form-buttons">
+          <button type="button" class="f3-cancel-btn">${escapeHtml(fr.form.cancel)}</button>
+          <button type="submit">${escapeHtml(fr.form.save)}</button>
+        </div>
 
-      ${removeRelativeBtn(form_creator)}
+        ${form_creator.linkExistingRelative ? addLinkExistingRelative(form_creator) : ''}
+
+        <hr>
+        ${deleteBtn(form_creator)}
+
+        ${removeRelativeBtn(form_creator)}
+      </div>
+
+      <div class="tab-content" data-tab-content="files">
+        <div class="f3-files-placeholder" style="padding: 1rem; text-align: center; color: #666;">
+            <p>Documents liés à la personne (Bientôt disponible)</p>
+        </div>
+      </div>
     </form>
   `)
-
-
 }
 
 function deleteBtn(form_creator: EditDatumFormCreator) {

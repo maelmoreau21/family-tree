@@ -13,6 +13,7 @@
   <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
   <link rel="stylesheet" href="/lib/styles/family-tree.css">
   <link rel="stylesheet" href="/builder.css">
+  <link rel="stylesheet" href="/shared/css/tabs.css">
   <script type="importmap">
     {
       "imports": {
@@ -31,7 +32,8 @@
 <body class="controls-collapsed">
   <div class="layout">
     <main class="workspace">
-      <button type="button" class="panel-toggle" data-action="toggle-panel" aria-controls="controlPanel" aria-expanded="false" aria-label="Basculer le panneau">
+      <button type="button" class="panel-toggle" data-action="toggle-panel" aria-controls="controlPanel"
+        aria-expanded="false" aria-label="Basculer le panneau">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
@@ -40,14 +42,20 @@
         <span>Afficher</span>
       </button>
       <aside class="controls" id="controlPanel">
-        <div class="search-panel" data-role="builder-search" data-state="loading">
-          <h2 class="search-title" id="builderSearchLabel">Recherche rapide</h2>
-          <div class="search-widget" data-role="builder-search-target"></div>
-
+        <div class="tabs-nav">
+          <button type="button" class="active" data-tab="data">Données</button>
+          <button type="button" data-tab="appearance">Apparence</button>
+          <button type="button" data-tab="tools">Outils</button>
         </div>
-        <details class="panel" open>
-          <summary>Panneau de détails</summary>
-          <div class="panel-body">
+
+        <!-- Tab: Données -->
+        <div class="tab-content active" data-tab-content="data">
+          <div class="search-panel" data-role="builder-search" data-state="loading">
+            <h2 class="search-title" id="builderSearchLabel">Recherche rapide</h2>
+            <div class="search-widget" data-role="builder-search-target"></div>
+          </div>
+
+          <div class="panel-section">
             <fieldset data-role="editable-fields">
               <legend>Champs modifiables</legend>
               <p class="group-hint">Sélectionnez les champs éditables ou ajoutez vos propres champs personnalisés.</p>
@@ -57,176 +65,192 @@
               </div>
             </fieldset>
 
-            <fieldset class="display-fields">
-              <legend>Champs affichés</legend>
-              <div class="display-group" data-display-row="1">
-                <span class="group-label">Ligne&nbsp;1</span>
-                <p class="group-hint">Cochez les champs à afficher pour la première ligne.</p>
-                <div class="field-list" role="group" aria-label="Champs affichés pour la ligne 1"></div>
-              </div>
-              <div class="display-group" data-display-row="2">
-                <span class="group-label">Ligne&nbsp;2</span>
-                <p class="group-hint">Les champs cochés s’affichent en dessous de la ligne principale.</p>
-                <div class="field-list" role="group" aria-label="Champs affichés pour la ligne 2"></div>
-              </div>
-            </fieldset>
-
             <fieldset class="main-profile" data-role="main-profile">
               <legend>Profil affiché par défaut</legend>
               <select id="mainProfileSelect">
                 <option value="">Chargement…</option>
               </select>
               <p class="hint">Sélectionné par défaut : <span data-role="main-profile-name">—</span></p>
-
             </fieldset>
           </div>
-        </details>
+        </div>
 
-        <details class="panel" open>
-          <summary>Éléments de carte</summary>
-          <div class="panel-body">
-            <label for="imageField">Champ image</label>
-            <select id="imageField">
-              <option value="avatar" selected>Avatar</option>
-              <option value="photo">Photo</option>
-              <option value="picture">Portrait</option>
-            </select>
+        <!-- Tab: Apparence -->
+        <div class="tab-content" data-tab-content="appearance">
+          <fieldset class="display-fields">
+            <legend>Champs affichés</legend>
+            <div class="display-group" data-display-row="1">
+              <span class="group-label">Ligne&nbsp;1</span>
+              <p class="group-hint">Cochez les champs à afficher pour la première ligne.</p>
+              <div class="field-list" role="group" aria-label="Champs affichés pour la ligne 1"></div>
+            </div>
+            <div class="display-group" data-display-row="2">
+              <span class="group-label">Ligne&nbsp;2</span>
+              <p class="group-hint">Les champs cochés s’affichent en dessous de la ligne principale.</p>
+              <div class="field-list" role="group" aria-label="Champs affichés pour la ligne 2"></div>
+            </div>
+          </fieldset>
 
-            <label for="cardStyle">Style de carte</label>
-            <select id="cardStyle">
-              <option value="default" selected>Défaut</option>
-              <option value="imageCircle">Image cercle</option>
-              <option value="imageCircleRect">Image cercle rect.</option>
-              <option value="imageRect">Image rect.</option>
-              <option value="rect">Rect.</option>
-            </select>
+          <details class="panel" open>
+            <summary>Éléments de carte</summary>
+            <div class="panel-body">
+              <label for="imageField">Champ image</label>
+              <select id="imageField">
+                <option value="avatar" selected>Avatar</option>
+                <option value="photo">Photo</option>
+                <option value="picture">Portrait</option>
+              </select>
 
+              <label for="cardStyle">Style de carte</label>
+              <select id="cardStyle">
+                <option value="default" selected>Défaut</option>
+                <option value="imageCircle">Image cercle</option>
+                <option value="imageCircleRect">Image cercle rect.</option>
+                <option value="imageRect">Image rect.</option>
+                <option value="rect">Rect.</option>
+              </select>
 
-            <fieldset class="media-tools" data-role="image-uploader">
-              <legend>Images</legend>
-              <p class="group-hint">Importez une image depuis votre ordinateur. Taille
-                max&nbsp;: 5&nbsp;Mo.</p>
+              <fieldset class="media-tools" data-role="image-uploader">
+                <legend>Images</legend>
+                <p class="group-hint">Importez une image depuis votre ordinateur. Taille max&nbsp;: 5&nbsp;Mo.</p>
+                <label for="assetUpload" class="file-label">Téléverser une image</label>
+                <input type="file" id="assetUpload" accept="image/*">
+                <p class="hint" data-role="upload-feedback">Formats recommandés&nbsp;: JPG, PNG, WebP.</p>
+                <div class="upload-result hidden" data-role="upload-result">
+                  <span class="upload-label">Image disponible à&nbsp;:</span>
+                  <code class="upload-url" data-role="upload-url"></code>
+                  <div class="upload-actions">
+                    <button type="button" class="ghost small" data-action="copy-upload-url">Copier l’URL</button>
+                    <a class="ghost small hidden" data-role="open-upload" href="#" target="_blank"
+                      rel="noopener">Ouvrir</a>
+                    <button type="button" class="ghost small" data-action="delete-upload">Supprimer la photo</button>
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+          </details>
 
-              <label for="assetUpload" class="file-label">Téléverser une image</label>
-              <input type="file" id="assetUpload" accept="image/*">
-              <p class="hint" data-role="upload-feedback">Formats recommandés&nbsp;: JPG, PNG, WebP.</p>
+          <details class="panel" open>
+            <summary>Options de mise en page</summary>
+            <div class="panel-body">
+              <label for="transitionInput">Durée de transition (ms)</label>
+              <input type="number" id="transitionInput" min="0" max="5000" step="50" value="320">
 
-              <div class="upload-result hidden" data-role="upload-result">
-                <span class="upload-label">Image disponible à&nbsp;:</span>
-                <code class="upload-url" data-role="upload-url"></code>
-                <div class="upload-actions">
-                  <button type="button" class="ghost small" data-action="copy-upload-url">Copier l’URL</button>
-                  <a class="ghost small hidden" data-role="open-upload" href="#" target="_blank"
-                    rel="noopener">Ouvrir</a>
-                  <button type="button" class="ghost small" data-action="delete-upload">Supprimer la photo</button>
+              <label for="cardYSpacing">Espacement vertical</label>
+              <input type="number" id="cardYSpacing" min="80" max="400" step="10" value="160">
+
+              <label for="cardXSpacing">Espacement horizontal</label>
+              <input type="number" id="cardXSpacing" min="120" max="400" step="10" value="240">
+
+              <label for="emptyLabel">Libellé carte vide</label>
+              <input type="text" id="emptyLabel" placeholder="Inconnu" value="Inconnu">
+
+              <div class="depth-grid">
+                <div class="depth-control">
+                  <label for="ancestryDepth">Générations ancêtres visibles</label>
+                  <select id="ancestryDepth">
+                    <option value="0">0 (profil seul)</option>
+                    <option value="1">1 génération</option>
+                    <option value="2">2 générations</option>
+                    <option value="3">3 générations</option>
+                    <option value="4">4 générations</option>
+                    <option value="5">5 générations</option>
+                    <option value="6">6 générations</option>
+                    <option value="8">8 générations</option>
+                    <option value="10">10 générations</option>
+                    <option value="">Illimité</option>
+                  </select>
+                </div>
+                <div class="depth-control">
+                  <label for="progenyDepth">Générations descendants visibles</label>
+                  <select id="progenyDepth">
+                    <option value="0">0 (profil seul)</option>
+                    <option value="1">1 génération</option>
+                    <option value="2">2 générations</option>
+                    <option value="3">3 générations</option>
+                    <option value="4">4 générations</option>
+                    <option value="5">5 générations</option>
+                    <option value="6">6 générations</option>
+                    <option value="8">8 générations</option>
+                    <option value="10">10 générations</option>
+                    <option value="">Illimité</option>
+                  </select>
                 </div>
               </div>
 
-              <!-- URL entry removed — uploads use the file picker directly -->
-            </fieldset>
-          </div>
-        </details>
+              <label class="toggle-row" for="miniTreeToggle">
+                <input type="checkbox" id="miniTreeToggle" checked>
+                <span>Activer les cartes compactes (Mini Tree)</span>
+              </label>
 
-        <details class="panel" open>
-          <summary>Options de mise en page</summary>
-          <div class="panel-body">
-            <label for="transitionInput">Durée de transition (ms)</label>
-            <input type="number" id="transitionInput" min="0" max="5000" step="50" value="320">
-
-            <label for="cardYSpacing">Espacement vertical</label>
-            <input type="number" id="cardYSpacing" min="80" max="400" step="10" value="160">
-
-            <label for="cardXSpacing">Espacement horizontal</label>
-            <input type="number" id="cardXSpacing" min="120" max="400" step="10" value="240">
-
-            <label for="emptyLabel">Libellé carte vide</label>
-            <input type="text" id="emptyLabel" placeholder="Inconnu" value="Inconnu">
-
-            <div class="depth-grid">
-              <div class="depth-control">
-                <label for="ancestryDepth">Générations ancêtres visibles</label>
-                <select id="ancestryDepth">
-                  <option value="0">0 (profil seul)</option>
-                  <option value="1">1 génération</option>
-                  <option value="2">2 générations</option>
-                  <option value="3">3 générations</option>
-                  <option value="4">4 générations</option>
-                  <option value="5">5 générations</option>
-                  <option value="6">6 générations</option>
-                  <option value="8">8 générations</option>
-                  <option value="10">10 générations</option>
-                  <option value="">Illimité</option>
-                </select>
-              </div>
-              <div class="depth-control">
-                <label for="progenyDepth">Générations descendants visibles</label>
-                <select id="progenyDepth">
-                  <option value="0">0 (profil seul)</option>
-                  <option value="1">1 génération</option>
-                  <option value="2">2 générations</option>
-                  <option value="3">3 générations</option>
-                  <option value="4">4 générations</option>
-                  <option value="5">5 générations</option>
-                  <option value="6">6 générations</option>
-                  <option value="8">8 générations</option>
-                  <option value="10">10 générations</option>
-                  <option value="">Illimité</option>
-                </select>
+              <div class="option-row">
+                <span>Orientation</span>
+                <div class="button-group" role="group" aria-label="Orientation">
+                  <button data-orientation="vertical" type="button" class="active">Verticale</button>
+                  <button data-orientation="horizontal" type="button">Horizontale</button>
+                </div>
               </div>
             </div>
+          </details>
 
-            <label class="toggle-row" for="miniTreeToggle">
-              <input type="checkbox" id="miniTreeToggle" checked>
-              <span>Activer les cartes compactes (Mini Tree)</span>
-            </label>
+          <details class="panel" open>
+            <summary>Dimensions de la carte</summary>
+            <div class="panel-body">
+              <p class="hint">Modifier ces valeurs impacte directement la mise en page.</p>
+              <div class="dimension-grid">
+                <label for="cardWidth">Largeur de la carte</label>
+                <input type="number" id="cardWidth" min="160" max="400" step="10" value="240">
 
-            <div class="option-row">
-              <span>Orientation</span>
-              <div class="button-group" role="group" aria-label="Orientation">
-                <button data-orientation="vertical" type="button" class="active">Verticale</button>
-                <button data-orientation="horizontal" type="button">Horizontale</button>
+                <label for="cardHeight">Hauteur de la carte</label>
+                <input type="number" id="cardHeight" min="100" max="300" step="10" value="150">
+
+                <label for="imgWidth">Largeur de l'image</label>
+                <input type="number" id="imgWidth" min="40" max="160" step="5" value="80">
+
+                <label for="imgHeight">Hauteur de l'image</label>
+                <input type="number" id="imgHeight" min="40" max="160" step="5" value="80">
+
+                <label for="imgX">Position X de l'image</label>
+                <input type="number" id="imgX" min="0" max="200" step="5" value="16">
+
+                <label for="imgY">Position Y de l'image</label>
+                <input type="number" id="imgY" min="0" max="200" step="5" value="16">
               </div>
+              <button id="resetDimensions" class="ghost" type="button">Réinitialiser</button>
+            </div>
+          </details>
+        </div>
+
+        <!-- Tab: Outils -->
+        <div class="tab-content" data-tab-content="tools">
+          <div class="panel-section">
+            <h3>GEDCOM</h3>
+            <div class="button-group-vertical">
+              <button type="button" class="secondary" id="gedcomImportBtn">Importer GEDCOM</button>
+              <button type="button" class="secondary" id="gedcomExportBtn">Exporter GEDCOM</button>
             </div>
           </div>
-        </details>
 
-        <details class="panel" open>
-          <summary>Dimensions de la carte</summary>
-          <div class="panel-body">
-            <p class="hint">Modifier ces valeurs impacte directement la mise en page.</p>
-            <div class="dimension-grid">
-              <label for="cardWidth">Largeur de la carte</label>
-              <input type="number" id="cardWidth" min="160" max="400" step="10" value="240">
-
-              <label for="cardHeight">Hauteur de la carte</label>
-              <input type="number" id="cardHeight" min="100" max="300" step="10" value="150">
-
-              <label for="imgWidth">Largeur de l'image</label>
-              <input type="number" id="imgWidth" min="40" max="160" step="5" value="80">
-
-              <label for="imgHeight">Hauteur de l'image</label>
-              <input type="number" id="imgHeight" min="40" max="160" step="5" value="80">
-
-              <label for="imgX">Position X de l'image</label>
-              <input type="number" id="imgX" min="0" max="200" step="5" value="16">
-
-              <label for="imgY">Position Y de l'image</label>
-              <input type="number" id="imgY" min="0" max="200" step="5" value="16">
+          <div class="panel-section">
+            <h3>Actions sur les branches</h3>
+            <div class="button-group-vertical">
+              <button type="button" class="secondary" id="exportAncestryBtn">Exporter Ascendance</button>
+              <button type="button" class="secondary" id="exportDescendanceBtn">Exporter Descendance</button>
+              <button type="button" class="danger" id="deleteBranchBtn">Supprimer la branche</button>
             </div>
-            <button id="resetDimensions" class="ghost" type="button">Réinitialiser</button>
           </div>
-        </details>
 
-        <details class="panel resources" open>
-          <summary>Ressources</summary>
-          <div class="panel-body">
-            <ul>
-              <li><a href="https://github.com/maelmoreau21/family-tree" target="_blank" rel="noopener">Dépôt GitHub du
-                  projet</a></li>
-            </ul>
-          </div>
-        </details>
-        <!-- Moved status here so it appears under "Dimensions de la carte" -->
+          <details class="panel resources" open>
+            <summary>Ressources</summary>
+            <div class="panel-body">
+              <ul>
+                <li><a href="https://github.com/maelmoreau21/family-tree" target="_blank" rel="noopener">Dépôt GitHub du
+                    projet</a></li>
+              </ul>
+            </div>
+          </details>
+        </div>
+
         <div class="builder-status" id="status" role="status" aria-live="assertive"></div>
       </aside>
       <section class="canvas">
@@ -236,6 +260,9 @@
   </div>
 
   <script type="module">
+    import { initTabs } from '/shared/js/tabs.js';
+    initTabs('#controlPanel');
+
     const loadBuilder = async () => {
       try {
         await import('/builder.bundle.js')

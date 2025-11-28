@@ -1,6 +1,7 @@
 import { EditDatumFormCreator, NewRelFormCreator } from '../types/form'
 import { getHtmlEdit, getHtmlNew } from './create-form-html'
 import { setElementHtml } from '../utils/safe-html'
+import { initTabs } from '../utils/tabs'
 
 
 export function createFormNew(form_creator: NewRelFormCreator, closeCallback: () => void) {
@@ -20,6 +21,7 @@ function createForm(form_creator: EditDatumFormCreator | NewRelFormCreator, clos
   function reload() {
     const formHtml = is_new ? getHtmlNew(form_creator) : getHtmlEdit(form_creator)
     setElementHtml(formContainer, formHtml, 'Form renderer')
+    initTabs(formContainer)
     setupEventListenersBase(formContainer, form_creator, closeCallback, reload)
     if (is_new) setupEventListenersNew(formContainer, form_creator)
     else setupEventListenersEdit(formContainer, form_creator, reload)
