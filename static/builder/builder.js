@@ -1438,7 +1438,34 @@ function attachPanelControls({ chart, card }) {
   const mainProfileSelect = mainProfileFieldset?.querySelector('#mainProfileSelect')
   const mainProfileName = mainProfileFieldset?.querySelector('[data-role="main-profile-name"]')
   if (mainProfileSelect) mainProfileSelect.disabled = true
-  const imageUploader = panel.querySelector('[data-role="image-uploader"]')
+  const IMAGE_UPLOADER_TEMPLATE = `
+  <fieldset class="media-tools" data-role="image-uploader">
+    <legend>Images</legend>
+    <p class="group-hint">Importez une image depuis votre ordinateur. Taille max&nbsp;: 5&nbsp;Mo.</p>
+    <label for="assetUpload" class="file-label">Téléverser une image</label>
+    <input type="file" id="assetUpload" accept="image/*">
+    <p class="hint" data-role="upload-feedback" data-status="info">Formats recommandés&nbsp;: JPG, PNG, WebP.</p>
+    <div class="upload-result hidden" data-role="upload-result" data-url="">
+      <span class="upload-label">Image disponible à&nbsp;:</span>
+      <code class="upload-url" data-role="upload-url"></code>
+      <div class="upload-actions">
+        <button type="button" class="ghost small" data-action="copy-upload-url">Copier l’URL</button>
+        <a class="ghost small hidden" data-role="open-upload" href="#" target="_blank" rel="noopener">Ouvrir</a>
+        <button type="button" class="ghost small" data-action="delete-upload">Supprimer la photo</button>
+      </div>
+    </div>
+  </fieldset>
+  `
+
+  // Create uploader from template
+  const tempDiv = document.createElement('div')
+  tempDiv.innerHTML = IMAGE_UPLOADER_TEMPLATE
+  const imageUploader = tempDiv.firstElementChild
+
+  // Remove existing if present (cleanup)
+  const existingUploader = panel.querySelector('[data-role="image-uploader"]')
+  if (existingUploader) existingUploader.remove()
+
   const assetUploadInput = imageUploader?.querySelector('#assetUpload')
   const assetUploadFeedback = imageUploader?.querySelector('[data-role="upload-feedback"]')
   const assetUploadResult = imageUploader?.querySelector('[data-role="upload-result"]')
@@ -1449,10 +1476,35 @@ function attachPanelControls({ chart, card }) {
   // manual URL input removed from UI — hide file input filename and use the label as trigger
   const fileLabel = imageUploader?.querySelector('.file-label')
 
-  const imageUploaderHome = imageUploader ? {
-    parent: imageUploader.parentElement,
-    nextSibling: imageUploader.nextSibling
-  } : null
+  // Inject into Edit Form
+  const observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      if (mutation.addedNodes.length) {
+        const labels = document.querySelectorAll('label')
+        let bioLabel = null
+        for (const l of labels) {
+          if (l.textContent && l.textContent.includes('Biographie')) {
+            bioLabel = l
+            break
+          }
+        }
+
+        if (bioLabel) {
+          // Found Bio label, find its container (usually a div wrapping label and input)
+          // We want to insert AFTER this container
+          const container = bioLabel.closest('div')
+          if (container && container.parentElement) {
+            if (!container.parentElement.contains(imageUploader)) {
+              container.parentElement.insertBefore(imageUploader, container.nextSibling)
+            }
+          }
+        }
+      }
+    }
+  })
+  observer.observe(document.body, { childList: true, subtree: true })
+
+  const imageUploaderHome = null // No longer needed as we inject dynamically
 
   let imageUploaderCurrentForm = null
   let imageUploaderCurrentDatumId = null

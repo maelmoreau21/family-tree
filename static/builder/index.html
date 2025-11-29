@@ -104,92 +104,63 @@
               <label for="cardStyle">Style de carte</label>
               <select id="cardStyle">
                 <option value="default" selected>Défaut</option>
-                <option value="imageCircle">Image cercle</option>
-                <option value="imageCircleRect">Image cercle rect.</option>
-                <option value="imageRect">Image rect.</option>
-                <option value="rect">Rect.</option>
-              </select>
+                <label for="transitionInput">Durée de transition (ms)</label>
+                <input type="number" id="transitionInput" min="0" max="5000" step="50" value="320">
 
-              <fieldset class="media-tools" data-role="image-uploader">
-                <legend>Images</legend>
-                <p class="group-hint">Importez une image depuis votre ordinateur. Taille max&nbsp;: 5&nbsp;Mo.</p>
-                <label for="assetUpload" class="file-label">Téléverser une image</label>
-                <input type="file" id="assetUpload" accept="image/*">
-                <p class="hint" data-role="upload-feedback">Formats recommandés&nbsp;: JPG, PNG, WebP.</p>
-                <div class="upload-result hidden" data-role="upload-result">
-                  <span class="upload-label">Image disponible à&nbsp;:</span>
-                  <code class="upload-url" data-role="upload-url"></code>
-                  <div class="upload-actions">
-                    <button type="button" class="ghost small" data-action="copy-upload-url">Copier l’URL</button>
-                    <a class="ghost small hidden" data-role="open-upload" href="#" target="_blank"
-                      rel="noopener">Ouvrir</a>
-                    <button type="button" class="ghost small" data-action="delete-upload">Supprimer la photo</button>
+                <label for="cardYSpacing">Espacement vertical</label>
+                <input type="number" id="cardYSpacing" min="80" max="400" step="10" value="160">
+
+                <label for="cardXSpacing">Espacement horizontal</label>
+                <input type="number" id="cardXSpacing" min="120" max="400" step="10" value="240">
+
+                <label for="emptyLabel">Libellé carte vide</label>
+                <input type="text" id="emptyLabel" placeholder="Inconnu" value="Inconnu">
+
+                <div class="depth-grid">
+                  <div class="depth-control">
+                    <label for="ancestryDepth">Générations ancêtres visibles</label>
+                    <select id="ancestryDepth">
+                      <option value="0">0 (profil seul)</option>
+                      <option value="1">1 génération</option>
+                      <option value="2">2 générations</option>
+                      <option value="3">3 générations</option>
+                      <option value="4">4 générations</option>
+                      <option value="5">5 générations</option>
+                      <option value="6">6 générations</option>
+                      <option value="8">8 générations</option>
+                      <option value="10">10 générations</option>
+                      <option value="">Illimité</option>
+                    </select>
+                  </div>
+                  <div class="depth-control">
+                    <label for="progenyDepth">Générations descendants visibles</label>
+                    <select id="progenyDepth">
+                      <option value="0">0 (profil seul)</option>
+                      <option value="1">1 génération</option>
+                      <option value="2">2 générations</option>
+                      <option value="3">3 générations</option>
+                      <option value="4">4 générations</option>
+                      <option value="5">5 générations</option>
+                      <option value="6">6 générations</option>
+                      <option value="8">8 générations</option>
+                      <option value="10">10 générations</option>
+                      <option value="">Illimité</option>
+                    </select>
                   </div>
                 </div>
-              </fieldset>
-            </div>
-          </details>
 
-          <details class="panel" open>
-            <summary>Options de mise en page</summary>
-            <div class="panel-body">
-              <label for="transitionInput">Durée de transition (ms)</label>
-              <input type="number" id="transitionInput" min="0" max="5000" step="50" value="320">
+                <label class="toggle-row" for="miniTreeToggle">
+                  <input type="checkbox" id="miniTreeToggle" checked>
+                  <span>Activer les cartes compactes (Mini Tree)</span>
+                </label>
 
-              <label for="cardYSpacing">Espacement vertical</label>
-              <input type="number" id="cardYSpacing" min="80" max="400" step="10" value="160">
-
-              <label for="cardXSpacing">Espacement horizontal</label>
-              <input type="number" id="cardXSpacing" min="120" max="400" step="10" value="240">
-
-              <label for="emptyLabel">Libellé carte vide</label>
-              <input type="text" id="emptyLabel" placeholder="Inconnu" value="Inconnu">
-
-              <div class="depth-grid">
-                <div class="depth-control">
-                  <label for="ancestryDepth">Générations ancêtres visibles</label>
-                  <select id="ancestryDepth">
-                    <option value="0">0 (profil seul)</option>
-                    <option value="1">1 génération</option>
-                    <option value="2">2 générations</option>
-                    <option value="3">3 générations</option>
-                    <option value="4">4 générations</option>
-                    <option value="5">5 générations</option>
-                    <option value="6">6 générations</option>
-                    <option value="8">8 générations</option>
-                    <option value="10">10 générations</option>
-                    <option value="">Illimité</option>
-                  </select>
+                <div class="option-row">
+                  <span>Orientation</span>
+                  <div class="button-group" role="group" aria-label="Orientation">
+                    <button data-orientation="vertical" type="button" class="active">Verticale</button>
+                    <button data-orientation="horizontal" type="button">Horizontale</button>
+                  </div>
                 </div>
-                <div class="depth-control">
-                  <label for="progenyDepth">Générations descendants visibles</label>
-                  <select id="progenyDepth">
-                    <option value="0">0 (profil seul)</option>
-                    <option value="1">1 génération</option>
-                    <option value="2">2 générations</option>
-                    <option value="3">3 générations</option>
-                    <option value="4">4 générations</option>
-                    <option value="5">5 générations</option>
-                    <option value="6">6 générations</option>
-                    <option value="8">8 générations</option>
-                    <option value="10">10 générations</option>
-                    <option value="">Illimité</option>
-                  </select>
-                </div>
-              </div>
-
-              <label class="toggle-row" for="miniTreeToggle">
-                <input type="checkbox" id="miniTreeToggle" checked>
-                <span>Activer les cartes compactes (Mini Tree)</span>
-              </label>
-
-              <div class="option-row">
-                <span>Orientation</span>
-                <div class="button-group" role="group" aria-label="Orientation">
-                  <button data-orientation="vertical" type="button" class="active">Verticale</button>
-                  <button data-orientation="horizontal" type="button">Horizontale</button>
-                </div>
-              </div>
             </div>
           </details>
 
