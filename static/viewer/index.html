@@ -13,6 +13,7 @@
   <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
   <link rel="stylesheet" href="/lib/styles/family-tree.css">
   <link rel="stylesheet" href="/viewer.css">
+  <link rel="stylesheet" href="/static/shared/css/tabs.css">
   <script type="importmap">
     {
       "imports": {
@@ -44,48 +45,66 @@
     <section class="canvas">
       <div id="FamilyChart" class="f3"></div>
       <aside id="personDetails" class="details" aria-live="polite">
-        <section class="search-block" data-role="viewer-search" data-state="loading" aria-label="Recherche de personne">
-          <label for="personSearchInput">Rechercher une personne</label>
-          <div id="personSearch"></div>
-          <p class="empty" data-role="viewer-search-empty">Aucune personne disponible pour le moment.</p>
-        </section>
+        <div class="tabs-nav">
+          <button type="button" class="active" data-tab="details">Détails</button>
+          <button type="button" data-tab="files">Fichiers</button>
+        </div>
 
-        <section class="info-section" aria-labelledby="infoSectionTitle">
-          <h2 id="infoSectionTitle">Informations complémentaires</h2>
-          <details class="performance-controls" aria-label="Paramètres">
-            <summary>Paramètres</summary>
-            <div class="performance-body">
-              <div class="performance-grid">
+        <div class="tab-content active" data-tab-content="details">
+          <section class="search-block" data-role="viewer-search" data-state="loading"
+            aria-label="Recherche de personne">
+            <label for="personSearchInput">Rechercher une personne</label>
+            <div id="personSearch"></div>
+            <p class="empty" data-role="viewer-search-empty">Aucune personne disponible pour le moment.</p>
+          </section>
 
+          <section class="info-section" aria-labelledby="infoSectionTitle">
+            <h2 id="infoSectionTitle">Informations complémentaires</h2>
+            <details class="performance-controls" aria-label="Paramètres">
+              <summary>Paramètres</summary>
+              <div class="performance-body">
+                <div class="performance-grid">
+
+                </div>
+                <label class="toggle-row" for="viewerMiniTree">
+                  <input type="checkbox" id="viewerMiniTree" checked>
+                  <span>Cartes compactes (Mini Tree)</span>
+                </label>
+                <label class="toggle-row" for="viewerAutoCenter">
+                  <input type="checkbox" id="viewerAutoCenter" checked>
+                  <span>Recentrage automatique</span>
+                </label>
+                <p class="viewer-github-link">
+                  <a href="https://github.com/maelmoreau21/family-tree" target="_blank" rel="noopener">Dépôt GitHub du
+                    projet</a>
+                </p>
+                <p class="dataset-meta" data-role="dataset-meta">
+                  <strong data-role="visible-count">0</strong> cartes visibles ·
+                  <span data-role="branch-count">0</span> profils dans la branche ·
+                  <span data-role="total-count">0</span> profils au total
+                </p>
               </div>
-              <label class="toggle-row" for="viewerMiniTree">
-                <input type="checkbox" id="viewerMiniTree" checked>
-                <span>Cartes compactes (Mini Tree)</span>
-              </label>
-              <label class="toggle-row" for="viewerAutoCenter">
-                <input type="checkbox" id="viewerAutoCenter" checked>
-                <span>Recentrage automatique</span>
-              </label>
-              <p class="viewer-github-link">
-                <a href="https://github.com/maelmoreau21/family-tree" target="_blank" rel="noopener">Dépôt GitHub du
-                  projet</a>
-              </p>
-              <p class="dataset-meta" data-role="dataset-meta">
-                <strong data-role="visible-count">0</strong> cartes visibles ·
-                <span data-role="branch-count">0</span> profils dans la branche ·
-                <span data-role="total-count">0</span> profils au total
-              </p>
+            </details>
+            <div class="details-content">
+              <div class="detail-list"></div>
             </div>
-          </details>
-          <div class="details-content">
-            <div class="detail-list"></div>
+          </section>
+        </div>
+
+        <div class="tab-content" data-tab-content="files">
+          <div class="panel-section">
+            <p class="empty-state">Aucun fichier associé à ce profil.</p>
+            <div class="file-list" data-role="file-list"></div>
           </div>
-        </section>
+        </div>
       </aside>
     </section>
     <footer id="status" role="status" aria-live="polite"></footer>
   </main>
   <script type="module">
+    import { initTabs } from '/static/shared/js/tabs.js';
+    initTabs('#personDetails');
+
     const loadViewer = async () => {
       try {
         await import('/viewer.bundle.js')
