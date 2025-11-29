@@ -1331,6 +1331,37 @@ function setupChart(payload) {
   )
   setChartLoading(false)
 
+  if (totalPersons === 0) {
+    const container = document.getElementById('FamilyChart')
+    if (container) {
+      container.innerHTML = `
+        <div class="empty-state-container">
+          <button class="create-tree-btn" id="createTreeBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Créer un nouvel arbre
+          </button>
+        </div>
+      `
+      document.getElementById('createTreeBtn')?.addEventListener('click', () => {
+        const newPerson = {
+          id: 'root',
+          data: {
+            'first name': 'Nouvelle',
+            'last name': 'Personne',
+            'gender': 'M'
+          },
+          rels: {}
+        }
+        chart.store.updateData([newPerson])
+        chart.updateTree({ initial: true })
+        editTreeInstance.open(chart.getMainDatum())
+        setStatus('Nouvel arbre créé', 'success')
+      })
+    }
+  }
+
   function resolveInitialMainId(persons, chartInstance) {
     if (!Array.isArray(persons) || persons.length === 0) {
       chartConfig = { ...chartConfig, mainId: null }

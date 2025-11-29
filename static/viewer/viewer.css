@@ -27,19 +27,6 @@
   --bg-gradient-end: #0f172a;
   --accent-primary: #6366f1;
   --accent-secondary: #8b5cf6;
-  --accent-glow: rgba(99, 102, 241, 0.5);
-
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --text-dim: #64748b;
-
-  --panel-bg: rgba(15, 23, 42, 0.75);
-  --panel-border: rgba(255, 255, 255, 0.1);
-  --panel-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-  --backdrop-blur: 20px;
-
-  --input-bg: rgba(0, 0, 0, 0.3);
-  --input-border: rgba(255, 255, 255, 0.1);
   --input-focus-border: var(--accent-primary);
 
   /* Spacing */
