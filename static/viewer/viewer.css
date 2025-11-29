@@ -1662,27 +1662,6 @@ body.viewer-details-collapsed .details {
 #personSearch .f3-autocomplete-input-cont,
 .search-block .f3-autocomplete-input-cont {
   background: var(--input-bg) !important;
-  border: 1px solid var(--input-border) !important;
-  border-radius: var(--radius-sm) !important;
-  padding: 0.15rem !important;
-}
-
-#personSearch .f3-autocomplete-input-cont input,
-.search-block .f3-autocomplete-input-cont input {
-  width: 100% !important;
-  background: transparent !important;
-  ```css height: 1.2rem;
-  background: var(--input-bg);
-  border: 1px solid var(--input-border);
-  border-radius: 4px;
-  position: relative;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.toggle-row input[type="checkbox"]:checked {
-  background: var(--accent-primary);
-  border-color: var(--accent-primary);
 }
 
 .toggle-row input[type="checkbox"]:checked::after {
@@ -2078,19 +2057,6 @@ g[data-icon='chevron-up'] circle {
 /* Ensure tab content fills the available space for scrolling */
 .tab-content {
   display: none;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.tab-content.active {
-  display: flex;
-}
-
-/* Fix scrolling in Details tab */
-.details .tab-content.active {
-  display: flex;
   flex-direction: column;
   flex: 1;
   min-height: 0;
