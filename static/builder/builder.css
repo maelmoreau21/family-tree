@@ -349,7 +349,7 @@ select {
 }
 
 .file-label:hover {
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 input:focus,
@@ -1895,18 +1895,262 @@ legend {
   }
 }
 
+max-width: none !important;
+}
+
+.search-widget {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+.search-panel {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+.search-panel .empty {
+  display: none !important;
+}
+
+/* Status Bar Fixes */
+#status {
+  white-space: nowrap !important;
+  display: block !important;
+  width: auto;
+  max-width: 95vw;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  padding: 0.5rem 1rem;
+}
+
+/* Edit Form Refinements */
+
+/* Hide the pencil icon in the form header */
+/* Hide the pencil icon in the form header - GLOBAL FIX */
+.f3-edit-btn,
+span.f3-edit-btn,
+.f3-form .f3-edit-btn {
+  display: none !important;
+}
+
+/* Form Container - Glassmorphism & Layout */
+.f3-form-cont {
+  background: rgba(20, 20, 30, 0.85) !important;
+  /* Semi-transparent background */
+  backdrop-filter: blur(var(--backdrop-blur)) !important;
+  border-left: 1px solid var(--panel-border) !important;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3) !important;
+  width: 350px !important;
+  /* Fixed width or clamp */
+  max-width: 100vw !important;
+  overflow-x: hidden !important;
+  right: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  height: 100vh !important;
+  padding: 0 !important;
+}
+
+/* Form Inner Layout */
+.f3-form {
+  padding: var(--space-md) !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding-top: 60px !important;
+  /* Space for header buttons */
+}
+
+/* Form Inputs */
+.f3-form input[type="text"],
+.f3-form textarea,
+.f3-form select {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  background: var(--input-bg) !important;
+  border: 1px solid var(--input-border) !important;
+  color: var(--text-main) !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 0.5rem !important;
+  font-family: inherit !important;
+  font-size: 0.9rem !important;
+  margin: 0 !important;
+  /* Remove default margins to control gap via flex */
+}
+
+.f3-form input[type="text"]:focus,
+.f3-form textarea:focus,
+.f3-form select:focus {
+  outline: none !important;
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 0 0 2px var(--accent-glow) !important;
+}
+
+/* Form Buttons */
+.f3-form button {
+  width: 100% !important;
+  padding: 0.6rem !important;
+  border-radius: var(--radius-sm) !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  margin: 0 !important;
+}
+
+.f3-form button[type="submit"] {
+  background: rgba(239, 68, 68, 0.2) !important;
+}
+
+/* Labels */
+/* Labels */
+.f3-form label {
+  color: var(--text-muted) !important;
+  font-size: 0.8rem !important;
+  margin-bottom: 0.15rem !important;
+  padding-bottom: 0px !important;
+  display: block !important;
+}
+
+/* Title */
+.f3-form-title {
+  color: var(--text-main) !important;
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+  margin-bottom: var(--space-md) !important;
+  text-align: left !important;
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--panel-border);
+}
+
+/* Close Button - Positioned Top Right */
+.f3-close-btn {
+  color: var(--text-muted) !important;
+  position: absolute !important;
+  top: var(--space-md) !important;
+  right: var(--space-md) !important;
+  left: auto !important;
+  font-size: 1.5rem !important;
+  background: var(--panel-bg) !important;
+  border-radius: 50% !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+  z-index: 101 !important;
+}
+
+.f3-close-btn:hover {
+  color: var(--text-main) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Add Button (if present in header) - Positioned Left of Close Button */
+/* Assuming the "Add" button might be .f3-add-btn or similar if it exists in the header */
+.f3-form-cont .f3-add-btn,
+.f3-form-cont [data-action="add"] {
+  position: absolute !important;
+  top: var(--space-md) !important;
+  right: calc(var(--space-md) + 40px) !important;
+  /* Positioned to the left of close button */
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 101 !important;
+}
+
+/* Hide specific 'useless' pencil button in edit menu */
+path[d^='M18.66'] {
+  display: none !important;
+}
+
+/* Hide circle in search panel */
+.search-panel circle,
+.search-widget svg circle {
+  display: none !important;
+}
+
+/* Prevent input text from overflowing the search container */
+.search-panel .f3-autocomplete-input-cont {
+  overflow: hidden !important;
+}
+
+.search-panel .f3-autocomplete-input-cont input {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+}
+
 /* Hide empty autocomplete dropdowns */
 .f3-autocomplete-items.is-empty,
 .f3-autocomplete-items:empty {
   display: none !important;
 }
- / *   H i d e   t h e   b a c k g r o u n d   c i r c l e   i n   c h e v r o n   i c o n s   * / 
- g [ d a t a - i c o n = ' c h e v r o n - d o w n ' ]   c i r c l e , 
- g [ d a t a - i c o n = ' c h e v r o n - u p ' ]   c i r c l e   { 
-     d i s p l a y :   n o n e   ! i m p o r t a n t ; 
-     o p a c i t y :   0   ! i m p o r t a n t ; 
-     v i s i b i l i t y :   h i d d e n   ! i m p o r t a n t ; 
- } 
- 
- 
- 
+
+/* Hide the background circle in chevron icons */
+g[data-icon='chevron-down'] circle,
+g[data-icon='chevron-up'] circle {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Search Bar Fixes */
+.search-panel .f3-autocomplete-input-cont {
+  width: 100%;
+  padding-right: 0;
+  box-sizing: border-box;
+}
+
+.search-panel .f3-autocomplete-input-cont input {
+  width: 100% !important;
+  box-sizing: border-box;
+}
+
+/* Ensure tabs are visible */
+.tabs-nav {
+  display: flex;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--panel-border);
+  margin-bottom: 1rem;
+  gap: 0.5rem;
+}
+
+.tabs-nav button[data-tab] {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.tabs-nav button[data-tab]:hover {
+  color: var(--text-main);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.tabs-nav button[data-tab].active {
+  color: var(--accent-primary);
+  border-bottom-color: var(--accent-primary);
+  font-weight: 600;
+}
+
+[data-tab-content] {
+  display: none;
+}
+
+[data-tab-content].active {
+  display: block;
+}

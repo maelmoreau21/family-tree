@@ -1612,8 +1612,12 @@ function attachPanelControls({ chart, card }) {
 
     restoreImageUploaderToPanel()
 
+    const unionSection = form.querySelector('.f3-union-section')
     const buttons = form.querySelector('.f3-form-buttons')
-    if (buttons && buttons.parentNode) {
+
+    if (unionSection && unionSection.parentNode) {
+      unionSection.parentNode.insertBefore(imageUploader, unionSection)
+    } else if (buttons && buttons.parentNode) {
       buttons.parentNode.insertBefore(imageUploader, buttons)
     } else {
       form.appendChild(imageUploader)
