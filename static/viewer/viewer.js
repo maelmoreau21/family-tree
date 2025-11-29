@@ -106,8 +106,10 @@ function applyPanelCollapsedState(collapsed) {
   if (detailsPanel) {
     if (collapsed) {
       detailsPanel.setAttribute('aria-hidden', 'true')
+      detailsPanel.hidden = true
     } else {
       detailsPanel.removeAttribute('aria-hidden')
+      detailsPanel.hidden = false
     }
   }
 }
