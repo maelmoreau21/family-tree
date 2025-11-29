@@ -213,32 +213,20 @@
                 <label for="imgX">Position X de l'image</label>
                 <input type="number" id="imgX" min="0" max="200" step="5" value="16">
 
-                <label for="imgY">Position Y de l'image</label>
-                <input type="number" id="imgY" min="0" max="200" step="5" value="16">
-              </div>
-              <button id="resetDimensions" class="ghost" type="button">Réinitialiser</button>
-            </div>
-            </section>
-    </main>
-  </div>
 
-  <script type="module">
-    import { initTabs } from '/static/shared/js/tabs.js';
-    initTabs('#controlPanel');
+                const loadBuilder = async () => {
+                try {
+                await import('/builder.bundle.js')
+                } catch (error) {
+                console.warn('[builder] Bundle introuvable, utilisation du script non compressé.', error)
+                await import('/builder.js')
+                }
+                }
 
-    const loadBuilder = async () => {
-      try {
-        await import('/builder.bundle.js')
-      } catch (error) {
-        console.warn('[builder] Bundle introuvable, utilisation du script non compressé.', error)
-        await import('/builder.js')
-      }
-    }
-
-    loadBuilder().catch(error => {
-      console.error('[builder] Impossible de charger l’éditeur', error)
-    })
-  </script>
+                loadBuilder().catch(error => {
+                console.error('[builder] Impossible de charger l’éditeur', error)
+                })
+                </script>
 </body>
 
 </html>
