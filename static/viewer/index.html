@@ -6,26 +6,12 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Family Tree &ndash; Visualisation</title>
   <link rel="icon" href="/static/logo.svg" type="image/svg+xml">
-  <link rel="shortcut icon" href="/static/logo.svg">
-  <link rel="icon" type="image/png" sizes="48x48" href="/static/logo-48.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/static/logo-32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/static/logo-16.png">
-  <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
-  <link rel="stylesheet" href="/lib/styles/family-tree.css">
-  <link rel="stylesheet" href="/viewer.css">
-  <link rel="stylesheet" href="/shared/css/tabs.css">
-  <script type="importmap">
-    {
-      "imports": {
-        "d3": "https://cdn.jsdelivr.net/npm/d3@7.9.0/+esm",
-        "d3-selection": "https://cdn.jsdelivr.net/npm/d3-selection@3.0.0/+esm",
-        "d3-shape": "https://cdn.jsdelivr.net/npm/d3-shape@3.2.0/+esm",
-        "d3-hierarchy": "https://cdn.jsdelivr.net/npm/d3-hierarchy@3.1.2/+esm",
-        "d3-zoom": "https://cdn.jsdelivr.net/npm/d3-zoom@3.0.0/+esm",
-        "d3-array": "https://cdn.jsdelivr.net/npm/d3-array@3.2.4/+esm",
-        "d3-transition": "https://cdn.jsdelivr.net/npm/d3-transition@3.0.1/+esm"
-      }
-    }
+  "d3-hierarchy": "https://cdn.jsdelivr.net/npm/d3-hierarchy@3.1.2/+esm",
+  "d3-zoom": "https://cdn.jsdelivr.net/npm/d3-zoom@3.0.0/+esm",
+  "d3-array": "https://cdn.jsdelivr.net/npm/d3-array@3.2.4/+esm",
+  "d3-transition": "https://cdn.jsdelivr.net/npm/d3-transition@3.0.1/+esm"
+  }
+  }
   </script>
 </head>
 
@@ -94,29 +80,13 @@
         <div class="tab-content" data-tab-content="files">
           <div class="f3-files-placeholder" style="padding: 1rem; text-align: center; color: #666;">
             <p>Documents liés à la personne (Bientôt disponible)</p>
-          </div>
-        </div>
-      </aside>
-    </section>
-    <footer id="status" role="status" aria-live="polite"></footer>
-  </main>
-  <script type="module">
-    import { initTabs } from '/shared/js/tabs.js';
-    initTabs('#personDetails');
+            }
+            }
 
-    const loadViewer = async () => {
-      try {
-        await import('/viewer.bundle.js')
-      } catch (error) {
-        console.warn('[viewer] Bundle introuvable, utilisation du script non compressé.', error)
-        await import('/viewer.js')
-      }
-    }
-
-    loadViewer().catch(error => {
-      console.error('[viewer] Impossible de charger l’interface', error)
-    })
-  </script>
+            loadViewer().catch(error => {
+            console.error('[viewer] Impossible de charger l’interface', error)
+            })
+            </script>
 </body>
 
 </html>
