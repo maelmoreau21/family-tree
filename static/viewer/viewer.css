@@ -141,62 +141,6 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.viewer-toolbar .panel-toggle:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: translateY(-1px);
-}
-
-/* Details Panel */
-.details {
-  position: absolute;
-  right: var(--space-md);
-  top: var(--space-md);
-  bottom: var(--space-md);
-  width: var(--viewer-details-width);
-  background: var(--panel-bg);
-  backdrop-filter: blur(var(--backdrop-blur));
-  -webkit-backdrop-filter: blur(var(--backdrop-blur));
-  border: 1px solid var(--panel-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--panel-shadow);
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-  margin-top: var(--space-sm);
-  font-style: italic;
-}
-
-/* Info Section */
-.info-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.info-section h2 {
-  margin: 0;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text-main);
-  display: none;
-  /* Often redundant with panel context */
-}
-
-/* Performance / Settings Accordion */
-.performance-controls {
-  background: transparent;
-  border: none;
   border-bottom: 1px solid var(--panel-border);
   padding-bottom: var(--space-sm);
   flex-shrink: 0;
