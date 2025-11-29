@@ -1288,15 +1288,6 @@ function setupChart(payload) {
     activePanelTeardown = null
   }
 
-  if (typeof panelControlAPI.handleFormCreation === 'function') {
-    editTreeInstance.setOnFormCreation(panelControlAPI.handleFormCreation)
-  }
-
-  const initialMainId = resolveInitialMainId(dataArray, chart)
-  if (initialMainId) {
-    chart.updateMainId(initialMainId)
-  }
-
   chart.setAfterUpdate(() => {
     if (!chart.store || typeof chart.store.getMainId !== 'function') return
     const storeMainId = chart.store.getMainId()
@@ -2668,7 +2659,7 @@ function attachPanelControls({ chart, card }) {
         try {
           const payload = await resp.json()
           if (payload?.message) message = payload.message
-        } catch (e) {}
+        } catch (e) { }
         throw new Error(message)
       }
 
@@ -2757,3 +2748,134 @@ window.addEventListener('beforeunload', (event) => {
 })
 
 initialise()
+
+// Tool Buttons Logic
+const tools = {
+  deleteBranch: (direction) => {
+    if (!activeChartInstance) return
+    const store = activeChartInstance.store
+    const mainId = store.getMainId()
+    if (!mainId) return alert('Veuillez sélectionner une personne d\'abord.')
+
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer la branche ${direction === 'asc' ? 'ascendance' : 'descendance'} de la personne sélectionnée ? Cette action est irréversible.`)) return
+
+    const data = store.getData()
+    const idsToDelete = new Set()
+
+    const traverse = (id) => {
+      idsToDelete.add(id)
+      const datum = data.find(d => d.id === id)
+      if (!datum) return
+
+      if (direction === 'asc') {
+        // Delete parents recursively
+        datum.rels.parents?.forEach(traverse)
+      } else {
+        // Delete children recursively
+        datum.rels.children?.forEach(traverse)
+      }
+    }
+
+    const mainDatum = data.find(d => d.id === mainId)
+    if (mainDatum) {
+      if (direction === 'asc') {
+        mainDatum.rels.parents?.forEach(traverse)
+        mainDatum.rels.parents = [] // Clear connection
+      } else {
+        mainDatum.rels.children?.forEach(traverse)
+        mainDatum.rels.children = [] // Clear connection
+      }
+    }
+
+    const newData = data.filter(d => !idsToDelete.has(d.id))
+    store.updateData(newData)
+    activeChartInstance.updateTree()
+    alert('Branche supprimée avec succès.')
+  },
+
+  importBranch: (direction) => {
+    if (!activeChartInstance) return
+    const store = activeChartInstance.store
+    const mainId = store.getMainId()
+    if (!mainId) return alert('Veuillez sélectionner une personne d\'abord.')
+
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.json'
+    input.onchange = (e) => {
+      const file = e.target.files[0]
+      if (!file) return
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        try {
+          const importedData = JSON.parse(event.target.result)
+          if (!Array.isArray(importedData)) throw new Error('Format invalide')
+
+          const currentData = store.getData()
+          const currentIds = new Set(currentData.map(d => d.id))
+          const newUniqueData = importedData.filter(d => !currentIds.has(d.id))
+
+          store.updateData([...currentData, ...newUniqueData])
+          activeChartInstance.updateTree()
+          alert(`Branche importée (${newUniqueData.length} nouvelles fiches).`)
+        } catch (err) {
+          console.error(err)
+          alert('Erreur lors de l\'importation : ' + err.message)
+        }
+      }
+      reader.readAsText(file)
+    }
+    input.click()
+  },
+
+  exportTree: () => {
+    if (!activeChartInstance) return
+    const data = activeChartInstance.store.getData()
+    const json = JSON.stringify(data, null, 2)
+    const blob = new Blob([json], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `family-tree-${new Date().toISOString().split('T')[0]}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  },
+
+  importTree: () => {
+    if (!activeChartInstance) return
+    if (!confirm('Attention, cela remplacera tout l\'arbre actuel. Continuer ?')) return
+
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.json'
+    input.onchange = (e) => {
+      const file = e.target.files[0]
+      if (!file) return
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        try {
+          const importedData = JSON.parse(event.target.result)
+          if (!Array.isArray(importedData)) throw new Error('Format invalide')
+
+          activeChartInstance.store.updateData(importedData)
+          activeChartInstance.updateTree()
+          alert('Arbre importé avec succès.')
+        } catch (err) {
+          console.error(err)
+          alert('Erreur lors de l\'importation : ' + err.message)
+        }
+      }
+      reader.readAsText(file)
+    }
+    input.click()
+  }
+}
+
+// Event Listeners for Tools
+document.querySelector('[data-action="delete-branch-asc"]')?.addEventListener('click', () => tools.deleteBranch('asc'))
+document.querySelector('[data-action="delete-branch-desc"]')?.addEventListener('click', () => tools.deleteBranch('desc'))
+document.querySelector('[data-action="import-branch-asc"]')?.addEventListener('click', () => tools.importBranch('asc'))
+document.querySelector('[data-action="import-branch-desc"]')?.addEventListener('click', () => tools.importBranch('desc'))
+document.querySelector('[data-action="export-tree"]')?.addEventListener('click', () => tools.exportTree())
+document.querySelector('[data-action="import-tree"]')?.addEventListener('click', () => tools.importTree())
+
