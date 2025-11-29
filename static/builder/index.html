@@ -208,25 +208,273 @@
                 <input type="number" id="imgWidth" min="40" max="160" step="5" value="80">
 
                 <label for="imgHeight">Hauteur de l'image</label>
-                <input type="number" id="imgHeight" min="40" max="160" step="5" value="80">
+                <link rel="stylesheet" href="/static/shared/css/tabs.css">
+                <script type="importmap">
+    {
+      "imports": {
+        "d3": "https://cdn.jsdelivr.net/npm/d3@7.9.0/+esm",
+        "d3-selection": "https://cdn.jsdelivr.net/npm/d3-selection@3.0.0/+esm",
+        "d3-shape": "https://cdn.jsdelivr.net/npm/d3-shape@3.2.0/+esm",
+        "d3-hierarchy": "https://cdn.jsdelivr.net/npm/d3-hierarchy@3.1.2/+esm",
+        "d3-zoom": "https://cdn.jsdelivr.net/npm/d3-zoom@3.0.0/+esm",
+        "d3-array": "https://cdn.jsdelivr.net/npm/d3-array@3.2.4/+esm",
+        "d3-transition": "https://cdn.jsdelivr.net/npm/d3-transition@3.0.1/+esm"
+      }
+    }
+  </script>
+                </head>
 
-                <label for="imgX">Position X de l'image</label>
-                <input type="number" id="imgX" min="0" max="200" step="5" value="16">
+                <body class="controls-collapsed">
+                  <div class="layout">
+                    <main class="workspace">
+                      <button type="button" class="panel-toggle" data-action="toggle-panel" aria-controls="controlPanel"
+                        aria-expanded="false" aria-label="Basculer le panneau">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                          <line x1="9" y1="3" x2="9" y2="21"></line>
+                        </svg>
+                        <span>Afficher</span>
+                      </button>
+                      <aside class="controls" id="controlPanel">
+                        <div class="tabs-nav">
+                          <button type="button" class="active" data-tab="data">Données</button>
+                          <button type="button" data-tab="appearance">Apparence</button>
+                          <button type="button" data-tab="tools">Outils</button>
+                        </div>
 
+                        <!-- Tab: Données -->
+                        <div class="tab-content active" data-tab-content="data">
+                          <div class="search-panel" data-role="builder-search" data-state="loading">
+                            <h2 class="search-title" id="builderSearchLabel">Recherche rapide</h2>
+                            <div class="search-widget" data-role="builder-search-target"></div>
+                          </div>
 
-                const loadBuilder = async () => {
-                try {
-                await import('/builder.bundle.js')
-                } catch (error) {
-                console.warn('[builder] Bundle introuvable, utilisation du script non compressé.', error)
-                await import('/builder.js')
-                }
-                }
+                          <div class="panel-section">
+                            <fieldset data-role="editable-fields">
+                              <legend>Champs modifiables</legend>
+                              <p class="group-hint">Sélectionnez les champs éditables ou ajoutez vos propres champs
+                                personnalisés.</p>
+                              <div class="editable-list" role="group" aria-label="Champs modifiables disponibles"></div>
+                              <div class="field-actions">
+                                <button type="button" class="ghost small" data-action="add-editable">Ajouter un
+                                  champ</button>
+                              </div>
+                            </fieldset>
 
-                loadBuilder().catch(error => {
-                console.error('[builder] Impossible de charger l’éditeur', error)
-                })
-                </script>
-</body>
+                            <fieldset class="main-profile" data-role="main-profile">
+                              <legend>Profil affiché par défaut</legend>
+                              <select id="mainProfileSelect">
+                                <option value="">Chargement…</option>
+                              </select>
+                              <p class="hint">Sélectionné par défaut : <span data-role="main-profile-name">—</span></p>
+                            </fieldset>
+                          </div>
+                        </div>
+
+                        <!-- Tab: Apparence -->
+                        <div class="tab-content" data-tab-content="appearance">
+                          <fieldset class="display-fields">
+                            <legend>Champs affichés</legend>
+                            <div class="display-group" data-display-row="1">
+                              <span class="group-label">Ligne&nbsp;1</span>
+                              <p class="group-hint">Cochez les champs à afficher pour la première ligne.</p>
+                              <div class="field-list" role="group" aria-label="Champs affichés pour la ligne 1"></div>
+                            </div>
+                            <div class="display-group" data-display-row="2">
+                              <span class="group-label">Ligne&nbsp;2</span>
+                              <p class="group-hint">Les champs cochés s’affichent en dessous de la ligne principale.</p>
+                              <div class="field-list" role="group" aria-label="Champs affichés pour la ligne 2"></div>
+                            </div>
+                          </fieldset>
+
+                          <details class="panel" open>
+                            <summary>Éléments de carte</summary>
+                            <div class="panel-body">
+                              <label for="imageField">Champ image</label>
+                              <select id="imageField">
+                                <option value="avatar" selected>Avatar</option>
+                                <option value="photo">Photo</option>
+                                <option value="picture">Portrait</option>
+                              </select>
+
+                              <label for="cardStyle">Style de carte</label>
+                              <select id="cardStyle">
+                                <option value="default" selected>Défaut</option>
+                                <option value="imageCircle">Image cercle</option>
+                                <option value="imageCircleRect">Image cercle rect.</option>
+                                <option value="imageRect">Image rect.</option>
+                                <option value="rect">Rect.</option>
+                              </select>
+
+                              <fieldset class="media-tools" data-role="image-uploader">
+                                <legend>Images</legend>
+                                <p class="group-hint">Importez une image depuis votre ordinateur. Taille max&nbsp;:
+                                  5&nbsp;Mo.</p>
+                                <label for="assetUpload" class="file-label">Téléverser une image</label>
+                                <input type="file" id="assetUpload" accept="image/*">
+                                <p class="hint" data-role="upload-feedback">Formats recommandés&nbsp;: JPG, PNG, WebP.
+                                </p>
+                                <div class="upload-result hidden" data-role="upload-result">
+                                  <span class="upload-label">Image disponible à&nbsp;:</span>
+                                  <code class="upload-url" data-role="upload-url"></code>
+                                  <div class="upload-actions">
+                                    <button type="button" class="ghost small" data-action="copy-upload-url">Copier
+                                      l’URL</button>
+                                    <a class="ghost small hidden" data-role="open-upload" href="#" target="_blank"
+                                      rel="noopener">Ouvrir</a>
+                                    <button type="button" class="ghost small" data-action="delete-upload">Supprimer la
+                                      photo</button>
+                                  </div>
+                                </div>
+                              </fieldset>
+                            </div>
+                          </details>
+
+                          <details class="panel" open>
+                            <summary>Options de mise en page</summary>
+                            <div class="panel-body">
+                              <label for="transitionInput">Durée de transition (ms)</label>
+                              <input type="number" id="transitionInput" min="0" max="5000" step="50" value="320">
+
+                              <label for="cardYSpacing">Espacement vertical</label>
+                              <input type="number" id="cardYSpacing" min="80" max="400" step="10" value="160">
+
+                              <label for="cardXSpacing">Espacement horizontal</label>
+                              <input type="number" id="cardXSpacing" min="120" max="400" step="10" value="240">
+
+                              <label for="emptyLabel">Libellé carte vide</label>
+                              <input type="text" id="emptyLabel" placeholder="Inconnu" value="Inconnu">
+
+                              <div class="depth-grid">
+                                <div class="depth-control">
+                                  <label for="ancestryDepth">Générations ancêtres visibles</label>
+                                  <select id="ancestryDepth">
+                                    <option value="0">0 (profil seul)</option>
+                                    <option value="1">1 génération</option>
+                                    <option value="2">2 générations</option>
+                                    <option value="3">3 générations</option>
+                                    <option value="4">4 générations</option>
+                                    <option value="5">5 générations</option>
+                                    <option value="6">6 générations</option>
+                                    <option value="8">8 générations</option>
+                                    <option value="10">10 générations</option>
+                                    <option value="">Illimité</option>
+                                  </select>
+                                </div>
+                                <div class="depth-control">
+                                  <label for="progenyDepth">Générations descendants visibles</label>
+                                  <select id="progenyDepth">
+                                    <option value="0">0 (profil seul)</option>
+                                    <option value="1">1 génération</option>
+                                    <option value="2">2 générations</option>
+                                    <option value="3">3 générations</option>
+                                    <option value="4">4 générations</option>
+                                    <option value="5">5 générations</option>
+                                    <option value="6">6 générations</option>
+                                    <option value="8">8 générations</option>
+                                    <option value="10">10 générations</option>
+                                    <option value="">Illimité</option>
+                                  </select>
+                                </div>
+                              </div>
+
+                              <label class="toggle-row" for="miniTreeToggle">
+                                <input type="checkbox" id="miniTreeToggle" checked>
+                                <span>Activer les cartes compactes (Mini Tree)</span>
+                              </label>
+
+                              <div class="option-row">
+                                <span>Orientation</span>
+                                <div class="button-group" role="group" aria-label="Orientation">
+                                  <button data-orientation="vertical" type="button" class="active">Verticale</button>
+                                  <button data-orientation="horizontal" type="button">Horizontale</button>
+                                </div>
+                              </div>
+                            </div>
+                          </details>
+
+                          <details class="panel" open>
+                            <summary>Dimensions de la carte</summary>
+                            <div class="panel-body">
+                              <p class="hint">Modifier ces valeurs impacte directement la mise en page.</p>
+                              <div class="dimension-grid">
+                                <label for="cardWidth">Largeur de la carte</label>
+                                <input type="number" id="cardWidth" min="160" max="400" step="10" value="240">
+
+                                <label for="cardHeight">Hauteur de la carte</label>
+                                <input type="number" id="cardHeight" min="100" max="300" step="10" value="150">
+
+                                <label for="imgWidth">Largeur de l'image</label>
+                                <input type="number" id="imgWidth" min="40" max="160" step="5" value="80">
+
+                                <label for="imgHeight">Hauteur de l'image</label>
+                                <input type="number" id="imgHeight" min="40" max="160" step="5" value="80">
+
+                                <label for="imgX">Position X de l'image</label>
+                                <input type="number" id="imgX" min="0" max="200" step="5" value="16">
+
+                                <label for="imgY">Position Y de l'image</label>
+                                <input type="number" id="imgY" min="0" max="200" step="5" value="16">
+                              </div>
+                              <button id="resetDimensions" class="ghost" type="button">Réinitialiser</button>
+                            </div>
+                          </details>
+                        </div>
+
+                        <!-- Tab: Outils -->
+                        <div class="tab-content" data-tab-content="tools">
+                          <div class="panel-section">
+                            <h3>Gestion de l'arbre</h3>
+                            <div class="button-group-vertical">
+                              <button type="button" data-action="delete-branch-asc" class="danger">Supprimer la branche
+                                Ascendance</button>
+                              <button type="button" data-action="delete-branch-desc" class="danger">Supprimer la branche
+                                Descendance</button>
+                              <div class="separator"></div>
+                              <button type="button" data-action="import-branch-asc">Importer branche Ascendance</button>
+                              <button type="button" data-action="import-branch-desc">Importer branche
+                                Descendance</button>
+                              <div class="separator"></div>
+                              <button type="button" data-action="import-tree">Importer tout l'arbre</button>
+                              <button type="button" data-action="export-tree">Exporter tout l'arbre</button>
+                            </div>
+                          </div>
+
+                          <div class="panel-section">
+                            <h3>Liens</h3>
+                            <div class="button-group-vertical">
+                              <a href="https://github.com/maelmoreau21/family-tree" target="_blank" rel="noopener"
+                                class="button">Dépôt GitHub</a>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="builder-status" id="status" role="status" aria-live="assertive"></div>
+                      </aside>
+                      <section class="canvas">
+                        <div id="FamilyChart" class="f3"></div>
+                      </section>
+                    </main>
+                  </div>
+
+                  <script type="module">
+                    import { initTabs } from '/static/shared/js/tabs.js';
+                    initTabs('#controlPanel');
+
+                    const loadBuilder = async () => {
+                      try {
+                        await import('/builder.bundle.js')
+                      } catch (error) {
+                        console.warn('[builder] Bundle introuvable, utilisation du script non compressé.', error)
+                        await import('/builder.js')
+                      }
+                    }
+
+                    loadBuilder().catch(error => {
+                      console.error('[builder] Impossible de charger l’éditeur', error)
+                    })
+                  </script>
+                </body>
 
 </html>
