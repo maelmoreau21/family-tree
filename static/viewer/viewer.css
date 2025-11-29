@@ -123,32 +123,6 @@ body {
 .viewer-toolbar {
   position: absolute;
   top: var(--space-md);
-  left: var(--space-md);
-  z-index: 101;
-  pointer-events: none;
-  /* Allow clicking through to canvas if needed, but button needs pointer-events: auto */
-}
-
-.viewer-toolbar .panel-toggle {
-  pointer-events: auto;
-  background: var(--panel-bg);
-  backdrop-filter: blur(var(--backdrop-blur));
-  border: 1px solid var(--panel-border);
-  color: var(--text-main);
-  padding: 0.6rem 1.2rem;
-  border-radius: 99px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border-bottom: 1px solid var(--panel-border);
-  padding-bottom: var(--space-sm);
-  flex-shrink: 0;
-}
-
-.performance-controls summary {
-  list-style: none;
-  cursor: pointer;
   font-weight: 600;
   font-size: 0.9rem;
   color: var(--text-main);
