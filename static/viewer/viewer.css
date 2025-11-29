@@ -1815,7 +1815,7 @@ body.viewer-details-collapsed .details {
   color: var(--text-main) !important;
   background: rgba(255, 255, 255, 0.1) !important;
 }
-}
+
 
 /* Hide empty autocomplete dropdowns */
 .f3-autocomplete-items.is-empty,
@@ -1855,24 +1855,6 @@ body.viewer-details-collapsed .details {
 g[data-icon='chevron-down'] circle,
 g[data-icon='chevron-up'] circle {
   display: none !important;
-  opacity: 0 !important;
-  visibility: hidden !important;
-}
-
-/* Ensure tab content fills the available space for scrolling */
-.tab-content {
-  display: none;
-  flex-direction: column;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: white;
-  font-size: 0.8rem;
-}
-
-/* Dataset Meta */
-.dataset-meta {
-  font-size: 0.75rem;
-  color: var(--text-dim);
   margin-top: var(--space-sm);
   border-top: 1px solid var(--panel-border);
   padding-top: var(--space-sm);
@@ -2010,7 +1992,7 @@ g[data-icon='chevron-up'] circle {
   color: var(--text-main) !important;
   background: rgba(255, 255, 255, 0.1) !important;
 }
-}
+
 
 /* Hide empty autocomplete dropdowns */
 .f3-autocomplete-items.is-empty,
