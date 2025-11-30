@@ -1483,6 +1483,7 @@ function attachPanelControls({ chart, card }) {
         const labels = document.querySelectorAll('label')
         let bioLabel = null
         for (const l of labels) {
+          if (l.closest('#controlPanel')) continue
           if (l.textContent && l.textContent.includes('Biographie')) {
             bioLabel = l
             break
