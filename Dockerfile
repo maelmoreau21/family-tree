@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1
+
 
 FROM node:20-alpine AS deps
 # Install dependencies for building sharp from source if needed
