@@ -1280,6 +1280,12 @@ function setupChart(payload) {
     teardown: () => { }
   }
 
+  if (editTreeInstance && panelControlAPI.handleFormCreation) {
+    if (typeof editTreeInstance.setOnFormCreation === 'function') {
+      editTreeInstance.setOnFormCreation(panelControlAPI.handleFormCreation)
+    }
+  }
+
   searchControlAPI = initBuilderSearch(chart)
 
   if (typeof panelControlAPI.teardown === 'function') {
