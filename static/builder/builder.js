@@ -2841,146 +2841,192 @@ initialise()
 
 // Tool Buttons Logic
 const tools = {
-    deleteBranch: (direction) => {
-      if (!activeChartInstance) return
-      const store = activeChartInstance.store
-      const mainId = store.getMainId()
-      if (!mainId) return alert('Veuillez sÃ©lectionner une personne d\'abord.')
+  deleteBranch: (direction) => {
+    if (!activeChartInstance) return
+    const store = activeChartInstance.store
+    const mainId = store.getMainId()
+    if (!mainId) return alert('Veuillez sÃ©lectionner une personne d\'abord.')
 
-      if (!confirm(`ÃŠtes-vous sÃ»r de vouloir supprimer la branche ${direction === 'asc' ? 'ascendance' : 'descendance'} de la personne sÃ©lectionnÃ©e ? Cette action est irrÃ©versible.`)) return
+    if (!confirm(`ÃŠtes-vous sÃ»r de vouloir supprimer la branche ${direction === 'asc' ? 'ascendance' : 'descendance'} de la personne sÃ©lectionnÃ©e ? Cette action est irrÃ©versible.`)) return
 
-      const data = store.getData()
-      const idsToDelete = new Set()
+    const data = store.getData()
+    const idsToDelete = new Set()
 
-      const traverse = (id) => {
-        idsToDelete.add(id)
-        const datum = data.find(d => d.id === id)
-        if (!datum) return
+    const traverse = (id) => {
+      idsToDelete.add(id)
+      const datum = data.find(d => d.id === id)
+      if (!datum) return
 
-        if (direction === 'asc') {
-          // Delete parents recursively
-          datum.rels.parents?.forEach(traverse)
-        } else {
-          // Delete children recursively
-          datum.rels.children?.forEach(traverse)
-        }
+      if (direction === 'asc') {
+        // Delete parents recursively
+        datum.rels.parents?.forEach(traverse)
+      } else {
+        // Delete children recursively
+        datum.rels.children?.forEach(traverse)
       }
-
-      const mainDatum = data.find(d => d.id === mainId)
-      if (mainDatum) {
-        if (direction === 'asc') {
-          mainDatum.rels.parents?.forEach(traverse)
-          mainDatum.rels.parents = [] // Clear connection
-        } else {
-          mainDatum.rels.children?.forEach(traverse)
-          mainDatum.rels.children = [] // Clear connection
-        }
-      }
-
-      const newData = data.filter(d => !idsToDelete.has(d.id))
-      store.updateData(newData)
-      activeChartInstance.updateTree()
-      alert('Branche supprimÃ©e avec succÃ¨s.')
-    },
-
-    importBranch: (direction) => {
-      if (!activeChartInstance) return
-      const store = activeChartInstance.store
-      const mainId = store.getMainId()
-      if (!mainId) return alert('Veuillez sÃ©lectionner une personne d\'abord.')
-
-      const input = document.createElement('input')
-      input.type = 'file'
-      input.accept = '.json'
-      input.onchange = (e) => {
-        const file = e.target.files[0]
-        if (!file) return
-        const reader = new FileReader()
-        reader.onload = (event) => {
-          try {
-            const importedData = JSON.parse(event.target.result)
-            if (!Array.isArray(importedData)) throw new Error('Format invalide')
-
-            const currentData = store.getData()
-            const currentIds = new Set(currentData.map(d => d.id))
-            const newUniqueData = importedData.filter(d => !currentIds.has(d.id))
-
-            store.updateData([...currentData, ...newUniqueData])
-            activeChartInstance.updateTree()
-            alert(`Branche importÃ©e (${newUniqueData.length} nouvelles fiches).`)
-          } catch (err) {
-            console.error(err)
-            alert('Erreur lors de l\'importation : ' + err.message)
-          }
-        }
-        reader.readAsText(file)
-      }
-      input.click()
-    },
-
-    exportTree: () => {
-      if (!activeChartInstance) return
-      const data = activeChartInstance.store.getData()
-      const json = JSON.stringify(data, null, 2)
-      const blob = new Blob([json], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `family-tree-${new Date().toISOString().split('T')[0]}.json`
-      a.click()
-      URL.revokeObjectURL(url)
-    },
-
-    importTree: () => {
-      if (!activeChartInstance) return
-      if (!confirm('Attention, cela remplacera tout l\'arbre actuel. Continuer ?')) return
-
-      const input = document.createElement('input')
-      input.type = 'file'
-      input.accept = '.json'
-      input.onchange = (e) => {
-        const file = e.target.files[0]
-        if (!file) return
-        const reader = new FileReader()
-        reader.onload = (event) => {
-          try {
-            const importedData = JSON.parse(event.target.result)
-            if (!Array.isArray(importedData)) throw new Error('Format invalide')
-
-            activeChartInstance.store.updateData(importedData)
-            activeChartInstance.updateTree()
-            alert('Arbre importÃ© avec succÃ¨s.')
-          } catch (err) {
-            console.error(err)
-            alert('Erreur lors de l\'importation : ' + err.message)
-          }
-        }
-        reader.readAsText(file)
-      }
-      input.click()
     }
+
+    const mainDatum = data.find(d => d.id === mainId)
+    if (mainDatum) {
+      if (direction === 'asc') {
+        mainDatum.rels.parents?.forEach(traverse)
+        mainDatum.rels.parents = [] // Clear connection
+      } else {
+        mainDatum.rels.children?.forEach(traverse)
+        mainDatum.rels.children = [] // Clear connection
+      }
+    }
+
+    const newData = data.filter(d => !idsToDelete.has(d.id))
+    store.updateData(newData)
+    activeChartInstance.updateTree()
+    alert('Branche supprimÃ©e avec succÃ¨s.')
+  },
+
+  importBranch: (direction) => {
+    if (!activeChartInstance) return
+    const store = activeChartInstance.store
+    const mainId = store.getMainId()
+    if (!mainId) return alert('Veuillez sélectionner une personne d\'abord.')
+
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.json'
+    input.onchange = (e) => {
+      const file = e.target.files[0]
+      if (!file) return
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        try {
+          const importedData = JSON.parse(event.target.result)
+          if (!Array.isArray(importedData) || importedData.length === 0) throw new Error('Format invalide ou vide')
+
+          const currentData = store.getData()
+          const currentIds = new Set(currentData.map(d => d.id))
+
+          // Filter out duplicates but keep the root if we need to link it
+          const newUniqueData = importedData.filter(d => !currentIds.has(d.id))
+
+          // Assume the first person in the imported file is the root of that branch
+          const importedRoot = importedData[0]
+          const mainDatum = currentData.find(d => d.id === mainId)
+
+          if (mainDatum && importedRoot) {
+            if (direction === 'asc') {
+              // Imported root is a PARENT of selected person
+              if (!mainDatum.rels.parents) mainDatum.rels.parents = []
+              if (!mainDatum.rels.parents.includes(importedRoot.id)) {
+                mainDatum.rels.parents.push(importedRoot.id)
+              }
+
+              // Also update the imported root's children to include selected person (if it's in the new data)
+              // We need to find the object in newUniqueData OR currentData if it was already there
+              let rootInStore = newUniqueData.find(d => d.id === importedRoot.id)
+              if (!rootInStore) rootInStore = currentData.find(d => d.id === importedRoot.id)
+
+              if (rootInStore) {
+                if (!rootInStore.rels.children) rootInStore.rels.children = []
+                if (!rootInStore.rels.children.includes(mainId)) {
+                  rootInStore.rels.children.push(mainId)
+                }
+              }
+
+            } else {
+              // Imported root is a CHILD of selected person
+              if (!mainDatum.rels.children) mainDatum.rels.children = []
+              if (!mainDatum.rels.children.includes(importedRoot.id)) {
+                mainDatum.rels.children.push(importedRoot.id)
+              }
+
+              // Also update the imported root's parents
+              let rootInStore = newUniqueData.find(d => d.id === importedRoot.id)
+              if (!rootInStore) rootInStore = currentData.find(d => d.id === importedRoot.id)
+
+              if (rootInStore) {
+                if (!rootInStore.rels.parents) rootInStore.rels.parents = []
+                if (!rootInStore.rels.parents.includes(mainId)) {
+                  rootInStore.rels.parents.push(mainId)
+                }
+              }
+            }
+          }
+
+          store.updateData([...currentData, ...newUniqueData])
+          activeChartInstance.updateTree()
+          alert(`Branche importée (${newUniqueData.length} nouvelles fiches) et reliée.`)
+        } catch (err) {
+          console.error(err)
+          alert('Erreur lors de l\'importation : ' + err.message)
+        }
+      }
+      reader.readAsText(file)
+    }
+    input.click()
+  },
+
+  exportTree: () => {
+    if (!activeChartInstance) return
+    const data = activeChartInstance.store.getData()
+    const json = JSON.stringify(data, null, 2)
+    const blob = new Blob([json], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `family-tree-${new Date().toISOString().split('T')[0]}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  },
+
+  importTree: () => {
+    if (!activeChartInstance) return
+    if (!confirm('Attention, cela remplacera tout l\'arbre actuel. Continuer ?')) return
+
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.json'
+    input.onchange = (e) => {
+      const file = e.target.files[0]
+      if (!file) return
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        try {
+          const importedData = JSON.parse(event.target.result)
+          if (!Array.isArray(importedData)) throw new Error('Format invalide')
+
+          activeChartInstance.store.updateData(importedData)
+          activeChartInstance.updateTree()
+          alert('Arbre importÃ© avec succÃ¨s.')
+        } catch (err) {
+          console.error(err)
+          alert('Erreur lors de l\'importation : ' + err.message)
+        }
+      }
+      reader.readAsText(file)
+    }
+    input.click()
   }
+}
 
 // Event Listeners for Tools
 function setupToolListeners() {
-    const actions = {
-      'delete-branch-asc': () => tools.deleteBranch('asc'),
-      'delete-branch-desc': () => tools.deleteBranch('desc'),
-      'import-branch-asc': () => tools.importBranch('asc'),
-      'import-branch-desc': () => tools.importBranch('desc'),
-      'import-tree': () => tools.importTree(),
-      'export-tree': () => tools.exportTree()
-    }
+  const actions = {
+    'delete-branch-asc': () => tools.deleteBranch('asc'),
+    'delete-branch-desc': () => tools.deleteBranch('desc'),
+    'import-branch-asc': () => tools.importBranch('asc'),
+    'import-branch-desc': () => tools.importBranch('desc'),
+    'import-tree': () => tools.importTree(),
+    'export-tree': () => tools.exportTree()
+  }
 
   Object.entries(actions).forEach(([action, handler]) => {
-      const btn = document.querySelector(`[data-action="${action}"]`)
-      if (btn) {
-        // Remove existing listeners to avoid duplicates if re-run
-        const newBtn = btn.cloneNode(true)
-        btn.parentNode.replaceChild(newBtn, btn)
-        newBtn.addEventListener('click', handler)
-      }
-    })
+    const btn = document.querySelector(`[data-action="${action}"]`)
+    if (btn) {
+      // Remove existing listeners to avoid duplicates if re-run
+      const newBtn = btn.cloneNode(true)
+      btn.parentNode.replaceChild(newBtn, btn)
+      newBtn.addEventListener('click', handler)
+    }
+  })
 }
 
 // Initialize tools when DOM is ready
