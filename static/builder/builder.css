@@ -2510,6 +2510,7 @@ legend {
     border-top: 1px solid var(--panel-border);
   }
 
+
   /* Tools Tab Styles */
   .button-group-vertical {
     display: flex;
@@ -2518,13 +2519,31 @@ legend {
     margin-top: var(--space-sm);
   }
 
-  .button-group-vertical button {
-    width: 100%;
-    text-align: left;
-    padding: var(--space-sm) var(--space-md);
+  .button-group-vertical button,
+  .button-group-vertical .button {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
+    width: 100%;
+    padding: var(--space-md);
+    background-color: var(--bg-card);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-md);
+    color: var(--text-main);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    font-weight: 500;
+    text-decoration: none;
+    box-sizing: border-box;
+  }
+
+  .button-group-vertical button:hover,
+  .button-group-vertical .button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--accent-primary);
+    transform: translateY(-1px);
   }
 
   .button-group-vertical button.danger {
@@ -2534,62 +2553,13 @@ legend {
 
   .button-group-vertical button.danger:hover {
     background: rgba(239, 68, 68, 0.1);
-    border-color: rgba(239, 68, 68, 0.5);
+    border-color: #ef4444;
   }
 
   .separator {
     height: 1px;
     background: var(--panel-border);
     margin: var(--space-sm) 0;
+    width: 100%;
   }
-/* Tools Tab Styles */
-.button-group-vertical {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-  margin-top: var(--space-sm);
-}
-
-.button-group-vertical button,
-.button-group-vertical .button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  padding: var(--space-md);
-  background-color: var(--bg-card);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--panel-border);
-  border-radius: var(--radius-md);
-  color: var(--text-main);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: center;
-  font-weight: 500;
-  text-decoration: none;
-  box-sizing: border-box;
-}
-
-.button-group-vertical button:hover,
-.button-group-vertical .button:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: var(--accent-primary);
-  transform: translateY(-1px);
-}
-
-.button-group-vertical button.danger {
-  border-color: rgba(239, 68, 68, 0.3);
-  color: #fca5a5;
-}
-
-.button-group-vertical button.danger:hover {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: #ef4444;
-}
-
-.separator {
-  height: 1px;
-  background: var(--panel-border);
-  margin: var(--space-sm) 0;
-  width: 100%;
 }

@@ -2836,6 +2836,7 @@ window.addEventListener('beforeunload', (event) => {
   event.preventDefault()
   event.returnValue = ''
 })
+
 initialise()
 
 // Tool Buttons Logic
@@ -3033,3 +3034,4 @@ if (document.readyState === 'loading') {
 } else {
   setupToolListeners()
 }
+
