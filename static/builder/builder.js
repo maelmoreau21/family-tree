@@ -1,4 +1,4 @@
-import * as f3 from '/lib/family-tree.esm.js'
+﻿import * as f3 from '/lib/family-tree.esm.js'
 
 const statusEl = document.getElementById('status')
 const saveBtn = document.getElementById('save')
@@ -130,7 +130,7 @@ function setChartLoading(isLoading, message = '') {
     chartLoadingEl.classList.remove('is-hidden')
     chartLoadingEl.setAttribute('aria-hidden', 'false')
     if (chartLoadingLabel) {
-      chartLoadingLabel.textContent = message || 'Chargement…'
+      chartLoadingLabel.textContent = message || 'Chargementâ€¦'
     }
   } else {
     const hide = () => {
@@ -266,7 +266,7 @@ function renderBreadcrumbTrail(mainId) {
   if (!mainId || !activeChartInstance?.store?.getTreeDatum) {
     const placeholder = document.createElement('span')
     placeholder.className = 'breadcrumb-empty'
-    placeholder.textContent = 'Sélectionnez une personne pour afficher son parcours.'
+    placeholder.textContent = 'SÃ©lectionnez une personne pour afficher son parcours.'
     breadcrumbRoot.append(placeholder)
     return
   }
@@ -394,22 +394,22 @@ if (panelToggleBtn) {
 }
 
 const DISPLAY_FIELD_LABELS = new Map([
-  ['first name', 'Prénom'],
-  ['first names', 'Prénoms'],
+  ['first name', 'PrÃ©nom'],
+  ['first names', 'PrÃ©noms'],
   ['last name', 'Nom'],
   ['birthday', 'Date de naissance'],
-  ['death', 'Date de Décès'],
+  ['death', 'Date de DÃ©cÃ¨s'],
   ['gender', 'Genre'],
   ['avatar', 'Photo de profil'],
   ['photo', 'Photo'],
   ['picture', 'Portrait'],
   ['bio', 'Biographie'],
-  ['metiers', 'Métiers'],
-  ['nationality', 'Nationalité'],
+  ['metiers', 'MÃ©tiers'],
+  ['nationality', 'NationalitÃ©'],
   ['occupation', 'Profession'],
-  ['location', 'Lieu de résidence'],
+  ['location', 'Lieu de rÃ©sidence'],
   ['birthplace', 'Lieu de naissance'],
-  ['deathplace', 'Lieu de décès'],
+  ['deathplace', 'Lieu de dÃ©cÃ¨s'],
   ['union date', "Date d'union"],
   ['union place', "Lieu d'union"],
   ['union paragraph', "Paragraphe d'union"],
@@ -438,25 +438,25 @@ const DISPLAY_DEFAULTS = {
   ],
   2: [
     { value: 'birthday', checked: true },
-    { value: 'death', label: 'Date de Décès', checked: false },
+    { value: 'death', label: 'Date de DÃ©cÃ¨s', checked: false },
     { value: 'avatar', checked: false },
     { value: 'gender', checked: false }
   ]
 }
 
 const EDITABLE_DEFAULTS = [
-  { value: 'first name', label: 'Prénom', checked: true },
-  { value: 'first names', label: 'Prénoms', checked: true },
+  { value: 'first name', label: 'PrÃ©nom', checked: true },
+  { value: 'first names', label: 'PrÃ©noms', checked: true },
   { value: 'last name', label: 'Nom', checked: true },
   { value: 'maiden name', label: 'Nom de naissance', checked: true },
   { value: 'birthday', label: 'Date de naissance', checked: true },
-  { value: 'death', label: 'Date de Décès', checked: true },
+  { value: 'death', label: 'Date de DÃ©cÃ¨s', checked: true },
   { value: 'birthplace', label: 'Lieu de naissance', checked: true },
-  { value: 'deathplace', label: 'Lieu de Décès', checked: true },
+  { value: 'deathplace', label: 'Lieu de DÃ©cÃ¨s', checked: true },
   { value: 'avatar', label: 'Avatar', checked: true },
   { value: 'gender', label: 'Genre', checked: true },
-  { value: 'nationality', label: 'Nationalité', checked: true },
-  { value: 'metiers', label: 'Métiers', checked: true },
+  { value: 'nationality', label: 'NationalitÃ©', checked: true },
+  { value: 'metiers', label: 'MÃ©tiers', checked: true },
   { value: 'bio', label: 'Biographie', checked: false }
 ]
 
@@ -612,7 +612,7 @@ function createSearchOptionFromDatum(datum) {
       return
     }
     if (key === 'death') {
-      addMeta(`✝ ${trimmed}`)
+      addMeta(`âœ ${trimmed}`)
       return
     }
     if (key === 'maiden name') {
@@ -639,7 +639,7 @@ function createSearchOptionFromDatum(datum) {
     searchText,
     optionHtml: (option) => {
       const safeMetaParts = metaParts.map(part => escapeHtml(part))
-      const meta = safeMetaParts.length ? `<small>${safeMetaParts.join(' · ')}</small>` : ''
+      const meta = safeMetaParts.length ? `<small>${safeMetaParts.join(' Â· ')}</small>` : ''
       const safeLabel = option.label_html || escapeHtml(option.label)
       return `<div>${safeLabel}${meta ? `<div class="f3-autocomplete-meta">${meta}</div>` : ''}</div>`
     }
@@ -1037,11 +1037,11 @@ function applyChartConfigToChart(chart) {
 }
 
 async function loadTree() {
-  setStatus('Chargement des données…')
-  setChartLoading(true, 'Chargement des données…')
+  setStatus('Chargement des donnÃ©esâ€¦')
+  setChartLoading(true, 'Chargement des donnÃ©esâ€¦')
   const response = await fetch('/api/tree', { cache: 'no-store' })
   if (!response.ok) {
-    throw new Error(`Échec du chargement (${response.status})`)
+    throw new Error(`Ã‰chec du chargement (${response.status})`)
   }
   return response.json()
 }
@@ -1061,13 +1061,13 @@ async function persistChanges(snapshot, { immediate = false } = {}) {
 
   if (isSaving) {
     queuedSave = { snapshot: payload, immediate }
-    setStatus('Sauvegarde déjà en cours…', 'saving')
+    setStatus('Sauvegarde dÃ©jÃ  en coursâ€¦', 'saving')
     return
   }
 
   try {
     isSaving = true
-    setStatus(immediate ? 'Enregistrement en cours…' : 'Sauvegarde automatique…', 'saving')
+    setStatus(immediate ? 'Enregistrement en coursâ€¦' : 'Sauvegarde automatiqueâ€¦', 'saving')
 
     const response = await fetch('/api/tree', {
       method: 'PUT',
@@ -1076,11 +1076,11 @@ async function persistChanges(snapshot, { immediate = false } = {}) {
     })
 
     if (!response.ok && response.status !== 204) {
-      throw new Error(`Serveur a retourné ${response.status}`)
+      throw new Error(`Serveur a retournÃ© ${response.status}`)
     }
 
     lastSnapshotString = JSON.stringify(payload)
-    setStatus('Modifications enregistrées ✅', 'success')
+    setStatus('Modifications enregistrÃ©es âœ…', 'success')
   } catch (error) {
     console.error(error)
     setStatus(`Erreur d'enregistrement: ${error.message}`, 'error')
@@ -1113,7 +1113,7 @@ function getSnapshot() {
 
 function scheduleAutoSave() {
   destroyTimer()
-  setStatus('Modification détectée… sauvegarde automatique imminente', 'saving')
+  setStatus('Modification dÃ©tectÃ©eâ€¦ sauvegarde automatique imminente', 'saving')
   autoSaveTimer = setTimeout(() => {
     const snapshot = getSnapshot()
     if (!snapshot) return
@@ -1127,7 +1127,7 @@ function setupChart(payload) {
     throw new Error('Conteneur du graphique introuvable')
   }
 
-  setChartLoading(true, 'Construction du graphique…')
+  setChartLoading(true, 'Construction du graphiqueâ€¦')
   clearElement(container)
   builderSearchReady = false
   builderSearchOptions = []
@@ -1250,7 +1250,7 @@ function setupChart(payload) {
       })
     }
   } catch (e) {
-    console.warn('builder: impossible d’attacher les gestionnaires de clic sur les cartes', e)
+    console.warn('builder: impossible dâ€™attacher les gestionnaires de clic sur les cartes', e)
   }
 
   let panelControlAPI = null
@@ -1331,8 +1331,8 @@ function setupChart(payload) {
   const totalPersons = dataArray.length
   setStatus(
     totalPersons > 0
-      ? `Éditeur prêt ✅ – ${totalPersons} personne(s) chargée(s)`
-      : 'Fichier de données vide',
+      ? `Ã‰diteur prÃªt âœ… â€“ ${totalPersons} personne(s) chargÃ©e(s)`
+      : 'Fichier de donnÃ©es vide',
     totalPersons > 0 ? 'success' : 'error'
   )
   setChartLoading(false)
@@ -1346,7 +1346,7 @@ function setupChart(payload) {
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
-            Créer un nouvel arbre
+            CrÃ©er un nouvel arbre
           </button>
         </div>
       `
@@ -1363,7 +1363,7 @@ function setupChart(payload) {
         chart.store.updateData([newPerson])
         chart.updateTree({ initial: true })
         editTreeInstance.open(chart.getMainDatum())
-        setStatus('Nouvel arbre créé', 'success')
+        setStatus('Nouvel arbre crÃ©Ã©', 'success')
       })
     }
   }
@@ -1448,14 +1448,14 @@ function attachPanelControls({ chart, card }) {
   <fieldset class="media-tools" data-role="image-uploader">
     <legend>Images</legend>
     <p class="group-hint">Importez une image depuis votre ordinateur. Taille max&nbsp;: 5&nbsp;Mo.</p>
-    <label for="assetUpload" class="file-label">Téléverser une image</label>
+    <label for="assetUpload" class="file-label">TÃ©lÃ©verser une image</label>
     <input type="file" id="assetUpload" accept="image/*">
-    <p class="hint" data-role="upload-feedback" data-status="info">Formats recommandés&nbsp;: JPG, PNG, WebP.</p>
+    <p class="hint" data-role="upload-feedback" data-status="info">Formats recommandÃ©s&nbsp;: JPG, PNG, WebP.</p>
     <div class="upload-result hidden" data-role="upload-result" data-url="">
-      <span class="upload-label">Image disponible à&nbsp;:</span>
+      <span class="upload-label">Image disponible Ã &nbsp;:</span>
       <code class="upload-url" data-role="upload-url"></code>
       <div class="upload-actions">
-        <button type="button" class="ghost small" data-action="copy-upload-url">Copier l’URL</button>
+        <button type="button" class="ghost small" data-action="copy-upload-url">Copier lâ€™URL</button>
         <a class="ghost small hidden" data-role="open-upload" href="#" target="_blank" rel="noopener">Ouvrir</a>
         <button type="button" class="ghost small" data-action="delete-upload">Supprimer la photo</button>
       </div>
@@ -1479,7 +1479,7 @@ function attachPanelControls({ chart, card }) {
   const assetUploadOpenLink = imageUploader?.querySelector('[data-role="open-upload"]')
   const copyUploadUrlBtn = imageUploader?.querySelector('[data-action="copy-upload-url"]')
   const deleteUploadBtn = imageUploader?.querySelector('[data-action="delete-upload"]')
-  // manual URL input removed from UI — hide file input filename and use the label as trigger
+  // manual URL input removed from UI â€” hide file input filename and use the label as trigger
   const fileLabel = imageUploader?.querySelector('.file-label')
 
   // Inject into Edit Form
@@ -1526,7 +1526,7 @@ function attachPanelControls({ chart, card }) {
     try {
       return editTreeInstance.store.getDatum(imageUploaderCurrentDatumId) || null
     } catch (error) {
-      console.error('Impossible de récupérer le profil actif pour le téléversement', error)
+      console.error('Impossible de rÃ©cupÃ©rer le profil actif pour le tÃ©lÃ©versement', error)
       return null
     }
   }
@@ -1586,8 +1586,8 @@ function attachPanelControls({ chart, card }) {
     if (!absoluteUrl) return
 
     if (!isSafeImageUrl(absoluteUrl)) {
-      setUploadFeedback('URL d’image non sûre ou format non supporté.', 'error')
-      setStatus('URL d’image non sûre', 'error')
+      setUploadFeedback('URL dâ€™image non sÃ»re ou format non supportÃ©.', 'error')
+      setStatus('URL dâ€™image non sÃ»re', 'error')
       return
     }
 
@@ -1629,28 +1629,28 @@ function attachPanelControls({ chart, card }) {
       try {
         chart.updateTree({ initial: false, tree_position: 'inherit' })
       } catch (error) {
-        console.error('Impossible de rafraîchir le graphique après mise à jour de l’image', error)
+        console.error('Impossible de rafraÃ®chir le graphique aprÃ¨s mise Ã  jour de lâ€™image', error)
       }
       scheduleAutoSave()
     }
 
-    // manual URL input removed — nothing to set here
+    // manual URL input removed â€” nothing to set here
 
     const appliedSomewhere = formUpdated || datumUpdated
     if (origin === 'upload') {
       if (appliedSomewhere) {
         const sizeMessage = sizeBytes ? ` (${formatBytes(sizeBytes)})` : ''
-        setUploadFeedback(`Image téléversée${sizeMessage} et appliquée au profil.`, 'success')
-        setStatus('Image appliquée au profil ✅', 'success')
+        setUploadFeedback(`Image tÃ©lÃ©versÃ©e${sizeMessage} et appliquÃ©e au profil.`, 'success')
+        setStatus('Image appliquÃ©e au profil âœ…', 'success')
       } else {
         const sizeMessage = sizeBytes ? ` (${formatBytes(sizeBytes)})` : ''
-        setUploadFeedback(`Image téléversée${sizeMessage}. Sélectionnez un profil éditable pour l’appliquer.`, 'info')
+        setUploadFeedback(`Image tÃ©lÃ©versÃ©e${sizeMessage}. SÃ©lectionnez un profil Ã©ditable pour lâ€™appliquer.`, 'info')
       }
     } else if (appliedSomewhere) {
-      setUploadFeedback('Image appliquée au profil.', 'success')
-      setStatus('Image appliquée au profil ✅', 'success')
+      setUploadFeedback('Image appliquÃ©e au profil.', 'success')
+      setStatus('Image appliquÃ©e au profil âœ…', 'success')
     } else {
-      setUploadFeedback('Sélectionnez un profil éditable pour appliquer l’image.', 'info')
+      setUploadFeedback('SÃ©lectionnez un profil Ã©ditable pour appliquer lâ€™image.', 'info')
     }
   }
 
@@ -1661,13 +1661,13 @@ function attachPanelControls({ chart, card }) {
 
     if (!existingValue) {
       clearUploadResult()
-      setUploadFeedback('Formats recommandés : JPG, PNG, WebP.', 'info')
+      setUploadFeedback('Formats recommandÃ©s : JPG, PNG, WebP.', 'info')
       return
     }
 
     const absoluteUrl = showUploadResult(existingValue, { silent: true })
-    // manual URL input removed — nothing to update
-    setUploadFeedback('Image actuelle du profil chargée.', 'info')
+    // manual URL input removed â€” nothing to update
+    setUploadFeedback('Image actuelle du profil chargÃ©e.', 'info')
   }
 
   function restoreImageUploaderToPanel() {
@@ -1684,7 +1684,7 @@ function attachPanelControls({ chart, card }) {
     }
     imageUploader.classList.remove('is-modal-context')
     clearUploadResult()
-    setUploadFeedback('Importez une image depuis votre ordinateur. Formats recommandés : JPG, PNG, WebP.', 'info')
+    setUploadFeedback('Importez une image depuis votre ordinateur. Formats recommandÃ©s : JPG, PNG, WebP.', 'info')
   }
 
   function injectImageUploaderIntoForm(form) {
@@ -1814,15 +1814,15 @@ function attachPanelControls({ chart, card }) {
       }
     }
     assetUploadResult.classList.remove('hidden')
-    // manual URL input removed — nothing to update
-    if (!silent) setUploadFeedback('Image prête à être appliquée.', 'info')
+    // manual URL input removed â€” nothing to update
+    if (!silent) setUploadFeedback('Image prÃªte Ã  Ãªtre appliquÃ©e.', 'info')
 
     return absoluteUrl
   }
 
-  async function copyToClipboard(value, { successMessage = 'Copié dans le presse-papiers ✅', errorMessage = 'Impossible de copier.' } = {}) {
+  async function copyToClipboard(value, { successMessage = 'CopiÃ© dans le presse-papiers âœ…', errorMessage = 'Impossible de copier.' } = {}) {
     if (!value) {
-      setUploadFeedback('Aucune URL à copier.', 'error')
+      setUploadFeedback('Aucune URL Ã  copier.', 'error')
       return
     }
     try {
@@ -1853,7 +1853,7 @@ function attachPanelControls({ chart, card }) {
     clearUploadResult()
 
     if (!file.type || !file.type.startsWith('image/')) {
-      setUploadFeedback('Format non pris en charge. Sélectionnez une image (JPEG, PNG, WebP…).', 'error')
+      setUploadFeedback('Format non pris en charge. SÃ©lectionnez une image (JPEG, PNG, WebPâ€¦).', 'error')
       return
     }
 
@@ -1862,15 +1862,15 @@ function attachPanelControls({ chart, card }) {
       return
     }
 
-    setUploadFeedback('Téléversement en cours…', 'saving')
-    setStatus('Téléversement de l’image…', 'saving')
+    setUploadFeedback('TÃ©lÃ©versement en coursâ€¦', 'saving')
+    setStatus('TÃ©lÃ©versement de lâ€™imageâ€¦', 'saving')
 
     const formData = new FormData()
     formData.append('file', file, file.name)
     if (imageUploaderCurrentDatumId) {
       formData.append('personId', imageUploaderCurrentDatumId)
     }
-    // No need to send field anymore — server will store the upload as /document/<personId>/profil.<ext>
+    // No need to send field anymore â€” server will store the upload as /document/<personId>/profil.<ext>
 
     try {
       const response = await fetch('/api/document', {
@@ -1892,22 +1892,22 @@ function attachPanelControls({ chart, card }) {
       const payload = await response.json()
       const uploadedUrl = payload?.url
       if (!uploadedUrl) {
-        throw new Error('Réponse du serveur invalide (URL manquante).')
+        throw new Error('RÃ©ponse du serveur invalide (URL manquante).')
       }
 
       const absoluteUrl = showUploadResult(uploadedUrl)
       applyImageToActiveProfile(absoluteUrl, { origin: 'upload', sizeBytes: file.size })
     } catch (error) {
       console.error(error)
-      setUploadFeedback(error.message || 'Échec du téléversement.', 'error')
-      setStatus(`Téléversement échoué: ${error.message || 'Erreur inconnue'}`, 'error')
+      setUploadFeedback(error.message || 'Ã‰chec du tÃ©lÃ©versement.', 'error')
+      setStatus(`TÃ©lÃ©versement Ã©chouÃ©: ${error.message || 'Erreur inconnue'}`, 'error')
       clearUploadResult()
     }
   }
 
   clearUploadResult()
   if (assetUploadFeedback) {
-    setUploadFeedback(assetUploadFeedback.textContent || 'Formats recommandés : JPG, PNG, WebP.', 'info')
+    setUploadFeedback(assetUploadFeedback.textContent || 'Formats recommandÃ©s : JPG, PNG, WebP.', 'info')
   }
 
   function setOrientationButtonsState(orientation) {
@@ -2002,12 +2002,12 @@ function attachPanelControls({ chart, card }) {
   function updateMainProfileDisplay(id) {
     if (!mainProfileName) return
     if (!id) {
-      mainProfileName.textContent = '—'
+      mainProfileName.textContent = 'â€”'
       return
     }
     const datum = editTreeInstance?.store?.getDatum?.(id)
     if (!datum) {
-      mainProfileName.textContent = '—'
+      mainProfileName.textContent = 'â€”'
       return
     }
     mainProfileName.textContent = buildPersonLabel(datum)
@@ -2197,7 +2197,7 @@ function attachPanelControls({ chart, card }) {
         chart.updateTree({ initial: false, tree_position: 'main_to_middle' })
       }
     } catch (error) {
-      console.error('Impossible de recentrer le graphique après sélection du profil', error)
+      console.error('Impossible de recentrer le graphique aprÃ¨s sÃ©lection du profil', error)
     }
     const datum = editTreeInstance?.store?.getDatum?.(id) || null
     if (focusSearch) {
@@ -2526,14 +2526,14 @@ function attachPanelControls({ chart, card }) {
   }
 
   function requestFieldDefinition() {
-    const rawValue = prompt('Nom du champ (clé dans vos données) ?')
+    const rawValue = prompt('Nom du champ (clÃ© dans vos donnÃ©es) ?')
     if (!rawValue) return null
     const value = rawValue.trim()
     if (!value) return null
 
     const key = normalizeFieldKey(value)
     const suggestedLabel = fieldLabelStore.get(key) || value
-    const labelInput = prompt('Libellé affiché pour ce champ ?', suggestedLabel)
+    const labelInput = prompt('LibellÃ© affichÃ© pour ce champ ?', suggestedLabel)
     const displayLabel = (labelInput ?? suggestedLabel).trim() || value
 
     return { value, label: displayLabel, key }
@@ -2724,8 +2724,8 @@ function attachPanelControls({ chart, card }) {
     const storedUrl = assetUploadResult?.dataset?.url || assetUploadUrlOutput?.textContent?.trim()
     if (storedUrl) applyImageToActiveProfile(storedUrl, { origin: 'manual' })
     copyToClipboard(storedUrl, {
-      successMessage: 'URL du téléversement copiée ✅',
-      errorMessage: 'Impossible de copier l’URL du téléversement.'
+      successMessage: 'URL du tÃ©lÃ©versement copiÃ©e âœ…',
+      errorMessage: 'Impossible de copier lâ€™URL du tÃ©lÃ©versement.'
     })
   })
 
@@ -2733,14 +2733,14 @@ function attachPanelControls({ chart, card }) {
     const datum = getActiveDatum()
     const personId = imageUploaderCurrentDatumId || (datum && datum.id)
     if (!personId) {
-      setUploadFeedback('Sélectionnez un profil éditable pour supprimer sa photo.', 'error')
+      setUploadFeedback('SÃ©lectionnez un profil Ã©ditable pour supprimer sa photo.', 'error')
       return
     }
 
     const confirmText = `Supprimer la photo de profil pour ${personId} ?`
     if (!confirm(confirmText)) return
 
-    setUploadFeedback('Suppression en cours…', 'saving')
+    setUploadFeedback('Suppression en coursâ€¦', 'saving')
     try {
       const url = `/api/document?personId=${encodeURIComponent(personId)}`
       const resp = await fetch(url, { method: 'DELETE' })
@@ -2755,7 +2755,7 @@ function attachPanelControls({ chart, card }) {
 
       // Clear uploader UI and remove image from active datum
       clearUploadResult()
-      setUploadFeedback('Photo supprimée.', 'success')
+      setUploadFeedback('Photo supprimÃ©e.', 'success')
       // If the active datum had the image URL in its data, remove it
       try {
         const targetFieldId = getActiveImageFieldId()
@@ -2769,7 +2769,7 @@ function attachPanelControls({ chart, card }) {
       }
     } catch (error) {
       console.error(error)
-      setUploadFeedback(error.message || 'Échec de la suppression.', 'error')
+      setUploadFeedback(error.message || 'Ã‰chec de la suppression.', 'error')
     }
   })
 
@@ -2841,131 +2841,151 @@ initialise()
 
 // Tool Buttons Logic
 const tools = {
-  deleteBranch: (direction) => {
-    if (!activeChartInstance) return
-    const store = activeChartInstance.store
-    const mainId = store.getMainId()
-    if (!mainId) return alert('Veuillez sélectionner une personne d\'abord.')
+    deleteBranch: (direction) => {
+      if (!activeChartInstance) return
+      const store = activeChartInstance.store
+      const mainId = store.getMainId()
+      if (!mainId) return alert('Veuillez sÃ©lectionner une personne d\'abord.')
 
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer la branche ${direction === 'asc' ? 'ascendance' : 'descendance'} de la personne sélectionnée ? Cette action est irréversible.`)) return
+      if (!confirm(`ÃŠtes-vous sÃ»r de vouloir supprimer la branche ${direction === 'asc' ? 'ascendance' : 'descendance'} de la personne sÃ©lectionnÃ©e ? Cette action est irrÃ©versible.`)) return
 
-    const data = store.getData()
-    const idsToDelete = new Set()
+      const data = store.getData()
+      const idsToDelete = new Set()
 
-    const traverse = (id) => {
-      idsToDelete.add(id)
-      const datum = data.find(d => d.id === id)
-      if (!datum) return
+      const traverse = (id) => {
+        idsToDelete.add(id)
+        const datum = data.find(d => d.id === id)
+        if (!datum) return
 
-      if (direction === 'asc') {
-        // Delete parents recursively
-        datum.rels.parents?.forEach(traverse)
-      } else {
-        // Delete children recursively
-        datum.rels.children?.forEach(traverse)
-      }
-    }
-
-    const mainDatum = data.find(d => d.id === mainId)
-    if (mainDatum) {
-      if (direction === 'asc') {
-        mainDatum.rels.parents?.forEach(traverse)
-        mainDatum.rels.parents = [] // Clear connection
-      } else {
-        mainDatum.rels.children?.forEach(traverse)
-        mainDatum.rels.children = [] // Clear connection
-      }
-    }
-
-    const newData = data.filter(d => !idsToDelete.has(d.id))
-    store.updateData(newData)
-    activeChartInstance.updateTree()
-    alert('Branche supprimée avec succès.')
-  },
-
-  importBranch: (direction) => {
-    if (!activeChartInstance) return
-    const store = activeChartInstance.store
-    const mainId = store.getMainId()
-    if (!mainId) return alert('Veuillez sélectionner une personne d\'abord.')
-
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = '.json'
-    input.onchange = (e) => {
-      const file = e.target.files[0]
-      if (!file) return
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        try {
-          const importedData = JSON.parse(event.target.result)
-          if (!Array.isArray(importedData)) throw new Error('Format invalide')
-
-          const currentData = store.getData()
-          const currentIds = new Set(currentData.map(d => d.id))
-          const newUniqueData = importedData.filter(d => !currentIds.has(d.id))
-
-          store.updateData([...currentData, ...newUniqueData])
-          activeChartInstance.updateTree()
-          alert(`Branche importée (${newUniqueData.length} nouvelles fiches).`)
-        } catch (err) {
-          console.error(err)
-          alert('Erreur lors de l\'importation : ' + err.message)
+        if (direction === 'asc') {
+          // Delete parents recursively
+          datum.rels.parents?.forEach(traverse)
+        } else {
+          // Delete children recursively
+          datum.rels.children?.forEach(traverse)
         }
       }
-      reader.readAsText(file)
-    }
-    input.click()
-  },
 
-  exportTree: () => {
-    if (!activeChartInstance) return
-    const data = activeChartInstance.store.getData()
-    const json = JSON.stringify(data, null, 2)
-    const blob = new Blob([json], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `family-tree-${new Date().toISOString().split('T')[0]}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-  },
-
-  importTree: () => {
-    if (!activeChartInstance) return
-    if (!confirm('Attention, cela remplacera tout l\'arbre actuel. Continuer ?')) return
-
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = '.json'
-    input.onchange = (e) => {
-      const file = e.target.files[0]
-      if (!file) return
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        try {
-          const importedData = JSON.parse(event.target.result)
-          if (!Array.isArray(importedData)) throw new Error('Format invalide')
-
-          activeChartInstance.store.updateData(importedData)
-          activeChartInstance.updateTree()
-          alert('Arbre importé avec succès.')
-        } catch (err) {
-          console.error(err)
-          alert('Erreur lors de l\'importation : ' + err.message)
+      const mainDatum = data.find(d => d.id === mainId)
+      if (mainDatum) {
+        if (direction === 'asc') {
+          mainDatum.rels.parents?.forEach(traverse)
+          mainDatum.rels.parents = [] // Clear connection
+        } else {
+          mainDatum.rels.children?.forEach(traverse)
+          mainDatum.rels.children = [] // Clear connection
         }
       }
-      reader.readAsText(file)
+
+      const newData = data.filter(d => !idsToDelete.has(d.id))
+      store.updateData(newData)
+      activeChartInstance.updateTree()
+      alert('Branche supprimÃ©e avec succÃ¨s.')
+    },
+
+    importBranch: (direction) => {
+      if (!activeChartInstance) return
+      const store = activeChartInstance.store
+      const mainId = store.getMainId()
+      if (!mainId) return alert('Veuillez sÃ©lectionner une personne d\'abord.')
+
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = '.json'
+      input.onchange = (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+        const reader = new FileReader()
+        reader.onload = (event) => {
+          try {
+            const importedData = JSON.parse(event.target.result)
+            if (!Array.isArray(importedData)) throw new Error('Format invalide')
+
+            const currentData = store.getData()
+            const currentIds = new Set(currentData.map(d => d.id))
+            const newUniqueData = importedData.filter(d => !currentIds.has(d.id))
+
+            store.updateData([...currentData, ...newUniqueData])
+            activeChartInstance.updateTree()
+            alert(`Branche importÃ©e (${newUniqueData.length} nouvelles fiches).`)
+          } catch (err) {
+            console.error(err)
+            alert('Erreur lors de l\'importation : ' + err.message)
+          }
+        }
+        reader.readAsText(file)
+      }
+      input.click()
+    },
+
+    exportTree: () => {
+      if (!activeChartInstance) return
+      const data = activeChartInstance.store.getData()
+      const json = JSON.stringify(data, null, 2)
+      const blob = new Blob([json], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `family-tree-${new Date().toISOString().split('T')[0]}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+    },
+
+    importTree: () => {
+      if (!activeChartInstance) return
+      if (!confirm('Attention, cela remplacera tout l\'arbre actuel. Continuer ?')) return
+
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = '.json'
+      input.onchange = (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+        const reader = new FileReader()
+        reader.onload = (event) => {
+          try {
+            const importedData = JSON.parse(event.target.result)
+            if (!Array.isArray(importedData)) throw new Error('Format invalide')
+
+            activeChartInstance.store.updateData(importedData)
+            activeChartInstance.updateTree()
+            alert('Arbre importÃ© avec succÃ¨s.')
+          } catch (err) {
+            console.error(err)
+            alert('Erreur lors de l\'importation : ' + err.message)
+          }
+        }
+        reader.readAsText(file)
+      }
+      input.click()
     }
-    input.click()
   }
-}
 
 // Event Listeners for Tools
-document.querySelector('[data-action="delete-branch-asc"]')?.addEventListener('click', () => tools.deleteBranch('asc'))
-document.querySelector('[data-action="delete-branch-desc"]')?.addEventListener('click', () => tools.deleteBranch('desc'))
-document.querySelector('[data-action="import-branch-asc"]')?.addEventListener('click', () => tools.importBranch('asc'))
-document.querySelector('[data-action="import-branch-desc"]')?.addEventListener('click', () => tools.importBranch('desc'))
-document.querySelector('[data-action="export-tree"]')?.addEventListener('click', () => tools.exportTree())
-document.querySelector('[data-action="import-tree"]')?.addEventListener('click', () => tools.importTree())
+function setupToolListeners() {
+    const actions = {
+      'delete-branch-asc': () => tools.deleteBranch('asc'),
+      'delete-branch-desc': () => tools.deleteBranch('desc'),
+      'import-branch-asc': () => tools.importBranch('asc'),
+      'import-branch-desc': () => tools.importBranch('desc'),
+      'import-tree': () => tools.importTree(),
+      'export-tree': () => tools.exportTree()
+    }
 
+  Object.entries(actions).forEach(([action, handler]) => {
+      const btn = document.querySelector(`[data-action="${action}"]`)
+      if (btn) {
+        // Remove existing listeners to avoid duplicates if re-run
+        const newBtn = btn.cloneNode(true)
+        btn.parentNode.replaceChild(newBtn, btn)
+        newBtn.addEventListener('click', handler)
+      }
+    })
+}
+
+// Initialize tools when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', setupToolListeners)
+} else {
+  setupToolListeners()
+}
