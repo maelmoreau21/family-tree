@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="/lib/styles/family-tree.css">
   <link rel="stylesheet" href="/builder.css">
   <link rel="stylesheet" href="/static/shared/css/tabs.css">
+
   <script type="importmap">
     {
       "imports": {
@@ -21,6 +22,35 @@
         "d3-selection": "https://cdn.jsdelivr.net/npm/d3-selection@3.0.0/+esm",
         "d3-shape": "https://cdn.jsdelivr.net/npm/d3-shape@3.2.0/+esm",
         "d3-hierarchy": "https://cdn.jsdelivr.net/npm/d3-hierarchy@3.1.2/+esm",
+        "d3-zoom": "https://cdn.jsdelivr.net/npm/d3-zoom@3.0.0/+esm",
+        "d3-array": "https://cdn.jsdelivr.net/npm/d3-array@3.2.4/+esm",
+        "d3-transition": "https://cdn.jsdelivr.net/npm/d3-transition@3.0.1/+esm"
+      }
+    }
+  </script>
+</head>
+
+<body class="controls-collapsed">
+  <div class="layout">
+    <main class="workspace">
+      <button type="button" class="panel-toggle" data-action="toggle-panel" aria-controls="controlPanel"
+        aria-expanded="false" aria-label="Basculer le panneau">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path
+            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+          </path>
+        </svg>
+        <span>Afficher</span>
+      </button>
+      <aside class="controls" id="controlPanel">
+        <div class="tabs-nav">
+          <button type="button" class="active" data-tab="data">Données</button>
+          <button type="button" data-tab="appearance">Apparence</button>
+          <button type="button" data-tab="tools">Outils</button>
+        </div>
+
         <!-- Tab: Données -->
         <div class="tab-content active" data-tab-content="data">
           <div class="search-panel" data-role="builder-search" data-state="loading">
@@ -229,6 +259,6 @@
       console.error('[builder] Impossible de charger l’éditeur', error)
     })
   </script>
-  </body>
+</body>
 
 </html>
