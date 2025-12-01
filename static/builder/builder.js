@@ -394,22 +394,22 @@ if (panelToggleBtn) {
 }
 
 const DISPLAY_FIELD_LABELS = new Map([
-  ['first name', 'PrÃ©nom'],
-  ['first names', 'PrÃ©noms'],
+  ['first name', 'Prénom'],
+  ['first names', 'Prénoms'],
   ['last name', 'Nom'],
   ['birthday', 'Date de naissance'],
-  ['death', 'Date de DÃ©cÃ¨s'],
+  ['death', 'Date de Décès'],
   ['gender', 'Genre'],
   ['avatar', 'Photo de profil'],
   ['photo', 'Photo'],
   ['picture', 'Portrait'],
   ['bio', 'Biographie'],
-  ['metiers', 'MÃ©tiers'],
-  ['nationality', 'NationalitÃ©'],
+  ['metiers', 'Métiers'],
+  ['nationality', 'Nationalité'],
   ['occupation', 'Profession'],
-  ['location', 'Lieu de rÃ©sidence'],
+  ['location', 'Lieu de résidence'],
   ['birthplace', 'Lieu de naissance'],
-  ['deathplace', 'Lieu de dÃ©cÃ¨s'],
+  ['deathplace', 'Lieu de décès'],
   ['union date', "Date d'union"],
   ['union place', "Lieu d'union"],
   ['union paragraph', "Paragraphe d'union"],
@@ -438,25 +438,25 @@ const DISPLAY_DEFAULTS = {
   ],
   2: [
     { value: 'birthday', checked: true },
-    { value: 'death', label: 'Date de DÃ©cÃ¨s', checked: false },
+    { value: 'death', label: 'Date de Décès', checked: false },
     { value: 'avatar', checked: false },
     { value: 'gender', checked: false }
   ]
 }
 
 const EDITABLE_DEFAULTS = [
-  { value: 'first name', label: 'PrÃ©nom', checked: true },
-  { value: 'first names', label: 'PrÃ©noms', checked: true },
+  { value: 'first name', label: 'Prénom', checked: true },
+  { value: 'first names', label: 'Prénoms', checked: true },
   { value: 'last name', label: 'Nom', checked: true },
   { value: 'maiden name', label: 'Nom de naissance', checked: true },
   { value: 'birthday', label: 'Date de naissance', checked: true },
-  { value: 'death', label: 'Date de DÃ©cÃ¨s', checked: true },
+  { value: 'death', label: 'Date de Décès', checked: true },
   { value: 'birthplace', label: 'Lieu de naissance', checked: true },
-  { value: 'deathplace', label: 'Lieu de DÃ©cÃ¨s', checked: true },
+  { value: 'deathplace', label: 'Lieu de Décès', checked: true },
   { value: 'avatar', label: 'Avatar', checked: true },
   { value: 'gender', label: 'Genre', checked: true },
-  { value: 'nationality', label: 'NationalitÃ©', checked: true },
-  { value: 'metiers', label: 'MÃ©tiers', checked: true },
+  { value: 'nationality', label: 'Nationalité', checked: true },
+  { value: 'metiers', label: 'Métiers', checked: true },
   { value: 'bio', label: 'Biographie', checked: false }
 ]
 
@@ -1037,11 +1037,11 @@ function applyChartConfigToChart(chart) {
 }
 
 async function loadTree() {
-  setStatus('Chargement des donnÃ©esâ€¦')
-  setChartLoading(true, 'Chargement des donnÃ©esâ€¦')
+  setStatus('Chargement des données…')
+  setChartLoading(true, 'Chargement des données…')
   const response = await fetch('/api/tree', { cache: 'no-store' })
   if (!response.ok) {
-    throw new Error(`Ã‰chec du chargement (${response.status})`)
+    throw new Error(`Échec du chargement (${response.status})`)
   }
   return response.json()
 }
@@ -1061,13 +1061,13 @@ async function persistChanges(snapshot, { immediate = false } = {}) {
 
   if (isSaving) {
     queuedSave = { snapshot: payload, immediate }
-    setStatus('Sauvegarde dÃ©jÃ  en coursâ€¦', 'saving')
+    setStatus('Sauvegarde déjà en cours…', 'saving')
     return
   }
 
   try {
     isSaving = true
-    setStatus(immediate ? 'Enregistrement en coursâ€¦' : 'Sauvegarde automatiqueâ€¦', 'saving')
+    setStatus(immediate ? 'Enregistrement en cours…' : 'Sauvegarde automatique…', 'saving')
 
     const response = await fetch('/api/tree', {
       method: 'PUT',
@@ -1076,11 +1076,11 @@ async function persistChanges(snapshot, { immediate = false } = {}) {
     })
 
     if (!response.ok && response.status !== 204) {
-      throw new Error(`Serveur a retournÃ© ${response.status}`)
+      throw new Error(`Serveur a retourné ${response.status}`)
     }
 
     lastSnapshotString = JSON.stringify(payload)
-    setStatus('Modifications enregistrÃ©es âœ…', 'success')
+    setStatus('Modifications enregistrées ✅', 'success')
   } catch (error) {
     console.error(error)
     setStatus(`Erreur d'enregistrement: ${error.message}`, 'error')
@@ -1113,7 +1113,7 @@ function getSnapshot() {
 
 function scheduleAutoSave() {
   destroyTimer()
-  setStatus('Modification dÃ©tectÃ©eâ€¦ sauvegarde automatique imminente', 'saving')
+  setStatus('Modification détectée… sauvegarde automatique imminente', 'saving')
   autoSaveTimer = setTimeout(() => {
     const snapshot = getSnapshot()
     if (!snapshot) return
@@ -1127,7 +1127,7 @@ function setupChart(payload) {
     throw new Error('Conteneur du graphique introuvable')
   }
 
-  setChartLoading(true, 'Construction du graphiqueâ€¦')
+  setChartLoading(true, 'Construction du graphique…')
   clearElement(container)
   builderSearchReady = false
   builderSearchOptions = []
@@ -1250,7 +1250,7 @@ function setupChart(payload) {
       })
     }
   } catch (e) {
-    console.warn('builder: impossible dâ€™attacher les gestionnaires de clic sur les cartes', e)
+    console.warn('builder: impossible d’attacher les gestionnaires de clic sur les cartes', e)
   }
 
   let panelControlAPI = null
@@ -1331,8 +1331,8 @@ function setupChart(payload) {
   const totalPersons = dataArray.length
   setStatus(
     totalPersons > 0
-      ? `Ã‰diteur prÃªt âœ… â€“ ${totalPersons} personne(s) chargÃ©e(s)`
-      : 'Fichier de donnÃ©es vide',
+      ? `Éditeur prêt ✅ – ${totalPersons} personne(s) chargée(s)`
+      : 'Fichier de données vide',
     totalPersons > 0 ? 'success' : 'error'
   )
   setChartLoading(false)
@@ -1346,7 +1346,7 @@ function setupChart(payload) {
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
-            CrÃ©er un nouvel arbre
+            Créer un nouvel arbre
           </button>
         </div>
       `
@@ -1363,7 +1363,7 @@ function setupChart(payload) {
         chart.store.updateData([newPerson])
         chart.updateTree({ initial: true })
         editTreeInstance.open(chart.getMainDatum())
-        setStatus('Nouvel arbre crÃ©Ã©', 'success')
+        setStatus('Nouvel arbre créé', 'success')
       })
     }
   }
@@ -1448,14 +1448,14 @@ function attachPanelControls({ chart, card }) {
   <fieldset class="media-tools" data-role="image-uploader">
     <legend>Images</legend>
     <p class="group-hint">Importez une image depuis votre ordinateur. Taille max&nbsp;: 5&nbsp;Mo.</p>
-    <label for="assetUpload" class="file-label">TÃ©lÃ©verser une image</label>
+    <label for="assetUpload" class="file-label">Téléverser une image</label>
     <input type="file" id="assetUpload" accept="image/*">
-    <p class="hint" data-role="upload-feedback" data-status="info">Formats recommandÃ©s&nbsp;: JPG, PNG, WebP.</p>
+    <p class="hint" data-role="upload-feedback" data-status="info">Formats recommandés&nbsp;: JPG, PNG, WebP.</p>
     <div class="upload-result hidden" data-role="upload-result" data-url="">
-      <span class="upload-label">Image disponible Ã &nbsp;:</span>
+      <span class="upload-label">Image disponible à&nbsp;:</span>
       <code class="upload-url" data-role="upload-url"></code>
       <div class="upload-actions">
-        <button type="button" class="ghost small" data-action="copy-upload-url">Copier lâ€™URL</button>
+        <button type="button" class="ghost small" data-action="copy-upload-url">Copier l’URL</button>
         <a class="ghost small hidden" data-role="open-upload" href="#" target="_blank" rel="noopener">Ouvrir</a>
         <button type="button" class="ghost small" data-action="delete-upload">Supprimer la photo</button>
       </div>
@@ -1479,7 +1479,7 @@ function attachPanelControls({ chart, card }) {
   const assetUploadOpenLink = imageUploader?.querySelector('[data-role="open-upload"]')
   const copyUploadUrlBtn = imageUploader?.querySelector('[data-action="copy-upload-url"]')
   const deleteUploadBtn = imageUploader?.querySelector('[data-action="delete-upload"]')
-  // manual URL input removed from UI â€” hide file input filename and use the label as trigger
+  // manual URL input removed from UI — hide file input filename and use the label as trigger
   const fileLabel = imageUploader?.querySelector('.file-label')
 
   // Inject into Edit Form
@@ -2526,14 +2526,14 @@ function attachPanelControls({ chart, card }) {
   }
 
   function requestFieldDefinition() {
-    const rawValue = prompt('Nom du champ (clÃ© dans vos donnÃ©es) ?')
+    const rawValue = prompt('Nom du champ (clé dans vos données) ?')
     if (!rawValue) return null
     const value = rawValue.trim()
     if (!value) return null
 
     const key = normalizeFieldKey(value)
     const suggestedLabel = fieldLabelStore.get(key) || value
-    const labelInput = prompt('LibellÃ© affichÃ© pour ce champ ?', suggestedLabel)
+    const labelInput = prompt('Libellé affiché pour ce champ ?', suggestedLabel)
     const displayLabel = (labelInput ?? suggestedLabel).trim() || value
 
     return { value, label: displayLabel, key }
@@ -2724,8 +2724,8 @@ function attachPanelControls({ chart, card }) {
     const storedUrl = assetUploadResult?.dataset?.url || assetUploadUrlOutput?.textContent?.trim()
     if (storedUrl) applyImageToActiveProfile(storedUrl, { origin: 'manual' })
     copyToClipboard(storedUrl, {
-      successMessage: 'URL du tÃ©lÃ©versement copiÃ©e âœ…',
-      errorMessage: 'Impossible de copier lâ€™URL du tÃ©lÃ©versement.'
+      successMessage: 'URL du téléversement copiée ✅',
+      errorMessage: 'Impossible de copier l’URL du téléversement.'
     })
   })
 
@@ -2733,14 +2733,14 @@ function attachPanelControls({ chart, card }) {
     const datum = getActiveDatum()
     const personId = imageUploaderCurrentDatumId || (datum && datum.id)
     if (!personId) {
-      setUploadFeedback('SÃ©lectionnez un profil Ã©ditable pour supprimer sa photo.', 'error')
+      setUploadFeedback('Sélectionnez un profil éditable pour supprimer sa photo.', 'error')
       return
     }
 
     const confirmText = `Supprimer la photo de profil pour ${personId} ?`
     if (!confirm(confirmText)) return
 
-    setUploadFeedback('Suppression en coursâ€¦', 'saving')
+    setUploadFeedback('Suppression en cours…', 'saving')
     try {
       const url = `/api/document?personId=${encodeURIComponent(personId)}`
       const resp = await fetch(url, { method: 'DELETE' })
@@ -2755,7 +2755,7 @@ function attachPanelControls({ chart, card }) {
 
       // Clear uploader UI and remove image from active datum
       clearUploadResult()
-      setUploadFeedback('Photo supprimÃ©e.', 'success')
+      setUploadFeedback('Photo supprimée.', 'success')
       // If the active datum had the image URL in its data, remove it
       try {
         const targetFieldId = getActiveImageFieldId()
@@ -2769,7 +2769,7 @@ function attachPanelControls({ chart, card }) {
       }
     } catch (error) {
       console.error(error)
-      setUploadFeedback(error.message || 'Ã‰chec de la suppression.', 'error')
+      setUploadFeedback(error.message || 'Échec de la suppression.', 'error')
     }
   })
 
