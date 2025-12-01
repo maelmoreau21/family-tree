@@ -2836,7 +2836,6 @@ window.addEventListener('beforeunload', (event) => {
   event.preventDefault()
   event.returnValue = ''
 })
-
 initialise()
 
 // Tool Buttons Logic
@@ -2845,9 +2844,9 @@ const tools = {
     if (!activeChartInstance) return
     const store = activeChartInstance.store
     const mainId = store.getMainId()
-    if (!mainId) return alert('Veuillez sÃ©lectionner une personne d\'abord.')
+    if (!mainId) return alert('Veuillez sélectionner une personne d\'abord.')
 
-    if (!confirm(`ÃŠtes-vous sÃ»r de vouloir supprimer la branche ${direction === 'asc' ? 'ascendance' : 'descendance'} de la personne sÃ©lectionnÃ©e ? Cette action est irrÃ©versible.`)) return
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer la branche ${direction === 'asc' ? 'ascendance' : 'descendance'} de la personne sélectionnée ? Cette action est irréversible.`)) return
 
     const data = store.getData()
     const idsToDelete = new Set()
@@ -2880,7 +2879,7 @@ const tools = {
     const newData = data.filter(d => !idsToDelete.has(d.id))
     store.updateData(newData)
     activeChartInstance.updateTree()
-    alert('Branche supprimÃ©e avec succÃ¨s.')
+    alert('Branche supprimée avec succès.')
   },
 
   importBranch: (direction) => {
@@ -2919,8 +2918,7 @@ const tools = {
                 mainDatum.rels.parents.push(importedRoot.id)
               }
 
-              // Also update the imported root's children to include selected person (if it's in the new data)
-              // We need to find the object in newUniqueData OR currentData if it was already there
+              // Also update the imported root's children to include selected person
               let rootInStore = newUniqueData.find(d => d.id === importedRoot.id)
               if (!rootInStore) rootInStore = currentData.find(d => d.id === importedRoot.id)
 
@@ -2995,7 +2993,7 @@ const tools = {
 
           activeChartInstance.store.updateData(importedData)
           activeChartInstance.updateTree()
-          alert('Arbre importÃ© avec succÃ¨s.')
+          alert('Arbre importé avec succès.')
         } catch (err) {
           console.error(err)
           alert('Erreur lors de l\'importation : ' + err.message)
