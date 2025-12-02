@@ -1586,8 +1586,8 @@ function attachPanelControls({ chart, card }) {
     if (!absoluteUrl) return
 
     if (!isSafeImageUrl(absoluteUrl)) {
-      setUploadFeedback('URL dâ€™image non sÃ»re ou format non supportÃ©.', 'error')
-      setStatus('URL dâ€™image non sÃ»re', 'error')
+      setUploadFeedback('URL d’image non sûre ou format non supporté.', 'error')
+      setStatus('URL d’image non sûre', 'error')
       return
     }
 
@@ -1629,25 +1629,25 @@ function attachPanelControls({ chart, card }) {
       try {
         chart.updateTree({ initial: false, tree_position: 'inherit' })
       } catch (error) {
-        console.error('Impossible de rafraÃ®chir le graphique aprÃ¨s mise Ã  jour de lâ€™image', error)
+        console.error('Impossible de rafraîchir le graphique après mise à jour de l’image', error)
       }
       scheduleAutoSave()
     }
 
-    // manual URL input removed â€” nothing to set here
+    // manual URL input removed — nothing to set here
 
     const appliedSomewhere = formUpdated || datumUpdated
     if (origin === 'upload') {
       if (appliedSomewhere) {
         const sizeMessage = sizeBytes ? ` (${formatBytes(sizeBytes)})` : ''
-        setUploadFeedback(`Image tÃ©lÃ©versÃ©e${sizeMessage} et appliquÃ©e au profil.`, 'success')
-        setStatus('Image appliquÃ©e au profil âœ…', 'success')
+        setUploadFeedback(`Image téléversée${sizeMessage} et appliquée au profil.`, 'success')
+        setStatus('Image appliquée au profil ✅', 'success')
       } else {
         const sizeMessage = sizeBytes ? ` (${formatBytes(sizeBytes)})` : ''
-        setUploadFeedback(`Image tÃ©lÃ©versÃ©e${sizeMessage}. SÃ©lectionnez un profil Ã©ditable pour lâ€™appliquer.`, 'info')
+        setUploadFeedback(`Image téléversée${sizeMessage}. Sélectionnez un profil éditable pour l’appliquer.`, 'info')
       }
     } else if (appliedSomewhere) {
-      setUploadFeedback('Image appliquÃ©e au profil.', 'success')
+      setUploadFeedback('Image appliquée au profil.', 'success')
       setStatus('Image appliquÃ©e au profil âœ…', 'success')
     } else {
       setUploadFeedback('SÃ©lectionnez un profil Ã©ditable pour appliquer lâ€™image.', 'info')
