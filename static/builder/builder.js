@@ -3056,11 +3056,35 @@ const tools = {
       const file = e.target.files[0]
       if (!file) return
       const reader = new FileReader()
-    }
-  }
+      reader.onload = async (event) => {
+        try {
+          const importedData = parseGEDCOM(event.target.result)
+          if (!Array.isArray(importedData)) throw new Error('Format invalide')
+
+          const newMainId = importedData.length > 0 ? importedData[0].id : null
+
+          const newConfig = { ...chartConfig }
+          if (newMainId) {
+            newConfig.mainId = newMainId
+          }
+
+          const snapshot = {
+            data: importedData,
+            config: newConfig
+          }
+
+          await persistChanges(snapshot, { immediate: true })
+          initialise()
+
+          alert('Arbre importé avec succès.')
+        } catch (err) {
+          console.error(err)
+          alert('Erreur lors de l\'importation : ' + err.message)
+        }
+      }
       reader.readAsText(file)
-}
-input.click()
+    }
+    input.click()
   }
 }
 
