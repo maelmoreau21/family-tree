@@ -3062,6 +3062,15 @@ const tools = {
           if (!Array.isArray(importedData)) throw new Error('Format invalide')
 
           activeChartInstance.store.updateData(importedData)
+
+          if (importedData.length > 0) {
+            // Update main ID to the first person in the imported file to avoid "Main datum not found"
+            // Preferably, logic could be smarter (e.g., find root), but first ID is safe default.
+            if (activeChartInstance.updateMainId) {
+              activeChartInstance.updateMainId(importedData[0].id)
+            }
+          }
+
           activeChartInstance.updateTree()
 
           const snapshot = getSnapshot()
