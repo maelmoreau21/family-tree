@@ -1,4 +1,5 @@
 ﻿import * as f3 from '/lib/family-tree.esm.js'
+import { parseGEDCOM, toGEDCOM } from './gedcom.js'
 
 const statusEl = document.getElementById('status')
 const saveBtn = document.getElementById('save')
@@ -34,6 +35,79 @@ function clearElement(target) {
   while (target.firstChild) {
     target.removeChild(target.firstChild)
   }
+}
+
+function showImportSelectionModal(candidates) {
+  return new Promise(resolve => {
+    const dialog = document.createElement('dialog')
+    dialog.className = 'import-selection-modal'
+
+    const form = document.createElement('form')
+    form.method = 'dialog'
+
+    const h3 = document.createElement('h3')
+    h3.textContent = 'Sélectionner le profil racine de la branche'
+
+    const p = document.createElement('p')
+    p.textContent = 'Veuillez choisir la personne à relier dans les données importées :'
+
+    const select = document.createElement('select')
+    select.className = 'f3-input'
+    select.size = 10
+
+    candidates.sort((a, b) => {
+      const na = (a.data['last name'] + a.data['first name']).toLowerCase();
+      const nb = (b.data['last name'] + b.data['first name']).toLowerCase();
+      return na.localeCompare(nb);
+    }).forEach(c => {
+      const option = document.createElement('option')
+      option.value = c.id
+      const birth = c.data.birthday ? `(${c.data.birthday})` : ''
+      option.textContent = `${c.data['first name']} ${c.data['last name']} ${birth}`
+      select.append(option)
+    })
+
+    const div = document.createElement('div')
+    div.className = 'dialog-actions'
+
+    const cancelBtn = document.createElement('button')
+    cancelBtn.textContent = 'Annuler'
+    cancelBtn.type = 'button'
+    cancelBtn.onclick = () => {
+      dialog.close()
+      resolve(null)
+    }
+
+    const confirmBtn = document.createElement('button')
+    confirmBtn.textContent = 'Importer'
+    confirmBtn.type = 'submit'
+    confirmBtn.className = 'primary'
+
+    div.append(cancelBtn, confirmBtn)
+    form.append(h3, p, select, div)
+    dialog.append(form)
+
+    document.body.append(dialog)
+    dialog.showModal()
+
+    dialog.addEventListener('close', () => {
+      if (dialog.returnValue === 'default') { // submit
+        resolve(select.value)
+      } else {
+        resolve(null)
+      }
+      dialog.remove()
+    })
+
+    form.onsubmit = (e) => {
+      if (!select.value) {
+        e.preventDefault()
+        alert('Veuillez sélectionner une personne.')
+        return
+      }
+      dialog.returnValue = 'default'
+    }
+  })
 }
 
 function setBuilderSearchState(state) {
@@ -2891,56 +2965,46 @@ const tools = {
 
     const input = document.createElement('input')
     input.type = 'file'
-    input.accept = '.json'
+    input.accept = '.ged,.gedcom'
     input.onchange = (e) => {
       const file = e.target.files[0]
       if (!file) return
       const reader = new FileReader()
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         try {
-          const importedData = JSON.parse(event.target.result)
+          const importedData = parseGEDCOM(event.target.result)
           if (!Array.isArray(importedData) || importedData.length === 0) throw new Error('Format invalide ou vide')
+
+          const selectedId = await showImportSelectionModal(importedData)
+          if (!selectedId) return
 
           const currentData = store.getData()
           const currentIds = new Set(currentData.map(d => d.id))
-
-          // Filter out duplicates but keep the root if we need to link it
           const newUniqueData = importedData.filter(d => !currentIds.has(d.id))
-
-          // Assume the first person in the imported file is the root of that branch
-          const importedRoot = importedData[0]
+          const importedRoot = importedData.find(d => d.id === selectedId)
           const mainDatum = currentData.find(d => d.id === mainId)
 
           if (mainDatum && importedRoot) {
             if (direction === 'asc') {
-              // Imported root is a PARENT of selected person
               if (!mainDatum.rels.parents) mainDatum.rels.parents = []
               if (!mainDatum.rels.parents.includes(importedRoot.id)) {
                 mainDatum.rels.parents.push(importedRoot.id)
               }
-
-              // Also update the imported root's children to include selected person
               let rootInStore = newUniqueData.find(d => d.id === importedRoot.id)
               if (!rootInStore) rootInStore = currentData.find(d => d.id === importedRoot.id)
-
               if (rootInStore) {
                 if (!rootInStore.rels.children) rootInStore.rels.children = []
                 if (!rootInStore.rels.children.includes(mainId)) {
                   rootInStore.rels.children.push(mainId)
                 }
               }
-
             } else {
-              // Imported root is a CHILD of selected person
               if (!mainDatum.rels.children) mainDatum.rels.children = []
               if (!mainDatum.rels.children.includes(importedRoot.id)) {
                 mainDatum.rels.children.push(importedRoot.id)
               }
-
-              // Also update the imported root's parents
               let rootInStore = newUniqueData.find(d => d.id === importedRoot.id)
               if (!rootInStore) rootInStore = currentData.find(d => d.id === importedRoot.id)
-
               if (rootInStore) {
                 if (!rootInStore.rels.parents) rootInStore.rels.parents = []
                 if (!rootInStore.rels.parents.includes(mainId)) {
@@ -2952,6 +3016,11 @@ const tools = {
 
           store.updateData([...currentData, ...newUniqueData])
           activeChartInstance.updateTree()
+
+          const snapshot = getSnapshot()
+          if (snapshot) await persistChanges(snapshot, { immediate: true })
+          initialise()
+
           alert(`Branche importée (${newUniqueData.length} nouvelles fiches) et reliée.`)
         } catch (err) {
           console.error(err)
@@ -2966,12 +3035,12 @@ const tools = {
   exportTree: () => {
     if (!activeChartInstance) return
     const data = activeChartInstance.store.getData()
-    const json = JSON.stringify(data, null, 2)
-    const blob = new Blob([json], { type: 'application/json' })
+    const gedcom = toGEDCOM(data)
+    const blob = new Blob([gedcom], { type: 'text/plain' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `family-tree-${new Date().toISOString().split('T')[0]}.json`
+    a.download = `family-tree-${new Date().toISOString().split('T')[0]}.ged`
     a.click()
     URL.revokeObjectURL(url)
   },
@@ -2982,18 +3051,23 @@ const tools = {
 
     const input = document.createElement('input')
     input.type = 'file'
-    input.accept = '.json'
+    input.accept = '.ged,.gedcom'
     input.onchange = (e) => {
       const file = e.target.files[0]
       if (!file) return
       const reader = new FileReader()
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         try {
-          const importedData = JSON.parse(event.target.result)
+          const importedData = parseGEDCOM(event.target.result)
           if (!Array.isArray(importedData)) throw new Error('Format invalide')
 
           activeChartInstance.store.updateData(importedData)
           activeChartInstance.updateTree()
+
+          const snapshot = getSnapshot()
+          if (snapshot) await persistChanges(snapshot, { immediate: true })
+          initialise()
+
           alert('Arbre importé avec succès.')
         } catch (err) {
           console.error(err)
