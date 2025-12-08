@@ -1,8 +1,7 @@
 ﻿import * as f3 from '/lib/family-tree.esm.js'
-import { parseGedcom, generateGedcom } from './gedcom.js'
 
-// Polyfill for structuredClone if needed (safe version)
-window.structuredCloneSafe = (val) => {
+// Polyfill for structuredClone if missing (or strictly for safe deep cloning)
+window.structuredCloneSafe = function (val) {
   if (typeof window.structuredClone === 'function') {
     return window.structuredClone(val)
   }
@@ -2867,8 +2866,10 @@ const tools = {
       if (!datum) return
 
       if (direction === 'asc') {
+        // Delete parents recursively
         datum.rels.parents?.forEach(traverse)
       } else {
+        // Delete children recursively
         datum.rels.children?.forEach(traverse)
       }
     }
@@ -2877,24 +2878,17 @@ const tools = {
     if (mainDatum) {
       if (direction === 'asc') {
         mainDatum.rels.parents?.forEach(traverse)
-        mainDatum.rels.parents = []
+        mainDatum.rels.parents = [] // Clear connection
       } else {
         mainDatum.rels.children?.forEach(traverse)
-        mainDatum.rels.children = []
+        mainDatum.rels.children = [] // Clear connection
       }
     }
 
     const newData = data.filter(d => !idsToDelete.has(d.id))
-    setStatus('Suppression... (Cela peut prendre un moment)', 'saving')
-
-    // Defer update to let UI render
-    requestAnimationFrame(() => {
-      store.updateData(newData)
-      activeChartInstance.updateTree()
-      const snapshot = getSnapshot()
-      if (snapshot) persistChanges(snapshot, { immediate: true }).then(() => setStatus('Branche supprimée', 'success'))
-      else alert('Branche supprimée avec succès.')
-    })
+    store.updateData(newData)
+    activeChartInstance.updateTree()
+    alert('Branche supprimée avec succès.')
   },
 
   importBranch: (direction) => {
@@ -2905,101 +2899,68 @@ const tools = {
 
     const input = document.createElement('input')
     input.type = 'file'
-    input.accept = '.ged'
+    input.accept = '.json'
     input.onchange = (e) => {
       const file = e.target.files[0]
       if (!file) return
       const reader = new FileReader()
-      reader.onload = async (event) => {
+      reader.onload = (event) => {
         try {
-          // Parse GEDCOM
-          const rawText = event.target.result
-          const importedData = parseGedcom(rawText)
-          if (!importedData.length) throw new Error('Aucune donnée trouvée dans ce fichier GEDCOM.')
+          const importedData = JSON.parse(event.target.result)
+          if (!Array.isArray(importedData) || importedData.length === 0) throw new Error('Format invalide ou vide')
 
-          // Show Modal to select the root person in the imported file
-          const selectedImportId = await showImportSelectionModal(importedData)
-          if (!selectedImportId) return // Cancelled
-
-          // Data Merging Logic
           const currentData = store.getData()
           const currentIds = new Set(currentData.map(d => d.id))
 
-          // ID Collision Handling: Map imported IDs to new UUIDs to prevent conflicts
-          const idMap = new Map()
-          importedData.forEach(p => {
-            // Generate new ID for every imported person
-            const newId = crypto.randomUUID()
-            idMap.set(p.id, newId)
-          })
+          // Filter out duplicates but keep the root if we need to link it
+          const newUniqueData = importedData.filter(d => !currentIds.has(d.id))
 
-          const remappedData = importedData.map(p => {
-            return {
-              ...p,
-              id: idMap.get(p.id),
-              rels: {
-                parents: p.rels.parents.map(pid => idMap.get(pid)).filter(Boolean),
-                children: p.rels.children.map(cid => idMap.get(cid)).filter(Boolean),
-                spouses: p.rels.spouses.map(sid => idMap.get(sid)).filter(Boolean),
-              }
-            }
-          })
-
-          const importedRootNewId = idMap.get(selectedImportId)
-          const newUniqueData = remappedData // All are new because of UUIDs
-
+          // Assume the first person in the imported file is the root of that branch
+          const importedRoot = importedData[0]
           const mainDatum = currentData.find(d => d.id === mainId)
 
-          if (mainDatum && importedRootNewId) {
-            // Find the imported root in the NEW data
-            let rootInNew = remappedData.find(d => d.id === importedRootNewId)
-
+          if (mainDatum && importedRoot) {
             if (direction === 'asc') {
-              // Imported root is PARENT of mainDatum
+              // Imported root is a PARENT of selected person
               if (!mainDatum.rels.parents) mainDatum.rels.parents = []
-              mainDatum.rels.parents.push(importedRootNewId)
-
-              if (rootInNew) {
-                if (!rootInNew.rels.children) rootInNew.rels.children = []
-                rootInNew.rels.children.push(mainId)
+              if (!mainDatum.rels.parents.includes(importedRoot.id)) {
+                mainDatum.rels.parents.push(importedRoot.id)
               }
-            } else {
-              // Imported root is CHILD of mainDatum
-              if (!mainDatum.rels.children) mainDatum.rels.children = []
-              mainDatum.rels.children.push(importedRootNewId)
 
-              if (rootInNew) {
-                if (!rootInNew.rels.parents) rootInNew.rels.parents = []
-                rootInNew.rels.parents.push(mainId)
+              // Also update the imported root's children to include selected person
+              let rootInStore = newUniqueData.find(d => d.id === importedRoot.id)
+              if (!rootInStore) rootInStore = currentData.find(d => d.id === importedRoot.id)
+
+              if (rootInStore) {
+                if (!rootInStore.rels.children) rootInStore.rels.children = []
+                if (!rootInStore.rels.children.includes(mainId)) {
+                  rootInStore.rels.children.push(mainId)
+                }
+              }
+
+            } else {
+              // Imported root is a CHILD of selected person
+              if (!mainDatum.rels.children) mainDatum.rels.children = []
+              if (!mainDatum.rels.children.includes(importedRoot.id)) {
+                mainDatum.rels.children.push(importedRoot.id)
+              }
+
+              // Also update the imported root's parents
+              let rootInStore = newUniqueData.find(d => d.id === importedRoot.id)
+              if (!rootInStore) rootInStore = currentData.find(d => d.id === importedRoot.id)
+
+              if (rootInStore) {
+                if (!rootInStore.rels.parents) rootInStore.rels.parents = []
+                if (!rootInStore.rels.parents.includes(mainId)) {
+                  rootInStore.rels.parents.push(mainId)
+                }
               }
             }
           }
 
-          setStatus('Fusion en cours...', 'saving')
-
-          // Use setTimeout to yield so the UI updates
-          setTimeout(() => {
-            store.updateData([...currentData, ...newUniqueData])
-
-            // Limit depth if large import
-            if (newUniqueData.length > 50) {
-              if (chartConfig.ancestryDepth > 2) commitConfigUpdate({ ancestryDepth: 2 }, { treePosition: 'none' })
-              if (chartConfig.progenyDepth > 2) commitConfigUpdate({ progenyDepth: 2 }, { treePosition: 'none' })
-            }
-
-            activeChartInstance.updateTree()
-
-            const snapshot = getSnapshot()
-            if (snapshot) {
-              persistChanges(snapshot, { immediate: true }).then(() => {
-                setStatus('Import terminé', 'success')
-                alert(`Branche importée avec succès (${newUniqueData.length} fiches) !`)
-              })
-            } else {
-              alert(`Branche importée avec succès (${newUniqueData.length} fiches) !`)
-            }
-          }, 50)
-
+          store.updateData([...currentData, ...newUniqueData])
+          activeChartInstance.updateTree()
+          alert(`Branche importée (${newUniqueData.length} nouvelles fiches) et reliée.`)
         } catch (err) {
           console.error(err)
           alert('Erreur lors de l\'importation : ' + err.message)
@@ -3013,60 +2974,12 @@ const tools = {
   exportTree: () => {
     if (!activeChartInstance) return
     const data = activeChartInstance.store.getData()
-    const gedcom = generateGedcom(data)
-    const blob = new Blob([gedcom], { type: 'text/plain' })
+    const json = JSON.stringify(data, null, 2)
+    const blob = new Blob([json], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `family-tree-${new Date().toISOString().split('T')[0]}.ged`
-    a.click()
-    URL.revokeObjectURL(url)
-  },
-
-  exportBranch: (direction) => {
-    if (!activeChartInstance) return
-    const store = activeChartInstance.store
-    const mainId = store.getMainId()
-    if (!mainId) return alert('Veuillez sélectionner une personne d\'abord.')
-
-    const data = store.getData()
-    const idsToExport = new Set()
-
-    const traverse = (id) => {
-      if (idsToExport.has(id)) return
-      idsToExport.add(id)
-      const datum = data.find(d => d.id === id)
-      if (!datum) return
-
-      if (direction === 'asc') {
-        datum.rels.parents?.forEach(traverse)
-      } else {
-        datum.rels.children?.forEach(traverse)
-        // Also include spouses for context? Maybe not strict branch, but helpful.
-        // For strict branch per request, we follow children only.
-        // If we want complete "descendance", spouses are often implied if linked to children.
-        // Let's stick to strict parent/child traversal + spouses of those included?
-        // Simple traversal first.
-      }
-    }
-
-    // Include the main person
-    traverse(mainId)
-
-    // Also include spouses of anyone in the set? 
-    // Standard "Branch" export usually implies bloodline. 
-    // Let's keep it simple: Ascendants OR Descendants.
-
-    const exportData = data.filter(d => idsToExport.has(d.id))
-
-    if (exportData.length === 0) return alert("Aucune donnée à exporter.")
-
-    const gedcom = generateGedcom(exportData)
-    const blob = new Blob([gedcom], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `branch-${direction}-${new Date().toISOString().split('T')[0]}.ged`
+    a.download = `family-tree-${new Date().toISOString().split('T')[0]}.json`
     a.click()
     URL.revokeObjectURL(url)
   },
@@ -3077,46 +2990,19 @@ const tools = {
 
     const input = document.createElement('input')
     input.type = 'file'
-    input.accept = '.ged'
+    input.accept = '.json'
     input.onchange = (e) => {
       const file = e.target.files[0]
       if (!file) return
       const reader = new FileReader()
       reader.onload = (event) => {
         try {
-          const rawText = event.target.result
-          const importedData = parseGedcom(rawText)
-          if (!importedData.length) throw new Error('Format invalide ou vide')
+          const importedData = JSON.parse(event.target.result)
+          if (!Array.isArray(importedData)) throw new Error('Format invalide')
 
-          // For full import, we don't necessarily need to remap IDs if it's a fresh start,
-          // but good practice might be to ensure clean IDs. 
-          // For now, let's keep original IDs from parser for full tree import (clean slate).
-
-          setStatus('Chargement de l\'arbre...', 'saving')
-
-          setTimeout(() => {
-            // Reset depth defaults for performant initial load if large
-            if (importedData.length > 100) {
-              chartConfig.ancestryDepth = 2
-              chartConfig.progenyDepth = 2
-              // Update UI controls
-              if (ancestryDepthSelect) ancestryDepthSelect.value = "2"
-              if (progenyDepthSelect) progenyDepthSelect.value = "2"
-            }
-
-            activeChartInstance.store.updateData(importedData)
-            activeChartInstance.updateTree()
-
-            const snapshot = getSnapshot()
-            if (snapshot) {
-              persistChanges(snapshot, { immediate: true }).then(() => {
-                setStatus('Arbre sauvegardé', 'success')
-                alert('Arbre importé avec succès.')
-              })
-            } else {
-              alert('Arbre importé avec succès.')
-            }
-          }, 50)
+          activeChartInstance.store.updateData(importedData)
+          activeChartInstance.updateTree()
+          alert('Arbre importé avec succès.')
         } catch (err) {
           console.error(err)
           alert('Erreur lors de l\'importation : ' + err.message)
@@ -3128,73 +3014,6 @@ const tools = {
   }
 }
 
-// Helper for Modal
-// Helper for Modal
-function showImportSelectionModal(candidates) {
-  return new Promise((resolve) => {
-    const dialog = document.createElement('dialog')
-    dialog.className = 'import-modal'
-
-    const h3 = document.createElement('h3')
-    h3.textContent = 'Sélectionner le Point de Liaison'
-
-    const p = document.createElement('p')
-    p.textContent = 'Veuillez sélectionner la personne dans le fichier importé qui sera reliée (comme parent ou enfant) à la fiche actuellement sélectionnée dans votre arbre.'
-
-    const select = document.createElement('select')
-    select.size = 10
-
-    candidates.forEach(c => {
-      const option = document.createElement('option')
-      option.value = c.id
-      option.textContent = `${c.data['first name'] || '?'} ${c.data['last name'] || '?'} (${c.data.birthDate || '?'})`
-      select.appendChild(option)
-    })
-
-    const btnContainer = document.createElement('div')
-    btnContainer.className = 'modal-actions'
-    // Add style wrapper for layout if needed, or just reliance on CSS
-    btnContainer.style.display = 'flex'
-    btnContainer.style.justifyContent = 'flex-end'
-    btnContainer.style.gap = '10px'
-    btnContainer.style.marginTop = '20px'
-
-    const cancelBtn = document.createElement('button')
-    cancelBtn.textContent = 'Annuler'
-    cancelBtn.type = 'button'
-    cancelBtn.onclick = () => {
-      dialog.close()
-      document.body.removeChild(dialog)
-      resolve(null)
-    }
-
-    const confirmBtn = document.createElement('button')
-    confirmBtn.textContent = 'Confirmer Importation'
-    confirmBtn.className = 'primary'
-
-    confirmBtn.onclick = () => {
-      const val = select.value
-      if (val) {
-        dialog.close()
-        document.body.removeChild(dialog)
-        resolve(val)
-      } else {
-        alert('Veuillez sélectionner une personne dans la liste.')
-      }
-    }
-
-    btnContainer.appendChild(cancelBtn)
-    btnContainer.appendChild(confirmBtn)
-    dialog.appendChild(h3)
-    dialog.appendChild(p)
-    dialog.appendChild(select)
-    dialog.appendChild(btnContainer)
-
-    document.body.appendChild(dialog)
-    dialog.showModal()
-  })
-}
-
 // Event Listeners for Tools
 function setupToolListeners() {
   const actions = {
@@ -3202,8 +3021,6 @@ function setupToolListeners() {
     'delete-branch-desc': () => tools.deleteBranch('desc'),
     'import-branch-asc': () => tools.importBranch('asc'),
     'import-branch-desc': () => tools.importBranch('desc'),
-    'export-branch-asc': () => tools.exportBranch('asc'),
-    'export-branch-desc': () => tools.exportBranch('desc'),
     'import-tree': () => tools.importTree(),
     'export-tree': () => tools.exportTree()
   }
@@ -3213,10 +3030,8 @@ function setupToolListeners() {
     if (btn) {
       // Remove existing listeners to avoid duplicates if re-run
       const newBtn = btn.cloneNode(true)
-      if (btn.parentNode) {
-        btn.parentNode.replaceChild(newBtn, btn)
-        newBtn.addEventListener('click', handler)
-      }
+      btn.parentNode.replaceChild(newBtn, btn)
+      newBtn.addEventListener('click', handler)
     }
   })
 }
