@@ -3056,36 +3056,11 @@ const tools = {
       const file = e.target.files[0]
       if (!file) return
       const reader = new FileReader()
-      reader.onload = async (event) => {
-        try {
-          const importedData = parseGEDCOM(event.target.result)
-          if (!Array.isArray(importedData)) throw new Error('Format invalide')
-
-          activeChartInstance.store.updateData(importedData)
-
-          if (importedData.length > 0) {
-            // Update main ID to the first person in the imported file to avoid "Main datum not found"
-            // Preferably, logic could be smarter (e.g., find root), but first ID is safe default.
-            if (activeChartInstance.updateMainId) {
-              activeChartInstance.updateMainId(importedData[0].id)
-            }
-          }
-
-          activeChartInstance.updateTree()
-
-          const snapshot = getSnapshot()
-          if (snapshot) await persistChanges(snapshot, { immediate: true })
-          initialise()
-
-          alert('Arbre importé avec succès.')
-        } catch (err) {
-          console.error(err)
-          alert('Erreur lors de l\'importation : ' + err.message)
-        }
-      }
-      reader.readAsText(file)
     }
-    input.click()
+  }
+      reader.readAsText(file)
+}
+input.click()
   }
 }
 
