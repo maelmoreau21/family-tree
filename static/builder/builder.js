@@ -2885,11 +2885,16 @@ const tools = {
     }
 
     const newData = data.filter(d => !idsToDelete.has(d.id))
-    store.updateData(newData)
-    activeChartInstance.updateTree()
-    const snapshot = getSnapshot()
-    if (snapshot) persistChanges(snapshot, { immediate: true }) // Force save
-    alert('Branche supprimée avec succès.')
+    setStatus('Suppression... (Cela peut prendre un moment)', 'saving')
+
+    // Defer update to let UI render
+    requestAnimationFrame(() => {
+      store.updateData(newData)
+      activeChartInstance.updateTree()
+      const snapshot = getSnapshot()
+      if (snapshot) persistChanges(snapshot, { immediate: true }).then(() => setStatus('Branche supprimée', 'success'))
+      else alert('Branche supprimée avec succès.')
+    })
   },
 
   importBranch: (direction) => {
@@ -2970,11 +2975,30 @@ const tools = {
             }
           }
 
-          store.updateData([...currentData, ...newUniqueData])
-          activeChartInstance.updateTree()
-          const snapshot = getSnapshot()
-          if (snapshot) persistChanges(snapshot, { immediate: true }) // Force Save
-          alert(`Branche importée avec succès (${newUniqueData.length} fiches) !`)
+          setStatus('Fusion en cours...', 'saving')
+
+          // Use setTimeout to yield so the UI updates
+          setTimeout(() => {
+            store.updateData([...currentData, ...newUniqueData])
+
+            // Limit depth if large import
+            if (newUniqueData.length > 50) {
+              if (chartConfig.ancestryDepth > 2) commitConfigUpdate({ ancestryDepth: 2 }, { treePosition: 'none' })
+              if (chartConfig.progenyDepth > 2) commitConfigUpdate({ progenyDepth: 2 }, { treePosition: 'none' })
+            }
+
+            activeChartInstance.updateTree()
+
+            const snapshot = getSnapshot()
+            if (snapshot) {
+              persistChanges(snapshot, { immediate: true }).then(() => {
+                setStatus('Import terminé', 'success')
+                alert(`Branche importée avec succès (${newUniqueData.length} fiches) !`)
+              })
+            } else {
+              alert(`Branche importée avec succès (${newUniqueData.length} fiches) !`)
+            }
+          }, 50)
 
         } catch (err) {
           console.error(err)
@@ -2995,6 +3019,54 @@ const tools = {
     const a = document.createElement('a')
     a.href = url
     a.download = `family-tree-${new Date().toISOString().split('T')[0]}.ged`
+    a.click()
+    URL.revokeObjectURL(url)
+  },
+
+  exportBranch: (direction) => {
+    if (!activeChartInstance) return
+    const store = activeChartInstance.store
+    const mainId = store.getMainId()
+    if (!mainId) return alert('Veuillez sélectionner une personne d\'abord.')
+
+    const data = store.getData()
+    const idsToExport = new Set()
+
+    const traverse = (id) => {
+      if (idsToExport.has(id)) return
+      idsToExport.add(id)
+      const datum = data.find(d => d.id === id)
+      if (!datum) return
+
+      if (direction === 'asc') {
+        datum.rels.parents?.forEach(traverse)
+      } else {
+        datum.rels.children?.forEach(traverse)
+        // Also include spouses for context? Maybe not strict branch, but helpful.
+        // For strict branch per request, we follow children only.
+        // If we want complete "descendance", spouses are often implied if linked to children.
+        // Let's stick to strict parent/child traversal + spouses of those included?
+        // Simple traversal first.
+      }
+    }
+
+    // Include the main person
+    traverse(mainId)
+
+    // Also include spouses of anyone in the set? 
+    // Standard "Branch" export usually implies bloodline. 
+    // Let's keep it simple: Ascendants OR Descendants.
+
+    const exportData = data.filter(d => idsToExport.has(d.id))
+
+    if (exportData.length === 0) return alert("Aucune donnée à exporter.")
+
+    const gedcom = generateGedcom(exportData)
+    const blob = new Blob([gedcom], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `branch-${direction}-${new Date().toISOString().split('T')[0]}.ged`
     a.click()
     URL.revokeObjectURL(url)
   },
@@ -3020,11 +3092,31 @@ const tools = {
           // but good practice might be to ensure clean IDs. 
           // For now, let's keep original IDs from parser for full tree import (clean slate).
 
-          activeChartInstance.store.updateData(importedData)
-          activeChartInstance.updateTree()
-          const snapshot = getSnapshot()
-          if (snapshot) persistChanges(snapshot, { immediate: true }) // Force Save
-          alert('Arbre importé avec succès.')
+          setStatus('Chargement de l\'arbre...', 'saving')
+
+          setTimeout(() => {
+            // Reset depth defaults for performant initial load if large
+            if (importedData.length > 100) {
+              chartConfig.ancestryDepth = 2
+              chartConfig.progenyDepth = 2
+              // Update UI controls
+              if (ancestryDepthSelect) ancestryDepthSelect.value = "2"
+              if (progenyDepthSelect) progenyDepthSelect.value = "2"
+            }
+
+            activeChartInstance.store.updateData(importedData)
+            activeChartInstance.updateTree()
+
+            const snapshot = getSnapshot()
+            if (snapshot) {
+              persistChanges(snapshot, { immediate: true }).then(() => {
+                setStatus('Arbre sauvegardé', 'success')
+                alert('Arbre importé avec succès.')
+              })
+            } else {
+              alert('Arbre importé avec succès.')
+            }
+          }, 50)
         } catch (err) {
           console.error(err)
           alert('Erreur lors de l\'importation : ' + err.message)
@@ -3132,6 +3224,8 @@ function setupToolListeners() {
     'delete-branch-desc': () => tools.deleteBranch('desc'),
     'import-branch-asc': () => tools.importBranch('asc'),
     'import-branch-desc': () => tools.importBranch('desc'),
+    'export-branch-asc': () => tools.exportBranch('asc'),
+    'export-branch-desc': () => tools.exportBranch('desc'),
     'import-tree': () => tools.importTree(),
     'export-tree': () => tools.exportTree()
   }
@@ -3141,8 +3235,10 @@ function setupToolListeners() {
     if (btn) {
       // Remove existing listeners to avoid duplicates if re-run
       const newBtn = btn.cloneNode(true)
-      btn.parentNode.replaceChild(newBtn, btn)
-      newBtn.addEventListener('click', handler)
+      if (btn.parentNode) {
+        btn.parentNode.replaceChild(newBtn, btn)
+        newBtn.addEventListener('click', handler)
+      }
     }
   })
 }

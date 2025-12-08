@@ -2511,55 +2511,166 @@ legend {
   }
 
 
-  /* Tools Tab Styles */
-  .button-group-vertical {
+
+  /* Tools Tab Styles - REDESIGNED */
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0 0 var(--space-sm) 0;
+    letter-spacing: 0.05em;
+  }
+  
+  .section-title.danger {
+    color: #ef4444;
+  }
+  
+  .tool-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  
+  .tool-btn {
     display: flex;
     flex-direction: column;
-    gap: var(--space-sm);
-    margin-top: var(--space-sm);
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-sm);
+    padding: 10px 4px;
+    gap: 6px;
+    transition: all 0.2s ease;
+    height: 100%;
+    cursor: pointer;
+    color: var(--text-main);
   }
-
-  .button-group-vertical button,
-  .button-group-vertical .button {
+  
+  .tool-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  .tool-icon {
+    font-size: 1.2rem;
+  }
+  
+  .tool-label {
+    font-size: 0.7rem;
+    text-align: center;
+    line-height: 1.1;
+    color: var(--text-main);
+  }
+  
+  .tool-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .tool-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-sm);
+    color: var(--text-main);
+    font-size: 0.85rem;
+    justify-content: center;
+    cursor: pointer;
+  }
+  
+  .tool-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+  
+  .tool-item.danger {
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+    background: rgba(239, 68, 68, 0.05);
+  }
+  
+  .tool-item.danger:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.5);
+  }
+  
+  .tool-row {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .tool-item.small {
+    font-size: 0.8rem;
+    padding: 6px 8px;
+  }
+  
+  .footer-links {
+    margin-top: auto;
+    border-top: 1px solid var(--panel-border);
+    padding-top: var(--space-md);
+  }
+  
+  .link-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 100%;
-    padding: var(--space-md);
-    background-color: var(--bg-card);
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--panel-border);
-    border-radius: var(--radius-md);
-    color: var(--text-main);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-align: center;
-    font-weight: 500;
+    gap: 8px;
+    color: var(--text-muted);
+    font-size: 0.8rem;
     text-decoration: none;
-    box-sizing: border-box;
+    padding: 6px;
+    border-radius: var(--radius-sm);
+    transition: color 0.2s;
+  }
+  
+  .link-btn:hover {
+    color: var(--text-main);
+    background: rgba(255,255,255,0.05);
   }
 
-  .button-group-vertical button:hover,
-  .button-group-vertical .button:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: var(--accent-primary);
-    transform: translateY(-1px);
+  /* Modal Improvements */
+  .import-modal {
+    background: #1e293b !important;
+    border: 1px solid var(--panel-border) !important; 
+    color: var(--text-main) !important;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
   }
-
-  .button-group-vertical button.danger {
-    border-color: rgba(239, 68, 68, 0.3);
-    color: #fca5a5;
+  
+  .import-modal h3 {
+    color: var(--text-main) !important;
+    font-size: 1.1rem;
   }
-
-  .button-group-vertical button.danger:hover {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: #ef4444;
+  
+  .import-modal p {
+    color: var(--text-muted) !important;
+    font-size: 0.9rem;
   }
-
-  .separator {
-    height: 1px;
-    background: var(--panel-border);
-    margin: var(--space-sm) 0;
-    width: 100%;
+  
+  .import-modal select {
+    background: rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid var(--panel-border) !important;
+    color: var(--text-main) !important;
+  }
+  
+  .import-modal button {
+    background: var(--input-bg);
+    color: var(--text-main); 
+    border: 1px solid var(--panel-border);
+  }
+  
+  .import-modal button.primary {
+    background: var(--accent-primary) !important;
+    border: none !important;
+    font-weight: 600;
   }
 }

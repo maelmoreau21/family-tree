@@ -257,6 +257,11 @@ export function generateGedcom(data) {
     const finalFamilies = {} // FamID -> { HUSB, WIFE, CHIL: [] }
 
     // 1. Create families from children's parents
+    // 1. Create families from children's parents
+    // Optimize: Create a map for gender lookups to avoid O(N^2)
+    const genderMap = new Map()
+    data.forEach(p => genderMap.set(p.id, p.data.gender))
+
     data.forEach(child => {
         if (child.rels.parents && child.rels.parents.length > 0) {
             const famId = getFamId(child.rels.parents)
@@ -266,9 +271,9 @@ export function generateGedcom(data) {
 
             // Assign Husb/Wife
             child.rels.parents.forEach(pid => {
-                const pNode = data.find(d => d.id === pid)
+                const gMode = genderMap.get(pid)
                 const gId = idMap.get(pid)
-                if (pNode && pNode.data.gender === 'F') finalFamilies[famId].wife = gId
+                if (gMode === 'F') finalFamilies[famId].wife = gId
                 else finalFamilies[famId].husb = gId
             })
         }
