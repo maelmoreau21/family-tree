@@ -2373,6 +2373,99 @@ function attachPanelControls({ chart, card }) {
     })
   }
 
+  function setMainProfile(id, {
+    openEditor = true,
+    suppressSave = false,
+    focusSearch = false,
+    highlightCard = true,
+    source = 'manual',
+    persistConfig = true
+  } = {}) {
+    if (!id) return
+    if (persistConfig) {
+      transientMainSelection = false
+    }
+    const persons = getAllPersons()
+    if (!persons.some(person => person.id === id)) {
+      refreshMainProfileOptions({ keepSelection: false })
+      return
+    }
+
+    const configChanged = persistConfig && chartConfig.mainId !== id
+    if (configChanged) {
+      chartConfig = { ...chartConfig, mainId: id }
+    }
+
+    if (configChanged && !suppressSave) {
+      lastSnapshotString = null
+      if (!isApplyingConfig) {
+        scheduleAutoSave()
+      }
+    }
+
+    const storeMainBefore = chart.store && typeof chart.store.getMainId === 'function'
+      ? chart.store.getMainId()
+      : null
+
+    if (!persistConfig && storeMainBefore !== id) {
+      ignoreNextMainSync = true
+    }
+
+    const shouldUpdateMainId = chart && typeof chart.updateMainId === 'function'
+    let recenterAlreadyScheduled = false
+
+
+    if (persistConfig && shouldUpdateMainId && storeMainBefore !== id) {
+      chart.updateMainId(id)
+      chart.updateTree({ initial: false, tree_position: 'main_to_middle' })
+      recenterAlreadyScheduled = true
+    }
+
+    if (persistConfig && mainProfileSelect && mainProfileSelect.value !== id) {
+      mainProfileSelect.value = id
+      mainProfileSelect.disabled = false
+    }
+
+    if (persistConfig) {
+      updateMainProfileDisplay(id)
+    } else {
+      updateMainProfileDisplay(chartConfig.mainId || null)
+    }
+
+
+    try {
+      if (!recenterAlreadyScheduled && chart && typeof chart.updateTree === 'function') {
+        chart.updateTree({ initial: false, tree_position: 'main_to_middle' })
+      }
+    } catch (error) {
+      console.error('Impossible de recentrer le graphique aprÃ¨s sÃ©lection du profil', error)
+    }
+    const datum = editTreeInstance?.store?.getDatum?.(id) || null
+    if (focusSearch) {
+      const label = datum ? buildPersonLabel(datum) : `Profil ${id}`
+      focusBuilderSearch({ label, select: true, flash: true, preventScroll: source === 'search' })
+    }
+    if (highlightCard) {
+      highlightCardById(id, { animate: true })
+    }
+    renderBreadcrumbTrail(id)
+    if (openEditor && editTreeInstance && datum) {
+      editTreeInstance.open(datum)
+    }
+  }
+
+  if (mainProfileSelect) {
+    mainProfileSelect.addEventListener('change', event => {
+      const { value } = event.target
+      if (!value) return
+      setMainProfile(value)
+    })
+  }
+
+  function escapeSelector(value) {
+    return cssEscape(value)
+  }
+
   function applyConfigToDisplayControls() {
     displayGroups.forEach((group, index) => {
       const desiredRow = (chartConfig.cardDisplay && chartConfig.cardDisplay[index]) || []
@@ -2384,278 +2477,7 @@ function attachPanelControls({ chart, card }) {
     })
   }
 
-  function createDisplayItem(group, { value, label, defaultChecked = false, removable = false }) {
-    const list = group.querySelector('.field-list')
-    if (!list) return { item: null, isNew: false }
-    const key = normalizeFieldKey(value)
-    if (HIDDEN_FIELD_KEYS.has(key)) return { item: null, isNew: false }
-    const selector = `[data-field-key="${escapeSelector(key)}"]`
-    const displayLabel = ensureFieldLabel(value, label)
-    let item = list.querySelector(selector)
-
-    if (item) {
-      const textEl = item.querySelector('label span')
-      if (textEl) textEl.textContent = displayLabel
-      if (removable) {
-        item.dataset.custom = 'true'
-        addRemoveButton(item)
-      }
-      return { item, isNew: false }
-    }
-
-    item = document.createElement('div')
-    item.className = 'display-item'
-    item.dataset.fieldKey = key
-    if (removable) item.dataset.custom = 'true'
-
-    const labelEl = document.createElement('label')
-    const checkbox = document.createElement('input')
-    checkbox.type = 'checkbox'
-    checkbox.value = value
-    checkbox.checked = defaultChecked
-
-    const textEl = document.createElement('span')
-    textEl.textContent = displayLabel
-
-    labelEl.append(checkbox, textEl)
-    item.append(labelEl)
-
-    if (removable) {
-      addRemoveButton(item)
-    }
-
-    list.append(item)
-    return { item, isNew: true }
-  }
-
-  function createEditableItem({ value, label, checked = true, removable = false, selectRows = [] }) {
-    if (!editableList) return
-    const key = normalizeFieldKey(value)
-    if (HIDDEN_FIELD_KEYS.has(key)) return
-    const displayLabel = ensureFieldLabel(value, label)
-    const selector = `[data-field-key="${escapeSelector(key)}"]`
-    let item = editableList.querySelector(selector)
-    const isNew = !item
-
-    if (!item) {
-      item = document.createElement('div')
-      item.className = 'editable-item'
-      item.dataset.fieldKey = key
-      if (removable) item.dataset.custom = 'true'
-
-      const labelEl = document.createElement('label')
-      const checkbox = document.createElement('input')
-      checkbox.type = 'checkbox'
-      checkbox.value = value
-      checkbox.checked = checked
-
-      const textEl = document.createElement('span')
-      textEl.textContent = displayLabel
-
-      labelEl.append(checkbox, textEl)
-      item.append(labelEl)
-
-      if (removable) {
-        const removeBtn = document.createElement('button')
-        removeBtn.type = 'button'
-        removeBtn.className = 'remove-field'
-        removeBtn.textContent = 'Retirer'
-        removeBtn.addEventListener('click', () => {
-          item.remove()
-          removeDisplayFieldEntries(key)
-          applyEditableFields()
-        })
-        item.append(removeBtn)
-      }
-
-      editableList.append(item)
-    } else {
-      const checkbox = item.querySelector('input[type="checkbox"]')
-      if (checkbox && typeof checked === 'boolean') checkbox.checked = checked
-      const textEl = item.querySelector('label span')
-      if (textEl) textEl.textContent = displayLabel
-      if (removable) item.dataset.custom = 'true'
-    }
-
-    const selectRowSet = new Set((selectRows || []).map(String))
-
-    displayGroups.forEach(group => {
-      const rowKey = group.dataset.displayRow
-      const defaults = displayDefaultsByRow.get(rowKey)
-      const defaultChecked = defaults?.get(key)
-      const shouldCheck = defaultChecked !== undefined ? defaultChecked : selectRowSet.has(rowKey)
-      const removableForGroup = removable
-      const { item: displayItem, isNew: created } = createDisplayItem(group, {
-        value,
-        label: displayLabel,
-        defaultChecked: shouldCheck,
-        removable: removableForGroup
-      })
-
-      if (!displayItem) return
-      if (!created && selectRowSet.has(rowKey)) {
-        const checkbox = displayItem.querySelector('input[type="checkbox"]')
-        if (checkbox) checkbox.checked = true
-      }
-    })
-  }
-
-  function getSelectedValues(group) {
-    if (!group) return []
-    return [...group.querySelectorAll('input[type="checkbox"]')]
-      .filter(input => input.checked)
-      .map(input => input.value)
-  }
-
-  function areFieldListsEqual(a = [], b = []) {
-    if (a.length !== b.length) return false
-    return a.every((value, index) => normalizeFieldKey(value) === normalizeFieldKey(b[index]))
-  }
-
-  function areCardDisplaysEqual(a = [], b = []) {
-    if (a.length !== b.length) return false
-    return a.every((row, index) => areFieldListsEqual(row, b[index]))
-  }
-
-  function syncDisplayItemsWithEditable(activeKeys) {
-    displayGroups.forEach(group => {
-      const items = group.querySelectorAll('.display-item')
-      items.forEach(item => {
-        const key = item.dataset.fieldKey
-        const checkbox = item.querySelector('input[type="checkbox"]')
-        const isActive = activeKeys.has(key)
-        item.classList.toggle('is-disabled', !isActive)
-        if (!checkbox) return
-        checkbox.disabled = !isActive
-        if (!isActive && checkbox.checked) {
-          checkbox.checked = false
-        }
-      })
-    })
-  }
-
-  function updateCardDisplay({ suppressSave = false } = {}) {
-    const row1Group = displayGroupMap.get('1')
-    const row2Group = displayGroupMap.get('2')
-    const row1 = sanitizeFieldValues(getSelectedValues(row1Group))
-    const row2 = sanitizeFieldValues(getSelectedValues(row2Group))
-    const fallback = (row1[0])
-      || (currentEditableFields.length ? currentEditableFields[0] : (DEFAULT_EDITABLE_FIELDS[0] || 'first name'))
-    const appliedRow1 = row1.length ? row1 : [fallback]
-    const appliedRows = [appliedRow1, row2]
-
-    card.setCardDisplay(appliedRows)
-    chart.updateTree({ initial: false, tree_position: 'inherit' })
-
-    const displayChanged = !areCardDisplaysEqual(chartConfig.cardDisplay, appliedRows)
-    if (displayChanged) {
-      chartConfig = {
-        ...chartConfig,
-        cardDisplay: appliedRows.map(row => [...row])
-      }
-      if (!suppressSave) {
-        lastSnapshotString = null
-        if (!isApplyingConfig) scheduleAutoSave()
-      }
-    }
-  }
-
-  function applyEditableFields({ suppressSave = false } = {}) {
-    if (!editTreeInstance || !editableList) return
-    const values = [...editableList.querySelectorAll('input[type="checkbox"]')]
-      .filter(input => input.checked)
-      .map(input => input.value)
-    let applied = values.length ? values : (chartConfig.editableFields.length ? [...chartConfig.editableFields] : ['first name'])
-    applied = sanitizeFieldValues(applied)
-    if (!applied.length) {
-      const fallbackField = DEFAULT_EDITABLE_FIELDS[0] || 'first name'
-      applied = [fallbackField]
-      if (editableList) {
-        const fallbackKey = normalizeFieldKey(fallbackField)
-        const selector = `[data-field-key="${escapeSelector(fallbackKey)}"] input[type="checkbox"]`
-        const fallbackInput = editableList.querySelector(selector)
-        if (fallbackInput) fallbackInput.checked = true
-      }
-    }
-    currentEditableFields = [...applied]
-    const fieldDescriptors = createFieldDescriptors(applied)
-    editTreeInstance.setFields(fieldDescriptors)
-
-    const activeKeys = new Set(applied.map(normalizeFieldKey))
-    syncDisplayItemsWithEditable(activeKeys)
-
-    const editableChanged = !areFieldListsEqual(chartConfig.editableFields, applied)
-    if (editableChanged) {
-      chartConfig = { ...chartConfig, editableFields: [...applied] }
-      if (!suppressSave) {
-        lastSnapshotString = null
-        if (!isApplyingConfig) scheduleAutoSave()
-      }
-    }
-
-    updateCardDisplay({ suppressSave })
-
-    const datum = editTreeInstance.store.getMainDatum()
-    if (datum) editTreeInstance.open(datum)
-  }
-
-  function requestFieldDefinition() {
-    const rawValue = prompt('Nom du champ (clé dans vos données) ?')
-    if (!rawValue) return null
-    const value = rawValue.trim()
-    if (!value) return null
-
-    const key = normalizeFieldKey(value)
-    const suggestedLabel = fieldLabelStore.get(key) || value
-    const labelInput = prompt('Libellé affiché pour ce champ ?', suggestedLabel)
-    const displayLabel = (labelInput ?? suggestedLabel).trim() || value
-
-    return { value, label: displayLabel, key }
-  }
-
-  function handleAddEditableField({ selectRows = [] } = {}) {
-    const definition = requestFieldDefinition()
-    if (!definition) return
-    const { value, label, key } = definition
-    const isDefault = EDITABLE_DEFAULTS.some(def => normalizeFieldKey(def.value) === key)
-
-    createEditableItem({
-      value,
-      label,
-      checked: true,
-      removable: !isDefault,
-      selectRows
-    })
-
-    applyEditableFields()
-  }
-
-  EDITABLE_DEFAULTS.forEach(def => {
-    if (!HIDDEN_FIELD_KEYS.has(normalizeFieldKey(def.value))) {
-      createEditableItem({
-        value: def.value,
-        label: def.label,
-        checked: def.checked !== false,
-        removable: false
-      })
-    }
-  })
-
-  editableList?.addEventListener('change', (event) => {
-    if (event.target.matches('input[type="checkbox"]')) {
-      applyEditableFields()
-    }
-  })
-
-  addEditableBtn?.addEventListener('click', () => handleAddEditableField())
-
-  displayGroups.forEach(group => {
-    group.addEventListener('change', (event) => {
-      if (event.target.matches('input[type="checkbox"]')) {
-        updateCardDisplay()
-      }
-    })
-  })
+  // restoration of deleted logic continue below...
 
   imageField?.addEventListener('change', () => {
     card.setCardImageField(imageField.value)
@@ -2719,8 +2541,6 @@ function attachPanelControls({ chart, card }) {
     commitConfigUpdate({ miniTree: enabled })
   })
 
-
-
   emptyLabel?.addEventListener('change', () => {
     if (isApplyingConfig) return
     const label = (emptyLabel.value || '').trim() || DEFAULT_CHART_CONFIG.singleParentEmptyCardLabel
@@ -2759,23 +2579,12 @@ function attachPanelControls({ chart, card }) {
     }
   }
 
-  ;[
-    cardWidth,
-    cardHeight,
-    imgWidth,
-    imgHeight,
-    imgX,
-    imgY
-  ].forEach(input => input?.addEventListener('change', applyCardDimensions))
+  ;[cardWidth, cardHeight, imgWidth, imgHeight, imgX, imgY].forEach(input => input?.addEventListener('change', applyCardDimensions))
 
   resetDimensions?.addEventListener('click', () => {
     ;[
-      [cardWidth, 240],
-      [cardHeight, 150],
-      [imgWidth, 80],
-      [imgHeight, 80],
-      [imgX, 16],
-      [imgY, 16]
+      [cardWidth, 240], [cardHeight, 150], [imgWidth, 80],
+      [imgHeight, 80], [imgX, 16], [imgY, 16]
     ].forEach(([input, value]) => {
       if (input) input.value = value
     })
@@ -2788,7 +2597,6 @@ function attachPanelControls({ chart, card }) {
     event.target.value = ''
   })
 
-  // Make the visible label open the hidden file input (we hide filename text via CSS)
   fileLabel?.addEventListener('click', (e) => {
     e.preventDefault()
     if (assetUploadInput) assetUploadInput.click()
@@ -2827,10 +2635,8 @@ function attachPanelControls({ chart, card }) {
         throw new Error(message)
       }
 
-      // Clear uploader UI and remove image from active datum
       clearUploadResult()
       setUploadFeedback('Photo supprimée.', 'success')
-      // If the active datum had the image URL in its data, remove it
       try {
         const targetFieldId = getActiveImageFieldId()
         if (datum && datum.data && datum.data[targetFieldId]) {
@@ -2838,16 +2644,12 @@ function attachPanelControls({ chart, card }) {
           chart.updateTree({ initial: false, tree_position: 'inherit' })
           scheduleAutoSave()
         }
-      } catch (e) {
-        /* ignore */
-      }
+      } catch (e) { /* ignore */ }
     } catch (error) {
       console.error(error)
       setUploadFeedback(error.message || 'Échec de la suppression.', 'error')
     }
   })
-
-  // manual URL input removed: no manual apply/copy behavior
 
   const previousApplyingState = isApplyingConfig
   isApplyingConfig = true
@@ -2913,7 +2715,6 @@ window.addEventListener('beforeunload', (event) => {
 
 initialise()
 
-// Tool Buttons Logic
 const tools = {
   deleteBranch: (direction) => {
     if (!activeChartInstance) return
@@ -2930,12 +2731,9 @@ const tools = {
       idsToDelete.add(id)
       const datum = data.find(d => d.id === id)
       if (!datum) return
-
       if (direction === 'asc') {
-        // Delete parents recursively
         datum.rels.parents?.forEach(traverse)
       } else {
-        // Delete children recursively
         datum.rels.children?.forEach(traverse)
       }
     }
@@ -2944,10 +2742,10 @@ const tools = {
     if (mainDatum) {
       if (direction === 'asc') {
         mainDatum.rels.parents?.forEach(traverse)
-        mainDatum.rels.parents = [] // Clear connection
+        mainDatum.rels.parents = []
       } else {
         mainDatum.rels.children?.forEach(traverse)
-        mainDatum.rels.children = [] // Clear connection
+        mainDatum.rels.children = []
       }
     }
 
@@ -3022,9 +2820,9 @@ const tools = {
           initialise()
 
           alert(`Branche importée (${newUniqueData.length} nouvelles fiches) et reliée.`)
-        } catch (err) {
-          console.error(err)
-          alert('Erreur lors de l\'importation : ' + err.message)
+        } catch (error) {
+          console.error(error)
+          alert('Erreur lors de l\'importation : ' + error.message)
         }
       }
       reader.readAsText(file)
@@ -3062,18 +2860,22 @@ const tools = {
           if (!Array.isArray(importedData)) throw new Error('Format invalide')
 
           const newMainId = importedData.length > 0 ? importedData[0].id : null
-
-          const newConfig = { ...chartConfig }
+          
           if (newMainId) {
-            newConfig.mainId = newMainId
+             console.log('Setting new mainId:', newMainId)
+             chartConfig.mainId = newMainId
+          } else {
+             chartConfig.mainId = null
           }
 
           const snapshot = {
             data: importedData,
-            config: newConfig
+            config: window.structuredCloneSafe(chartConfig)
           }
-
+          
           await persistChanges(snapshot, { immediate: true })
+          
+          activeChartInstance = null
           initialise()
 
           alert('Arbre importé avec succès.')
@@ -3088,7 +2890,6 @@ const tools = {
   }
 }
 
-// Event Listeners for Tools
 function setupToolListeners() {
   const actions = {
     'delete-branch-asc': () => tools.deleteBranch('asc'),
@@ -3102,7 +2903,6 @@ function setupToolListeners() {
   Object.entries(actions).forEach(([action, handler]) => {
     const btn = document.querySelector(`[data-action="${action}"]`)
     if (btn) {
-      // Remove existing listeners to avoid duplicates if re-run
       const newBtn = btn.cloneNode(true)
       btn.parentNode.replaceChild(newBtn, btn)
       newBtn.addEventListener('click', handler)
@@ -3110,10 +2910,8 @@ function setupToolListeners() {
   })
 }
 
-// Initialize tools when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', setupToolListeners)
 } else {
   setupToolListeners()
 }
-
