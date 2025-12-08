@@ -3129,39 +3129,19 @@ const tools = {
 }
 
 // Helper for Modal
+// Helper for Modal
 function showImportSelectionModal(candidates) {
   return new Promise((resolve) => {
     const dialog = document.createElement('dialog')
     dialog.className = 'import-modal'
 
-    // Simple Styles for this dialog (inline)
-    dialog.style.cssText = `
-      padding: 20px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      max-width: 500px;
-      width: 100%;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: white;
-      z-index: 10000;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    `
-
     const h3 = document.createElement('h3')
-    h3.textContent = 'Sélectionner la personne de référence'
-    h3.style.marginBottom = '10px'
+    h3.textContent = 'Sélectionner le Point de Liaison'
 
     const p = document.createElement('p')
-    p.textContent = 'Choisissez la personne dans le fichier importé qui correspond au lien (parent ou enfant) avec votre fiche sélectionnée.'
-    p.style.marginBottom = '10px'
+    p.textContent = 'Veuillez sélectionner la personne dans le fichier importé qui sera reliée (comme parent ou enfant) à la fiche actuellement sélectionnée dans votre arbre.'
 
     const select = document.createElement('select')
-    select.style.width = '100%'
-    select.style.marginBottom = '20px'
-    select.style.padding = '8px'
     select.size = 10
 
     candidates.forEach(c => {
@@ -3172,9 +3152,12 @@ function showImportSelectionModal(candidates) {
     })
 
     const btnContainer = document.createElement('div')
+    btnContainer.className = 'modal-actions'
+    // Add style wrapper for layout if needed, or just reliance on CSS
     btnContainer.style.display = 'flex'
     btnContainer.style.justifyContent = 'flex-end'
     btnContainer.style.gap = '10px'
+    btnContainer.style.marginTop = '20px'
 
     const cancelBtn = document.createElement('button')
     cancelBtn.textContent = 'Annuler'
@@ -3186,13 +3169,8 @@ function showImportSelectionModal(candidates) {
     }
 
     const confirmBtn = document.createElement('button')
-    confirmBtn.textContent = 'Importer'
-    confirmBtn.className = 'primary' // Assume global style
-    confirmBtn.style.background = '#007bff'
-    confirmBtn.style.color = 'white'
-    confirmBtn.style.border = 'none'
-    confirmBtn.style.padding = '8px 16px'
-    confirmBtn.style.borderRadius = '4px'
+    confirmBtn.textContent = 'Confirmer Importation'
+    confirmBtn.className = 'primary'
 
     confirmBtn.onclick = () => {
       const val = select.value
@@ -3201,7 +3179,7 @@ function showImportSelectionModal(candidates) {
         document.body.removeChild(dialog)
         resolve(val)
       } else {
-        alert('Sélectionnez une personne.')
+        alert('Veuillez sélectionner une personne dans la liste.')
       }
     }
 
