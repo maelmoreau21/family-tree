@@ -113,8 +113,8 @@ export function parseGedcom(gedcomInfo) {
             else if (tag === 'BIRT') lastTag = 'BIRT'
             else if (tag === 'DEAT') lastTag = 'DEAT'
             else if (tag === 'DATE') {
-                if (lastTag === 'BIRT') person.data.birthDate = val
-                if (lastTag === 'DEAT') person.data.deathDate = val
+                if (lastTag === 'BIRT') person.data["Date de naissance"] = val
+                if (lastTag === 'DEAT') person.data["Date de décès"] = val
             }
         })
 
@@ -220,15 +220,15 @@ export function generateGedcom(data) {
         if (p.data.gender) lines.push(`1 SEX ${p.data.gender}`)
 
         // Birth
-        if (p.data.birthDate) {
+        if (p.data["Date de naissance"]) {
             lines.push('1 BIRT')
-            lines.push(`2 DATE ${p.data.birthDate}`)
+            lines.push(`2 DATE ${p.data["Date de naissance"]}`)
         }
 
         // Death
-        if (p.data.deathDate) {
+        if (p.data["Date de décès"]) {
             lines.push('1 DEAT')
-            lines.push(`2 DATE ${p.data.deathDate}`)
+            lines.push(`2 DATE ${p.data["Date de décès"]}`)
         }
 
         // Connect to Families as Child (FAMC)
