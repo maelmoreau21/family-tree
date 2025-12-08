@@ -1,5 +1,13 @@
 ﻿import * as f3 from '/lib/family-tree.esm.js'
-import { parseGEDCOM, toGEDCOM } from './gedcom.js'
+import { parseGedcom, generateGedcom } from './gedcom.js'
+
+// Polyfill for structuredClone if needed (safe version)
+window.structuredCloneSafe = (val) => {
+  if (typeof window.structuredClone === 'function') {
+    return window.structuredClone(val)
+  }
+  return JSON.parse(JSON.stringify(val))
+}
 
 const statusEl = document.getElementById('status')
 const saveBtn = document.getElementById('save')
@@ -35,79 +43,6 @@ function clearElement(target) {
   while (target.firstChild) {
     target.removeChild(target.firstChild)
   }
-}
-
-function showImportSelectionModal(candidates) {
-  return new Promise(resolve => {
-    const dialog = document.createElement('dialog')
-    dialog.className = 'import-selection-modal'
-
-    const form = document.createElement('form')
-    form.method = 'dialog'
-
-    const h3 = document.createElement('h3')
-    h3.textContent = 'Sélectionner le profil racine de la branche'
-
-    const p = document.createElement('p')
-    p.textContent = 'Veuillez choisir la personne à relier dans les données importées :'
-
-    const select = document.createElement('select')
-    select.className = 'f3-input'
-    select.size = 10
-
-    candidates.sort((a, b) => {
-      const na = (a.data['last name'] + a.data['first name']).toLowerCase();
-      const nb = (b.data['last name'] + b.data['first name']).toLowerCase();
-      return na.localeCompare(nb);
-    }).forEach(c => {
-      const option = document.createElement('option')
-      option.value = c.id
-      const birth = c.data.birthday ? `(${c.data.birthday})` : ''
-      option.textContent = `${c.data['first name']} ${c.data['last name']} ${birth}`
-      select.append(option)
-    })
-
-    const div = document.createElement('div')
-    div.className = 'dialog-actions'
-
-    const cancelBtn = document.createElement('button')
-    cancelBtn.textContent = 'Annuler'
-    cancelBtn.type = 'button'
-    cancelBtn.onclick = () => {
-      dialog.close()
-      resolve(null)
-    }
-
-    const confirmBtn = document.createElement('button')
-    confirmBtn.textContent = 'Importer'
-    confirmBtn.type = 'submit'
-    confirmBtn.className = 'primary'
-
-    div.append(cancelBtn, confirmBtn)
-    form.append(h3, p, select, div)
-    dialog.append(form)
-
-    document.body.append(dialog)
-    dialog.showModal()
-
-    dialog.addEventListener('close', () => {
-      if (dialog.returnValue === 'default') { // submit
-        resolve(select.value)
-      } else {
-        resolve(null)
-      }
-      dialog.remove()
-    })
-
-    form.onsubmit = (e) => {
-      if (!select.value) {
-        e.preventDefault()
-        alert('Veuillez sélectionner une personne.')
-        return
-      }
-      dialog.returnValue = 'default'
-    }
-  })
 }
 
 function setBuilderSearchState(state) {
@@ -2373,99 +2308,6 @@ function attachPanelControls({ chart, card }) {
     })
   }
 
-  function setMainProfile(id, {
-    openEditor = true,
-    suppressSave = false,
-    focusSearch = false,
-    highlightCard = true,
-    source = 'manual',
-    persistConfig = true
-  } = {}) {
-    if (!id) return
-    if (persistConfig) {
-      transientMainSelection = false
-    }
-    const persons = getAllPersons()
-    if (!persons.some(person => person.id === id)) {
-      refreshMainProfileOptions({ keepSelection: false })
-      return
-    }
-
-    const configChanged = persistConfig && chartConfig.mainId !== id
-    if (configChanged) {
-      chartConfig = { ...chartConfig, mainId: id }
-    }
-
-    if (configChanged && !suppressSave) {
-      lastSnapshotString = null
-      if (!isApplyingConfig) {
-        scheduleAutoSave()
-      }
-    }
-
-    const storeMainBefore = chart.store && typeof chart.store.getMainId === 'function'
-      ? chart.store.getMainId()
-      : null
-
-    if (!persistConfig && storeMainBefore !== id) {
-      ignoreNextMainSync = true
-    }
-
-    const shouldUpdateMainId = chart && typeof chart.updateMainId === 'function'
-    let recenterAlreadyScheduled = false
-
-
-    if (persistConfig && shouldUpdateMainId && storeMainBefore !== id) {
-      chart.updateMainId(id)
-      chart.updateTree({ initial: false, tree_position: 'main_to_middle' })
-      recenterAlreadyScheduled = true
-    }
-
-    if (persistConfig && mainProfileSelect && mainProfileSelect.value !== id) {
-      mainProfileSelect.value = id
-      mainProfileSelect.disabled = false
-    }
-
-    if (persistConfig) {
-      updateMainProfileDisplay(id)
-    } else {
-      updateMainProfileDisplay(chartConfig.mainId || null)
-    }
-
-
-    try {
-      if (!recenterAlreadyScheduled && chart && typeof chart.updateTree === 'function') {
-        chart.updateTree({ initial: false, tree_position: 'main_to_middle' })
-      }
-    } catch (error) {
-      console.error('Impossible de recentrer le graphique aprÃ¨s sÃ©lection du profil', error)
-    }
-    const datum = editTreeInstance?.store?.getDatum?.(id) || null
-    if (focusSearch) {
-      const label = datum ? buildPersonLabel(datum) : `Profil ${id}`
-      focusBuilderSearch({ label, select: true, flash: true, preventScroll: source === 'search' })
-    }
-    if (highlightCard) {
-      highlightCardById(id, { animate: true })
-    }
-    renderBreadcrumbTrail(id)
-    if (openEditor && editTreeInstance && datum) {
-      editTreeInstance.open(datum)
-    }
-  }
-
-  if (mainProfileSelect) {
-    mainProfileSelect.addEventListener('change', event => {
-      const { value } = event.target
-      if (!value) return
-      setMainProfile(value)
-    })
-  }
-
-  function escapeSelector(value) {
-    return cssEscape(value)
-  }
-
   function applyConfigToDisplayControls() {
     displayGroups.forEach((group, index) => {
       const desiredRow = (chartConfig.cardDisplay && chartConfig.cardDisplay[index]) || []
@@ -2477,7 +2319,278 @@ function attachPanelControls({ chart, card }) {
     })
   }
 
-  // restoration of deleted logic continue below...
+  function createDisplayItem(group, { value, label, defaultChecked = false, removable = false }) {
+    const list = group.querySelector('.field-list')
+    if (!list) return { item: null, isNew: false }
+    const key = normalizeFieldKey(value)
+    if (HIDDEN_FIELD_KEYS.has(key)) return { item: null, isNew: false }
+    const selector = `[data-field-key="${escapeSelector(key)}"]`
+    const displayLabel = ensureFieldLabel(value, label)
+    let item = list.querySelector(selector)
+
+    if (item) {
+      const textEl = item.querySelector('label span')
+      if (textEl) textEl.textContent = displayLabel
+      if (removable) {
+        item.dataset.custom = 'true'
+        addRemoveButton(item)
+      }
+      return { item, isNew: false }
+    }
+
+    item = document.createElement('div')
+    item.className = 'display-item'
+    item.dataset.fieldKey = key
+    if (removable) item.dataset.custom = 'true'
+
+    const labelEl = document.createElement('label')
+    const checkbox = document.createElement('input')
+    checkbox.type = 'checkbox'
+    checkbox.value = value
+    checkbox.checked = defaultChecked
+
+    const textEl = document.createElement('span')
+    textEl.textContent = displayLabel
+
+    labelEl.append(checkbox, textEl)
+    item.append(labelEl)
+
+    if (removable) {
+      addRemoveButton(item)
+    }
+
+    list.append(item)
+    return { item, isNew: true }
+  }
+
+  function createEditableItem({ value, label, checked = true, removable = false, selectRows = [] }) {
+    if (!editableList) return
+    const key = normalizeFieldKey(value)
+    if (HIDDEN_FIELD_KEYS.has(key)) return
+    const displayLabel = ensureFieldLabel(value, label)
+    const selector = `[data-field-key="${escapeSelector(key)}"]`
+    let item = editableList.querySelector(selector)
+    const isNew = !item
+
+    if (!item) {
+      item = document.createElement('div')
+      item.className = 'editable-item'
+      item.dataset.fieldKey = key
+      if (removable) item.dataset.custom = 'true'
+
+      const labelEl = document.createElement('label')
+      const checkbox = document.createElement('input')
+      checkbox.type = 'checkbox'
+      checkbox.value = value
+      checkbox.checked = checked
+
+      const textEl = document.createElement('span')
+      textEl.textContent = displayLabel
+
+      labelEl.append(checkbox, textEl)
+      item.append(labelEl)
+
+      if (removable) {
+        const removeBtn = document.createElement('button')
+        removeBtn.type = 'button'
+        removeBtn.className = 'remove-field'
+        removeBtn.textContent = 'Retirer'
+        removeBtn.addEventListener('click', () => {
+          item.remove()
+          removeDisplayFieldEntries(key)
+          applyEditableFields()
+        })
+        item.append(removeBtn)
+      }
+
+      editableList.append(item)
+    } else {
+      const checkbox = item.querySelector('input[type="checkbox"]')
+      if (checkbox && typeof checked === 'boolean') checkbox.checked = checked
+      const textEl = item.querySelector('label span')
+      if (textEl) textEl.textContent = displayLabel
+      if (removable) item.dataset.custom = 'true'
+    }
+
+    const selectRowSet = new Set((selectRows || []).map(String))
+
+    displayGroups.forEach(group => {
+      const rowKey = group.dataset.displayRow
+      const defaults = displayDefaultsByRow.get(rowKey)
+      const defaultChecked = defaults?.get(key)
+      const shouldCheck = defaultChecked !== undefined ? defaultChecked : selectRowSet.has(rowKey)
+      const removableForGroup = removable
+      const { item: displayItem, isNew: created } = createDisplayItem(group, {
+        value,
+        label: displayLabel,
+        defaultChecked: shouldCheck,
+        removable: removableForGroup
+      })
+
+      if (!displayItem) return
+      if (!created && selectRowSet.has(rowKey)) {
+        const checkbox = displayItem.querySelector('input[type="checkbox"]')
+        if (checkbox) checkbox.checked = true
+      }
+    })
+  }
+
+  function getSelectedValues(group) {
+    if (!group) return []
+    return [...group.querySelectorAll('input[type="checkbox"]')]
+      .filter(input => input.checked)
+      .map(input => input.value)
+  }
+
+  function areFieldListsEqual(a = [], b = []) {
+    if (a.length !== b.length) return false
+    return a.every((value, index) => normalizeFieldKey(value) === normalizeFieldKey(b[index]))
+  }
+
+  function areCardDisplaysEqual(a = [], b = []) {
+    if (a.length !== b.length) return false
+    return a.every((row, index) => areFieldListsEqual(row, b[index]))
+  }
+
+  function syncDisplayItemsWithEditable(activeKeys) {
+    displayGroups.forEach(group => {
+      const items = group.querySelectorAll('.display-item')
+      items.forEach(item => {
+        const key = item.dataset.fieldKey
+        const checkbox = item.querySelector('input[type="checkbox"]')
+        const isActive = activeKeys.has(key)
+        item.classList.toggle('is-disabled', !isActive)
+        if (!checkbox) return
+        checkbox.disabled = !isActive
+        if (!isActive && checkbox.checked) {
+          checkbox.checked = false
+        }
+      })
+    })
+  }
+
+  function updateCardDisplay({ suppressSave = false } = {}) {
+    const row1Group = displayGroupMap.get('1')
+    const row2Group = displayGroupMap.get('2')
+    const row1 = sanitizeFieldValues(getSelectedValues(row1Group))
+    const row2 = sanitizeFieldValues(getSelectedValues(row2Group))
+    const fallback = (row1[0])
+      || (currentEditableFields.length ? currentEditableFields[0] : (DEFAULT_EDITABLE_FIELDS[0] || 'first name'))
+    const appliedRow1 = row1.length ? row1 : [fallback]
+    const appliedRows = [appliedRow1, row2]
+
+    card.setCardDisplay(appliedRows)
+    chart.updateTree({ initial: false, tree_position: 'inherit' })
+
+    const displayChanged = !areCardDisplaysEqual(chartConfig.cardDisplay, appliedRows)
+    if (displayChanged) {
+      chartConfig = {
+        ...chartConfig,
+        cardDisplay: appliedRows.map(row => [...row])
+      }
+      if (!suppressSave) {
+        lastSnapshotString = null
+        if (!isApplyingConfig) scheduleAutoSave()
+      }
+    }
+  }
+
+  function applyEditableFields({ suppressSave = false } = {}) {
+    if (!editTreeInstance || !editableList) return
+    const values = [...editableList.querySelectorAll('input[type="checkbox"]')]
+      .filter(input => input.checked)
+      .map(input => input.value)
+    let applied = values.length ? values : (chartConfig.editableFields.length ? [...chartConfig.editableFields] : ['first name'])
+    applied = sanitizeFieldValues(applied)
+    if (!applied.length) {
+      const fallbackField = DEFAULT_EDITABLE_FIELDS[0] || 'first name'
+      applied = [fallbackField]
+      if (editableList) {
+        const fallbackKey = normalizeFieldKey(fallbackField)
+        const selector = `[data-field-key="${escapeSelector(fallbackKey)}"] input[type="checkbox"]`
+        const fallbackInput = editableList.querySelector(selector)
+        if (fallbackInput) fallbackInput.checked = true
+      }
+    }
+    currentEditableFields = [...applied]
+    const fieldDescriptors = createFieldDescriptors(applied)
+    editTreeInstance.setFields(fieldDescriptors)
+
+    const activeKeys = new Set(applied.map(normalizeFieldKey))
+    syncDisplayItemsWithEditable(activeKeys)
+
+    const editableChanged = !areFieldListsEqual(chartConfig.editableFields, applied)
+    if (editableChanged) {
+      chartConfig = { ...chartConfig, editableFields: [...applied] }
+      if (!suppressSave) {
+        lastSnapshotString = null
+        if (!isApplyingConfig) scheduleAutoSave()
+      }
+    }
+
+    updateCardDisplay({ suppressSave })
+
+    const datum = editTreeInstance.store.getMainDatum()
+    if (datum) editTreeInstance.open(datum)
+  }
+
+  function requestFieldDefinition() {
+    const rawValue = prompt('Nom du champ (clé dans vos données) ?')
+    if (!rawValue) return null
+    const value = rawValue.trim()
+    if (!value) return null
+
+    const key = normalizeFieldKey(value)
+    const suggestedLabel = fieldLabelStore.get(key) || value
+    const labelInput = prompt('Libellé affiché pour ce champ ?', suggestedLabel)
+    const displayLabel = (labelInput ?? suggestedLabel).trim() || value
+
+    return { value, label: displayLabel, key }
+  }
+
+  function handleAddEditableField({ selectRows = [] } = {}) {
+    const definition = requestFieldDefinition()
+    if (!definition) return
+    const { value, label, key } = definition
+    const isDefault = EDITABLE_DEFAULTS.some(def => normalizeFieldKey(def.value) === key)
+
+    createEditableItem({
+      value,
+      label,
+      checked: true,
+      removable: !isDefault,
+      selectRows
+    })
+
+    applyEditableFields()
+  }
+
+  EDITABLE_DEFAULTS.forEach(def => {
+    if (!HIDDEN_FIELD_KEYS.has(normalizeFieldKey(def.value))) {
+      createEditableItem({
+        value: def.value,
+        label: def.label,
+        checked: def.checked !== false,
+        removable: false
+      })
+    }
+  })
+
+  editableList?.addEventListener('change', (event) => {
+    if (event.target.matches('input[type="checkbox"]')) {
+      applyEditableFields()
+    }
+  })
+
+  addEditableBtn?.addEventListener('click', () => handleAddEditableField())
+
+  displayGroups.forEach(group => {
+    group.addEventListener('change', (event) => {
+      if (event.target.matches('input[type="checkbox"]')) {
+        updateCardDisplay()
+      }
+    })
+  })
 
   imageField?.addEventListener('change', () => {
     card.setCardImageField(imageField.value)
@@ -2541,6 +2654,8 @@ function attachPanelControls({ chart, card }) {
     commitConfigUpdate({ miniTree: enabled })
   })
 
+
+
   emptyLabel?.addEventListener('change', () => {
     if (isApplyingConfig) return
     const label = (emptyLabel.value || '').trim() || DEFAULT_CHART_CONFIG.singleParentEmptyCardLabel
@@ -2579,12 +2694,23 @@ function attachPanelControls({ chart, card }) {
     }
   }
 
-  ;[cardWidth, cardHeight, imgWidth, imgHeight, imgX, imgY].forEach(input => input?.addEventListener('change', applyCardDimensions))
+  ;[
+    cardWidth,
+    cardHeight,
+    imgWidth,
+    imgHeight,
+    imgX,
+    imgY
+  ].forEach(input => input?.addEventListener('change', applyCardDimensions))
 
   resetDimensions?.addEventListener('click', () => {
     ;[
-      [cardWidth, 240], [cardHeight, 150], [imgWidth, 80],
-      [imgHeight, 80], [imgX, 16], [imgY, 16]
+      [cardWidth, 240],
+      [cardHeight, 150],
+      [imgWidth, 80],
+      [imgHeight, 80],
+      [imgX, 16],
+      [imgY, 16]
     ].forEach(([input, value]) => {
       if (input) input.value = value
     })
@@ -2597,6 +2723,7 @@ function attachPanelControls({ chart, card }) {
     event.target.value = ''
   })
 
+  // Make the visible label open the hidden file input (we hide filename text via CSS)
   fileLabel?.addEventListener('click', (e) => {
     e.preventDefault()
     if (assetUploadInput) assetUploadInput.click()
@@ -2635,8 +2762,10 @@ function attachPanelControls({ chart, card }) {
         throw new Error(message)
       }
 
+      // Clear uploader UI and remove image from active datum
       clearUploadResult()
       setUploadFeedback('Photo supprimée.', 'success')
+      // If the active datum had the image URL in its data, remove it
       try {
         const targetFieldId = getActiveImageFieldId()
         if (datum && datum.data && datum.data[targetFieldId]) {
@@ -2644,12 +2773,16 @@ function attachPanelControls({ chart, card }) {
           chart.updateTree({ initial: false, tree_position: 'inherit' })
           scheduleAutoSave()
         }
-      } catch (e) { /* ignore */ }
+      } catch (e) {
+        /* ignore */
+      }
     } catch (error) {
       console.error(error)
       setUploadFeedback(error.message || 'Échec de la suppression.', 'error')
     }
   })
+
+  // manual URL input removed: no manual apply/copy behavior
 
   const previousApplyingState = isApplyingConfig
   isApplyingConfig = true
@@ -2715,6 +2848,7 @@ window.addEventListener('beforeunload', (event) => {
 
 initialise()
 
+// Tool Buttons Logic
 const tools = {
   deleteBranch: (direction) => {
     if (!activeChartInstance) return
@@ -2731,6 +2865,7 @@ const tools = {
       idsToDelete.add(id)
       const datum = data.find(d => d.id === id)
       if (!datum) return
+
       if (direction === 'asc') {
         datum.rels.parents?.forEach(traverse)
       } else {
@@ -2752,6 +2887,8 @@ const tools = {
     const newData = data.filter(d => !idsToDelete.has(d.id))
     store.updateData(newData)
     activeChartInstance.updateTree()
+    const snapshot = getSnapshot()
+    if (snapshot) persistChanges(snapshot, { immediate: true }) // Force save
     alert('Branche supprimée avec succès.')
   },
 
@@ -2763,66 +2900,85 @@ const tools = {
 
     const input = document.createElement('input')
     input.type = 'file'
-    input.accept = '.ged,.gedcom'
+    input.accept = '.ged'
     input.onchange = (e) => {
       const file = e.target.files[0]
       if (!file) return
       const reader = new FileReader()
       reader.onload = async (event) => {
         try {
-          const importedData = parseGEDCOM(event.target.result)
-          if (!Array.isArray(importedData) || importedData.length === 0) throw new Error('Format invalide ou vide')
+          // Parse GEDCOM
+          const rawText = event.target.result
+          const importedData = parseGedcom(rawText)
+          if (!importedData.length) throw new Error('Aucune donnée trouvée dans ce fichier GEDCOM.')
 
-          const selectedId = await showImportSelectionModal(importedData)
-          if (!selectedId) return
+          // Show Modal to select the root person in the imported file
+          const selectedImportId = await showImportSelectionModal(importedData)
+          if (!selectedImportId) return // Cancelled
 
+          // Data Merging Logic
           const currentData = store.getData()
           const currentIds = new Set(currentData.map(d => d.id))
-          const newUniqueData = importedData.filter(d => !currentIds.has(d.id))
-          const importedRoot = importedData.find(d => d.id === selectedId)
+
+          // ID Collision Handling: Map imported IDs to new UUIDs to prevent conflicts
+          const idMap = new Map()
+          importedData.forEach(p => {
+            // Generate new ID for every imported person
+            const newId = crypto.randomUUID()
+            idMap.set(p.id, newId)
+          })
+
+          const remappedData = importedData.map(p => {
+            return {
+              ...p,
+              id: idMap.get(p.id),
+              rels: {
+                parents: p.rels.parents.map(pid => idMap.get(pid)).filter(Boolean),
+                children: p.rels.children.map(cid => idMap.get(cid)).filter(Boolean),
+                spouses: p.rels.spouses.map(sid => idMap.get(sid)).filter(Boolean),
+              }
+            }
+          })
+
+          const importedRootNewId = idMap.get(selectedImportId)
+          const newUniqueData = remappedData // All are new because of UUIDs
+
           const mainDatum = currentData.find(d => d.id === mainId)
 
-          if (mainDatum && importedRoot) {
+          if (mainDatum && importedRootNewId) {
+            // Find the imported root in the NEW data
+            let rootInNew = remappedData.find(d => d.id === importedRootNewId)
+
             if (direction === 'asc') {
+              // Imported root is PARENT of mainDatum
               if (!mainDatum.rels.parents) mainDatum.rels.parents = []
-              if (!mainDatum.rels.parents.includes(importedRoot.id)) {
-                mainDatum.rels.parents.push(importedRoot.id)
-              }
-              let rootInStore = newUniqueData.find(d => d.id === importedRoot.id)
-              if (!rootInStore) rootInStore = currentData.find(d => d.id === importedRoot.id)
-              if (rootInStore) {
-                if (!rootInStore.rels.children) rootInStore.rels.children = []
-                if (!rootInStore.rels.children.includes(mainId)) {
-                  rootInStore.rels.children.push(mainId)
-                }
+              mainDatum.rels.parents.push(importedRootNewId)
+
+              if (rootInNew) {
+                if (!rootInNew.rels.children) rootInNew.rels.children = []
+                rootInNew.rels.children.push(mainId)
               }
             } else {
+              // Imported root is CHILD of mainDatum
               if (!mainDatum.rels.children) mainDatum.rels.children = []
-              if (!mainDatum.rels.children.includes(importedRoot.id)) {
-                mainDatum.rels.children.push(importedRoot.id)
-              }
-              let rootInStore = newUniqueData.find(d => d.id === importedRoot.id)
-              if (!rootInStore) rootInStore = currentData.find(d => d.id === importedRoot.id)
-              if (rootInStore) {
-                if (!rootInStore.rels.parents) rootInStore.rels.parents = []
-                if (!rootInStore.rels.parents.includes(mainId)) {
-                  rootInStore.rels.parents.push(mainId)
-                }
+              mainDatum.rels.children.push(importedRootNewId)
+
+              if (rootInNew) {
+                if (!rootInNew.rels.parents) rootInNew.rels.parents = []
+                rootInNew.rels.parents.push(mainId)
               }
             }
           }
 
           store.updateData([...currentData, ...newUniqueData])
           activeChartInstance.updateTree()
-
           const snapshot = getSnapshot()
-          if (snapshot) await persistChanges(snapshot, { immediate: true })
-          initialise()
+          if (snapshot) persistChanges(snapshot, { immediate: true }) // Force Save
+          alert(`Branche importée avec succès (${newUniqueData.length} fiches) !`)
 
-          alert(`Branche importée (${newUniqueData.length} nouvelles fiches) et reliée.`)
-        } catch (error) {
-          console.error(error)
-          alert('Erreur lors de l\'importation : ' + error.message)
+        } catch (err) {
+          console.error(err)
+          alert('Erreur lors de l\'importation : ' + err.message)
         }
       }
       reader.readAsText(file)
@@ -2833,7 +2989,7 @@ const tools = {
   exportTree: () => {
     if (!activeChartInstance) return
     const data = activeChartInstance.store.getData()
-    const gedcom = toGEDCOM(data)
+    const gedcom = generateGedcom(data)
     const blob = new Blob([gedcom], { type: 'text/plain' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -2849,35 +3005,25 @@ const tools = {
 
     const input = document.createElement('input')
     input.type = 'file'
-    input.accept = '.ged,.gedcom'
+    input.accept = '.ged'
     input.onchange = (e) => {
       const file = e.target.files[0]
       if (!file) return
       const reader = new FileReader()
-      reader.onload = async (event) => {
+      reader.onload = (event) => {
         try {
-          const importedData = parseGEDCOM(event.target.result)
-          if (!Array.isArray(importedData)) throw new Error('Format invalide')
+          const rawText = event.target.result
+          const importedData = parseGedcom(rawText)
+          if (!importedData.length) throw new Error('Format invalide ou vide')
 
-          const newMainId = importedData.length > 0 ? importedData[0].id : null
-          
-          if (newMainId) {
-             console.log('Setting new mainId:', newMainId)
-             chartConfig.mainId = newMainId
-          } else {
-             chartConfig.mainId = null
-          }
+          // For full import, we don't necessarily need to remap IDs if it's a fresh start,
+          // but good practice might be to ensure clean IDs. 
+          // For now, let's keep original IDs from parser for full tree import (clean slate).
 
-          const snapshot = {
-            data: importedData,
-            config: window.structuredCloneSafe(chartConfig)
-          }
-          
-          await persistChanges(snapshot, { immediate: true })
-          
-          activeChartInstance = null
-          initialise()
-
+          activeChartInstance.store.updateData(importedData)
+          activeChartInstance.updateTree()
+          const snapshot = getSnapshot()
+          if (snapshot) persistChanges(snapshot, { immediate: true }) // Force Save
           alert('Arbre importé avec succès.')
         } catch (err) {
           console.error(err)
@@ -2890,6 +3036,96 @@ const tools = {
   }
 }
 
+// Helper for Modal
+function showImportSelectionModal(candidates) {
+  return new Promise((resolve) => {
+    const dialog = document.createElement('dialog')
+    dialog.className = 'import-modal'
+
+    // Simple Styles for this dialog (inline)
+    dialog.style.cssText = `
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      max-width: 500px;
+      width: 100%;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      z-index: 10000;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    `
+
+    const h3 = document.createElement('h3')
+    h3.textContent = 'Sélectionner la personne de référence'
+    h3.style.marginBottom = '10px'
+
+    const p = document.createElement('p')
+    p.textContent = 'Choisissez la personne dans le fichier importé qui correspond au lien (parent ou enfant) avec votre fiche sélectionnée.'
+    p.style.marginBottom = '10px'
+
+    const select = document.createElement('select')
+    select.style.width = '100%'
+    select.style.marginBottom = '20px'
+    select.style.padding = '8px'
+    select.size = 10
+
+    candidates.forEach(c => {
+      const option = document.createElement('option')
+      option.value = c.id
+      option.textContent = `${c.data['first name'] || '?'} ${c.data['last name'] || '?'} (${c.data.birthDate || '?'})`
+      select.appendChild(option)
+    })
+
+    const btnContainer = document.createElement('div')
+    btnContainer.style.display = 'flex'
+    btnContainer.style.justifyContent = 'flex-end'
+    btnContainer.style.gap = '10px'
+
+    const cancelBtn = document.createElement('button')
+    cancelBtn.textContent = 'Annuler'
+    cancelBtn.type = 'button'
+    cancelBtn.onclick = () => {
+      dialog.close()
+      document.body.removeChild(dialog)
+      resolve(null)
+    }
+
+    const confirmBtn = document.createElement('button')
+    confirmBtn.textContent = 'Importer'
+    confirmBtn.className = 'primary' // Assume global style
+    confirmBtn.style.background = '#007bff'
+    confirmBtn.style.color = 'white'
+    confirmBtn.style.border = 'none'
+    confirmBtn.style.padding = '8px 16px'
+    confirmBtn.style.borderRadius = '4px'
+
+    confirmBtn.onclick = () => {
+      const val = select.value
+      if (val) {
+        dialog.close()
+        document.body.removeChild(dialog)
+        resolve(val)
+      } else {
+        alert('Sélectionnez une personne.')
+      }
+    }
+
+    btnContainer.appendChild(cancelBtn)
+    btnContainer.appendChild(confirmBtn)
+    dialog.appendChild(h3)
+    dialog.appendChild(p)
+    dialog.appendChild(select)
+    dialog.appendChild(btnContainer)
+
+    document.body.appendChild(dialog)
+    dialog.showModal()
+  })
+}
+
+// Event Listeners for Tools
 function setupToolListeners() {
   const actions = {
     'delete-branch-asc': () => tools.deleteBranch('asc'),
@@ -2903,6 +3139,7 @@ function setupToolListeners() {
   Object.entries(actions).forEach(([action, handler]) => {
     const btn = document.querySelector(`[data-action="${action}"]`)
     if (btn) {
+      // Remove existing listeners to avoid duplicates if re-run
       const newBtn = btn.cloneNode(true)
       btn.parentNode.replaceChild(newBtn, btn)
       newBtn.addEventListener('click', handler)
@@ -2910,8 +3147,10 @@ function setupToolListeners() {
   })
 }
 
+// Initialize tools when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', setupToolListeners)
 } else {
   setupToolListeners()
 }
+
