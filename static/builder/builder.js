@@ -1328,9 +1328,24 @@ function setupChart(payload) {
 
   chart.updateTree({ initial: true, tree_position: 'fit' })
 
-  const mainDatum = chart.getMainDatum()
-  if (mainDatum) {
-    editTreeInstance.open(mainDatum)
+
+  try {
+    const mainDatum = chart.getMainDatum()
+    if (mainDatum) {
+      editTreeInstance.open(mainDatum)
+    }
+  } catch (e) {
+    console.warn('Initial open failed, trying fallback', e)
+    // Fallback if main ID is invalid in the store
+    try {
+      const first = chart.store.getData()[0]
+      if (first) {
+        editTreeInstance.open(first)
+        // Update config to match reality
+        chartConfig.mainId = first.id
+        renderBreadcrumbTrail(first.id)
+      }
+    } catch (e2) { }
   }
   renderBreadcrumbTrail(chart.store?.getMainId?.() || initialMainId || null)
 
