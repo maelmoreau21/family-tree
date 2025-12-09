@@ -163,7 +163,7 @@ async function applyMigrations(client) {
     return
   }
 
-  
+
   await setVersion(SCHEMA_VERSION)
 }
 
@@ -475,6 +475,53 @@ export async function getLastUpdatedAt() {
   if (!value) return null
   if (value instanceof Date) return value.toISOString()
   return String(value)
+}
+
+export async function searchPersons(query, limit = 20) {
+  if (!query || typeof query !== 'string') return []
+  const searchTerm = query.trim()
+  if (!searchTerm) return []
+
+  const sqlFTS = `
+    SELECT id, given_name, family_name, metadata
+    FROM persons_fts
+    WHERE search @@ plainto_tsquery('simple', $1)
+    ORDER BY ts_rank(search, plainto_tsquery('simple', $1)) DESC
+    LIMIT $2
+  `
+
+  const sqlLike = `
+    SELECT id, given_name, family_name, metadata
+    FROM persons
+    WHERE 
+      given_name ILIKE $1 OR 
+      family_name ILIKE $1
+    LIMIT $2
+  `
+
+  return withClient(async (client) => {
+    try {
+      if (ftsEnabled) {
+        const result = await client.query(sqlFTS, [searchTerm, limit])
+        return result.rows.map(row => ({
+          id: row.id,
+          label: [row.given_name, row.family_name].filter(Boolean).join(' ') || row.id,
+          metadata: typeof row.metadata === 'string' ? JSON.parse(row.metadata) : row.metadata
+        }))
+      } else {
+        const likeTerm = `%${searchTerm}%`
+        const result = await client.query(sqlLike, [likeTerm, limit])
+        return result.rows.map(row => ({
+          id: row.id,
+          label: [row.given_name, row.family_name].filter(Boolean).join(' ') || row.id,
+          metadata: typeof row.metadata === 'string' ? JSON.parse(row.metadata) : row.metadata
+        }))
+      }
+    } catch (err) {
+      console.warn('Search failed', err)
+      return []
+    }
+  })
 }
 
 export async function rebuildFts() {

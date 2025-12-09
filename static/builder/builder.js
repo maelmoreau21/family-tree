@@ -669,75 +669,144 @@ function buildSearchOptionsFromPersons(persons) {
   return options
 }
 
+
+// --- ASYNC SEARCH HELPERS ---
+let searchDebounce = null
+
+async function searchOnServer(query) {
+  if (!query || query.trim().length < 2) return []
+  try {
+    const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=15`)
+    if (!res.ok) return []
+    return await res.json()
+  } catch (e) {
+    console.error('Search error', e)
+    return []
+  }
+}
+
+async function fetchSubtreeAndFocus(personId) {
+  if (!personId) return
+
+  // check if already loaded
+  const existing = activeChartInstance?.store?.getDatum?.(personId)
+  if (existing) {
+    activateProfileInteraction(personId, { openEditor: true, highlightCard: true, scrollCard: true })
+    return
+  }
+
+  // Fetch subtree
+  setChartLoading(true, 'Chargement du profil...')
+  try {
+    const res = await fetch(`/api/tree?mode=subtree&mainId=${encodeURIComponent(personId)}&ancestryDepth=1&progenyDepth=1&includeSiblings=true&includeSpouses=true`)
+    if (res.ok) {
+      const payload = await res.json()
+      if (payload.data && payload.data.length) {
+        // Merge data logic
+        // We need to carefully merge without duplicating or breaking graph
+        // The simplest is to add missing people
+        const currentData = activeChartInstance.store.getData()
+        const currentIds = new Set(currentData.map(d => d.id))
+        const newPeople = payload.data.filter(p => !currentIds.has(p.id))
+
+        if (newPeople.length) {
+          activeChartInstance.store.updateData([...currentData, ...newPeople])
+          activeChartInstance.updateTree({ initial: false })
+        }
+
+        // Now focus
+        setTimeout(() => {
+          activateProfileInteraction(personId, { openEditor: true, highlightCard: true, scrollCard: true })
+          setChartLoading(false)
+        }, 100)
+
+        return
+      }
+    }
+  } catch (e) {
+    console.error(e)
+  }
+  setChartLoading(false)
+  setStatus('Impossible de charger ce profil', 'error')
+}
+
 function initBuilderSearch(chart) {
   if (!chart || !searchTarget) {
     setBuilderSearchState('empty')
     return null
   }
 
-  if (searchEmptyEl) {
-    searchEmptyEl.classList.remove('hidden')
-  }
+  // Clear existing content to prevent duplicates if re-init
+  searchTarget.innerHTML = ''
 
-  chart.setPersonDropdown(
-    (datum) => buildPersonLabel(datum),
-    {
-      cont: searchTarget,
-      placeholder: 'Rechercher (nom, date, lieu, etc.)',
-      onSelect: (id) => {
-        if (!id) return
-        const datum = editTreeInstance?.store?.getDatum?.(id)
-        if (!datum) return
+  // Custom Search UI Construction because f3.personSearch is synchronous
+  const wrapper = document.createElement('div')
+  wrapper.className = 'f3-search-wrapper'
+  wrapper.innerHTML = `
+    <input type="text" id="builderSearchInput" placeholder="Rechercher (nom, date...)" autocomplete="off" spellcheck="false" class="f3-search-input">
+    <div class="f3-search-results hidden" id="builderSearchResults"></div>
+  `
+  searchTarget.appendChild(wrapper)
 
-        activateProfileInteraction(id, {
-          openEditor: true,
-          highlightCard: true,
-          focusSearch: false,
-          scrollCard: true
-        })
+  const input = wrapper.querySelector('input')
+  const resultsContainer = wrapper.querySelector('.f3-search-results')
+  builderSearchInput = input
 
+  if (searchLabel) input.setAttribute('aria-labelledby', searchLabel.id)
 
+  input.addEventListener('focus', () => setSearchPanelFocusState(true))
+  input.addEventListener('blur', () => setTimeout(() => setSearchPanelFocusState(false), 200))
 
+  // Debounced Search
+  input.addEventListener('input', (e) => {
+    const term = e.target.value
+    if (searchDebounce) clearTimeout(searchDebounce)
 
-        try {
-          const input = searchTarget.querySelector('input')
-          if (input) {
-            input.value = ''
-            input.blur()
-          }
-        } catch (e) {
-        }
-      }
+    if (!term.trim()) {
+      resultsContainer.innerHTML = ''
+      resultsContainer.classList.add('hidden')
+      return
     }
-  )
 
-  const input = searchTarget.querySelector('input')
-  if (input) {
-    input.setAttribute('id', 'builderSearchInput')
-    if (searchLabel) input.setAttribute('aria-labelledby', searchLabel.id)
-    if (searchHint) input.setAttribute('aria-describedby', searchHint.id)
-    input.setAttribute('autocomplete', 'off')
-    input.setAttribute('spellcheck', 'false')
-    builderSearchInput = input
-    builderSearchInput.addEventListener('focus', () => setSearchPanelFocusState(true))
-    builderSearchInput.addEventListener('blur', () => setSearchPanelFocusState(false))
+    searchDebounce = setTimeout(async () => {
+      const results = await searchOnServer(term)
+      renderSearchResults(results)
+    }, 300)
+  })
+
+  function renderSearchResults(results) {
+    resultsContainer.innerHTML = ''
+    if (!results.length) {
+      resultsContainer.classList.add('hidden')
+      return
+    }
+
+    resultsContainer.classList.remove('hidden')
+    results.forEach(res => {
+      const div = document.createElement('div')
+      div.className = 'f3-search-result-item'
+      // Highlight match?
+      const name = escapeHtml(res.label || res.givenName + ' ' + res.familyName)
+      const meta = res.metadata ? `<small>${escapeHtml(JSON.stringify(res.metadata).slice(0, 50))}...</small>` : ''
+      div.innerHTML = `<strong>${name}</strong>` // Simplistic for now
+
+      div.addEventListener('click', () => {
+        input.value = res.label
+        resultsContainer.classList.add('hidden')
+        fetchSubtreeAndFocus(res.id)
+      })
+      resultsContainer.appendChild(div)
+    })
   }
 
-  function refreshSearchOptions() {
-    if (!chart.personSearch) return
-    const persons = getAllPersons()
-    builderSearchOptions = buildSearchOptionsFromPersons(persons)
-    chart.personSearch.setOptionsGetter(() => builderSearchOptions)
-    setBuilderSearchState(builderSearchOptions.length ? 'ready' : 'empty')
-    builderSearchReady = true
-  }
-
-  refreshSearchOptions()
+  setBuilderSearchState('ready')
+  builderSearchReady = true
 
   return {
-    refreshSearchOptions
+    refreshSearchOptions: () => { } // No-op now
   }
 }
+
 
 const DEFAULT_CHART_CONFIG = Object.freeze({
   transitionTime: 320,
@@ -1045,13 +1114,26 @@ function applyChartConfigToChart(chart) {
 }
 
 async function loadTree() {
-  setStatus('Chargement des données…')
-  setChartLoading(true, 'Chargement des données…')
-  const response = await fetch('/api/tree', { cache: 'no-store' })
-  if (!response.ok) {
-    throw new Error(`Échec du chargement (${response.status})`)
+  setStatus('Chargement des données (mode optimisé)…')
+  setChartLoading(true, 'Chargement des méta-données…')
+
+  // 1. Fetch Summary to get Main ID and Total Count
+  const summaryRes = await fetch('/api/tree/summary', { cache: 'no-store' })
+  if (!summaryRes.ok) throw new Error(`Échec du chargement sommaire (${summaryRes.status})`)
+  const summary = await summaryRes.json()
+
+  const mainId = summary.mainId
+  if (!mainId) {
+    // Empty tree or no main ID, return empty structure
+    return { data: [], config: {}, meta: summary }
   }
-  return response.json()
+
+  // 2. Fetch Initial Subtree (Main Person + neighbors)
+  // We explicitly ask for a limited depth to avoid loading 1M people
+  setChartLoading(true, 'Chargement du voisinage…')
+  const subtreeRes = await fetch(`/api/tree?mode=subtree&mainId=${encodeURIComponent(mainId)}&ancestryDepth=2&progenyDepth=2`, { cache: 'no-store' })
+  if (!subtreeRes.ok) throw new Error(`Échec du chargement du sous-arbre (${subtreeRes.status})`)
+  return subtreeRes.json()
 }
 
 function destroyTimer() {

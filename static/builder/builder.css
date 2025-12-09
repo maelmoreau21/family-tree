@@ -236,6 +236,59 @@ body.controls-collapsed .panel-toggle {
   font-style: italic;
 }
 
+/* Async Search Results */
+.f3-search-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.f3-search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-root);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-sm);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  margin-top: 4px;
+}
+
+.f3-search-result-item {
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex;
+  flex-direction: column;
+}
+
+.f3-search-result-item:last-child {
+  border-bottom: none;
+}
+
+.f3-search-result-item:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.f3-search-result-item strong {
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.f3-search-result-item small {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  margin-top: 2px;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Accordion Panels */
 details.panel {
   background: transparent;
