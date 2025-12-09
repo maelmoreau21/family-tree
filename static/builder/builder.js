@@ -2529,8 +2529,19 @@ function attachPanelControls({ chart, card }) {
 
     updateCardDisplay({ suppressSave })
 
-    const datum = editTreeInstance.store.getMainDatum()
-    if (datum) editTreeInstance.open(datum)
+    try {
+      const datum = editTreeInstance.store.getMainDatum()
+      if (datum) editTreeInstance.open(datum)
+    } catch (e) {
+      console.warn('Unable to open main datum in edit tree:', e)
+      // Fallback: If main datum is broken, try opening the first one if available
+      try {
+        const first = editTreeInstance.store.getData()[0]
+        if (first) {
+          editTreeInstance.open(first)
+        }
+      } catch (e2) { /* ignore */ }
+    }
   }
 
   function requestFieldDefinition() {
