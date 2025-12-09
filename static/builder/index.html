@@ -237,8 +237,25 @@
         <div id="FamilyChart" class="f3"></div>
       </section>
     </main>
+    <!-- Selective Import Modal -->
+    <dialog id="importSelectionModal" class="modal">
+      <div class="modal-content">
+        <h3>Importation sélective</h3>
+        <p>Veuillez sélectionner la personne dans le fichier importé qui correspond au profil sélectionné (<span
+            id="importTargetName"></span>).</p>
+        <div class="search-panel">
+          <input type="text" id="importSearch" placeholder="Rechercher un nom..." class="search-input">
+        </div>
+        <div id="importCandidatesList" class="candidates-list"></div>
+        <div class="modal-actions">
+          <button id="cancelImportBtn" class="ghost">Annuler</button>
+          <button id="confirmImportBtn" disabled>Fusionner</button>
+        </div>
+      </div>
+    </dialog>
   </div>
 
+  <script src="/static/builder/gedcom.js"></script>
   <script type="module">
     import { initTabs } from '/static/shared/js/tabs.js';
     initTabs('#controlPanel');

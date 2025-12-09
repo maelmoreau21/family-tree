@@ -2562,4 +2562,103 @@ legend {
     margin: var(--space-sm) 0;
     width: 100%;
   }
+}/* Selective Import Modal */
+#importSelectionModal {
+  max-width: 600px;
+  width: 90%;
+  border-radius: var(--radius-lg);
+  background: var(--bg-root);
+  color: var(--text-main);
+  border: 1px solid var(--panel-border);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  padding: 0;
+}
+#importSelectionModal::backdrop {
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+}
+#importSelectionModal .modal-content {
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+#importSelectionModal h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+#importSelectionModal p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin: 0;
+  line-height: 1.6;
+}
+#importSelectionModal .search-panel {
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+#importSelectionModal .search-input {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--text-main);
+  font-size: 1rem;
+}
+#importSelectionModal .search-input:focus {
+  border-color: var(--accent-primary);
+  outline: none;
+}
+.candidates-list {
+  max-height: 300px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+}
+.candidate-item {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--panel-border);
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+}
+.candidate-item:last-child {
+  border-bottom: none;
+}
+.candidate-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.candidate-item.selected {
+  background: var(--accent-primary);
+  color: white;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+.modal-actions button {
+  padding: 0.5rem 1.25rem;
+  font-size: 0.95rem;
+}
+#confirmImportBtn {
+  background: var(--accent-primary);
+  color: white;
+  border: none;
+}
+#confirmImportBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--text-dim);
+}
+#confirmImportBtn:not(:disabled):hover {
+  background: var(--accent-secondary);
 }

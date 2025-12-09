@@ -2889,6 +2889,7 @@ const tools = {
     store.updateData(newData)
     activeChartInstance.updateTree()
     alert('Branche supprimée avec succès.')
+    persistChanges({ immediate: true })
   },
 
   importBranch: (direction) => {
@@ -2897,73 +2898,81 @@ const tools = {
     const mainId = store.getMainId()
     if (!mainId) return alert('Veuillez sélectionner une personne d\'abord.')
 
+    const currentData = store.getData()
+    const mainDatum = currentData.find(d => d.id === mainId)
+    if (!mainDatum) return
+
     const input = document.createElement('input')
     input.type = 'file'
-    input.accept = '.json'
+    input.accept = '.ged'
     input.onchange = (e) => {
       const file = e.target.files[0]
       if (!file) return
       const reader = new FileReader()
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         try {
-          const importedData = JSON.parse(event.target.result)
-          if (!Array.isArray(importedData) || importedData.length === 0) throw new Error('Format invalide ou vide')
+          const parser = new window.GedcomParser()
+          const importedData = parser.parse(event.target.result)
 
-          const currentData = store.getData()
+          if (!importedData.length) throw new Error('Aucune donnée trouvée dans le fichier GEDCOM')
+
+          // Selective Import: User must choose who in the imported file links to mainId
+          const selectedImportId = await requestSelectiveMerge(importedData, mainDatum.data['first name'] + ' ' + (mainDatum.data['last name'] || ''))
+          if (!selectedImportId) return // Cancelled
+
           const currentIds = new Set(currentData.map(d => d.id))
+          const importedRoot = importedData.find(d => d.id === selectedImportId)
 
-          // Filter out duplicates but keep the root if we need to link it
-          const newUniqueData = importedData.filter(d => !currentIds.has(d.id))
+          // Rename IDs to avoid collisions, EXCEPT the selected Import ID might map to existing logic?
+          // Simplification: We blindly merge new people. If ID collision, we should rename imported.
+          // For now, let's assume we rename ALL imported IDs to be safe, except establishing the link.
 
-          // Assume the first person in the imported file is the root of that branch
-          const importedRoot = importedData[0]
-          const mainDatum = currentData.find(d => d.id === mainId)
+          // Actually, we must preserve internal references within imported data.
+          // Strategy: Prefix all imported IDs to guarantee uniqueness.
+          const prefix = `IMP_${Date.now()}_`
+          const idMap = new Map()
 
-          if (mainDatum && importedRoot) {
-            if (direction === 'asc') {
-              // Imported root is a PARENT of selected person
-              if (!mainDatum.rels.parents) mainDatum.rels.parents = []
-              if (!mainDatum.rels.parents.includes(importedRoot.id)) {
-                mainDatum.rels.parents.push(importedRoot.id)
-              }
+          importedData.forEach(d => {
+            const newId = prefix + d.id
+            idMap.set(d.id, newId)
+            d.id = newId
+          })
 
-              // Also update the imported root's children to include selected person
-              let rootInStore = newUniqueData.find(d => d.id === importedRoot.id)
-              if (!rootInStore) rootInStore = currentData.find(d => d.id === importedRoot.id)
+          // Update relationships in imported data with new IDs
+          importedData.forEach(d => {
+            if (d.rels.parents) d.rels.parents = d.rels.parents.map(oid => idMap.get(oid)).filter(Boolean)
+            if (d.rels.children) d.rels.children = d.rels.children.map(oid => idMap.get(oid)).filter(Boolean)
+            if (d.rels.spouses) d.rels.spouses = d.rels.spouses.map(oid => idMap.get(oid)).filter(Boolean)
+          })
 
-              if (rootInStore) {
-                if (!rootInStore.rels.children) rootInStore.rels.children = []
-                if (!rootInStore.rels.children.includes(mainId)) {
-                  rootInStore.rels.children.push(mainId)
-                }
-              }
+          const newRootId = idMap.get(selectedImportId)
+          const newRoot = importedData.find(d => d.id === newRootId)
 
-            } else {
-              // Imported root is a CHILD of selected person
-              if (!mainDatum.rels.children) mainDatum.rels.children = []
-              if (!mainDatum.rels.children.includes(importedRoot.id)) {
-                mainDatum.rels.children.push(importedRoot.id)
-              }
+          // Linkages
+          if (direction === 'asc') {
+            // newRoot is PARENT of mainDatum
+            if (!mainDatum.rels.parents) mainDatum.rels.parents = []
+            if (!mainDatum.rels.parents.includes(newRootId)) mainDatum.rels.parents.push(newRootId)
 
-              // Also update the imported root's parents
-              let rootInStore = newUniqueData.find(d => d.id === importedRoot.id)
-              if (!rootInStore) rootInStore = currentData.find(d => d.id === importedRoot.id)
+            if (!newRoot.rels.children) newRoot.rels.children = []
+            if (!newRoot.rels.children.includes(mainId)) newRoot.rels.children.push(mainId)
+          } else {
+            // newRoot is CHILD of mainDatum
+            if (!mainDatum.rels.children) mainDatum.rels.children = []
+            if (!mainDatum.rels.children.includes(newRootId)) mainDatum.rels.children.push(newRootId)
 
-              if (rootInStore) {
-                if (!rootInStore.rels.parents) rootInStore.rels.parents = []
-                if (!rootInStore.rels.parents.includes(mainId)) {
-                  rootInStore.rels.parents.push(mainId)
-                }
-              }
-            }
+            if (!newRoot.rels.parents) newRoot.rels.parents = []
+            if (!newRoot.rels.parents.includes(mainId)) newRoot.rels.parents.push(mainId)
           }
 
-          store.updateData([...currentData, ...newUniqueData])
+          store.updateData([...currentData, ...importedData])
           activeChartInstance.updateTree()
-          alert(`Branche importée (${newUniqueData.length} nouvelles fiches) et reliée.`)
+          alert(`Branche importée avec succès.`)
+          persistChanges({ immediate: true })
+
         } catch (err) {
           console.error(err)
-          alert('Erreur lors de l\'importation : ' + err.message)
+          alert('Erreur lors de l\'importation GEDCOM : ' + err.message)
         }
       }
       reader.readAsText(file)
@@ -2974,14 +2983,20 @@ const tools = {
   exportTree: () => {
     if (!activeChartInstance) return
     const data = activeChartInstance.store.getData()
-    const json = JSON.stringify(data, null, 2)
-    const blob = new Blob([json], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `family-tree-${new Date().toISOString().split('T')[0]}.json`
-    a.click()
-    URL.revokeObjectURL(url)
+    try {
+      const parser = new window.GedcomParser()
+      const gedcomContent = parser.generate(data)
+      const blob = new Blob([gedcomContent], { type: 'text/plain' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `family-tree-${new Date().toISOString().split('T')[0]}.ged`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error(err)
+      alert("Erreur lors de l'export GEDCOM: " + err.message)
+    }
   },
 
   importTree: () => {
@@ -2990,19 +3005,23 @@ const tools = {
 
     const input = document.createElement('input')
     input.type = 'file'
-    input.accept = '.json'
+    input.accept = '.ged'
     input.onchange = (e) => {
       const file = e.target.files[0]
       if (!file) return
       const reader = new FileReader()
       reader.onload = (event) => {
         try {
-          const importedData = JSON.parse(event.target.result)
-          if (!Array.isArray(importedData)) throw new Error('Format invalide')
+          const parser = new window.GedcomParser()
+          const importedData = parser.parse(event.target.result)
+
+          if (!importedData.length) throw new Error('Aucune donnée valide trouvée.')
 
           activeChartInstance.store.updateData(importedData)
           activeChartInstance.updateTree()
-          alert('Arbre importé avec succès.')
+          alert('Arbre GEDCOM importé avec succès.')
+          persistChanges({ immediate: true })
+          initialise()
         } catch (err) {
           console.error(err)
           alert('Erreur lors de l\'importation : ' + err.message)
@@ -3014,7 +3033,71 @@ const tools = {
   }
 }
 
+// Helper for Selective Import Modal
+function requestSelectiveMerge(candidates, targetName) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('importSelectionModal')
+    const list = document.getElementById('importCandidatesList')
+    const searchInput = document.getElementById('importSearch')
+    const targetNameEl = document.getElementById('importTargetName')
+    const confirmBtn = document.getElementById('confirmImportBtn')
+    const cancelBtn = document.getElementById('cancelImportBtn')
+
+    if (!modal) return resolve(candidates[0]?.id) // Fallback if no modal
+
+    let selectedId = null
+    targetNameEl.textContent = targetName
+
+    function renderList(filter = '') {
+      list.innerHTML = ''
+      const lowerFilter = filter.toLowerCase()
+      candidates.forEach(c => {
+        const name = (c.data['first name'] + ' ' + (c.data['last name'] || '')).trim()
+        if (filter && !name.toLowerCase().includes(lowerFilter)) return
+
+        const div = document.createElement('div')
+        div.className = 'candidate-item'
+        if (c.id === selectedId) div.classList.add('selected')
+        div.textContent = name || 'Inconnu'
+        div.onclick = () => {
+          selectedId = c.id
+          confirmBtn.disabled = false
+          renderList(filter) // Re-render to show selection state
+        }
+        list.appendChild(div)
+      })
+    }
+
+    renderList()
+    modal.showModal()
+
+    const onSearch = (e) => renderList(e.target.value)
+    searchInput.addEventListener('input', onSearch)
+
+    const onConfirm = () => {
+      cleanup()
+      resolve(selectedId)
+    }
+
+    const onCancel = () => {
+      cleanup()
+      resolve(null)
+    }
+
+    function cleanup() {
+      modal.close()
+      searchInput.removeEventListener('input', onSearch)
+      confirmBtn.removeEventListener('click', onConfirm)
+      cancelBtn.removeEventListener('click', onCancel)
+    }
+
+    confirmBtn.addEventListener('click', onConfirm)
+    cancelBtn.addEventListener('click', onCancel)
+  })
+}
+
 // Event Listeners for Tools
+
 function setupToolListeners() {
   const actions = {
     'delete-branch-asc': () => tools.deleteBranch('asc'),
