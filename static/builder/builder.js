@@ -1191,6 +1191,7 @@ function setupChart(payload) {
 
   const chart = f3.createChart(chartSelector, data)
   activeChartInstance = chart
+  const initialMainId = resolveInitialMainId(data, chart)
   applyChartConfigToChart(chart)
 
   const initialCardDisplay = chartConfig.cardDisplay && chartConfig.cardDisplay.length
