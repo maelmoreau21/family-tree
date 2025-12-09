@@ -2994,8 +2994,12 @@ const tools = {
 
           store.updateData([...currentData, ...importedData])
           activeChartInstance.updateTree()
+
           alert(`Branche importée avec succès.`)
-          persistChanges({ immediate: true })
+
+          // Force Save
+          const snapshot = getSnapshot()
+          if (snapshot) await persistChanges(snapshot, { immediate: true })
 
         } catch (err) {
           console.error(err)
@@ -3037,7 +3041,7 @@ const tools = {
       const file = e.target.files[0]
       if (!file) return
       const reader = new FileReader()
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         try {
           const parser = new window.GedcomParser()
           const importedData = parser.parse(event.target.result)
@@ -3046,8 +3050,14 @@ const tools = {
 
           activeChartInstance.store.updateData(importedData)
           activeChartInstance.updateTree()
+
+          // Force immediate save BEFORE reloading
+          const snapshot = getSnapshot()
+          if (snapshot) {
+            await persistChanges(snapshot, { immediate: true })
+          }
+
           alert('Arbre GEDCOM importé avec succès.')
-          persistChanges({ immediate: true })
           initialise()
         } catch (err) {
           console.error(err)
