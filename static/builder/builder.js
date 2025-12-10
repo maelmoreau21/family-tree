@@ -2318,7 +2318,7 @@ function attachPanelControls({ chart, card }) {
     const key = normalizeFieldKey(value)
     if (HIDDEN_FIELD_KEYS.has(key)) return
     const displayLabel = ensureFieldLabel(value, label)
-    const selector = `[data - field - key= "${escapeSelector(key)}"]`
+    const selector = `[data-field-key="${escapeSelector(key)}"]`
     let item = editableList.querySelector(selector)
     const isNew = !item
 
@@ -3110,7 +3110,7 @@ function setupToolListeners() {
   }
 
   Object.entries(actions).forEach(([action, handler]) => {
-    const btn = document.querySelector(`[data - action= "${action}"]`)
+    const btn = document.querySelector(`[data-action="${action}"]`)
     if (btn) {
       // Remove existing listeners to avoid duplicates if re-run
       const newBtn = btn.cloneNode(true)
