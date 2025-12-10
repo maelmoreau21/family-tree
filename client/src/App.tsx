@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { FamilyChart } from './components/FamilyChart'
-import { fetchSubtree, fetchTreeSummary, type Person } from './services/api'
-import { SearchWidget } from './components/SearchWidget'
+import { fetchSubtree, fetchTreeSummary, Person } from './services/api'
 import './index.css'
 
 function App() {
@@ -37,37 +36,11 @@ function App() {
     init()
   }, [])
 
-  const handleSearchSelect = async (selectedId: string) => {
-    setLoading(true)
-    try {
-      const payload = await fetchSubtree(selectedId)
-      // Merge Logic: simple array concatenation + dedup
-      setData(prev => {
-        const seen = new Set(prev.map(p => p.id))
-        const newOnes = payload.data.filter(p => !seen.has(p.id))
-        return [...prev, ...newOnes]
-      })
-      setMainId(selectedId)
-    } catch (e) {
-      console.error(e)
-      setError('Impossible de charger ce profil')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (loading && data.length === 0) return <div className="chart-loading">Chargement...</div>
+  if (loading) return <div className="chart-loading">Chargement...</div>
   if (error) return <div className="error">{error}</div>
 
   return (
     <div className="layout">
-      {/* Sidebar Overlay */}
-      <div className="controls" style={{ transform: 'none', opacity: 1, left: 20, top: 20 }}>
-        <div className="search-panel">
-          <SearchWidget onSelect={handleSearchSelect} />
-        </div>
-      </div>
-
       <div className="workspace">
         <FamilyChart
           data={data}

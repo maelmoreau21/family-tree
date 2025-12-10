@@ -14,8 +14,7 @@ import {
   setTreePayload,
   getLastUpdatedAt,
   rebuildFts,
-  getDatabaseUrl,
-  searchPersons
+  getDatabaseUrl
 } from './db.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -58,7 +57,7 @@ const DEFAULT_SEED_DATASET = {
       data: {
         'first name': 'Inconnu',
         'last name': 'Profil',
-        gender: ''
+            gender: ''
       },
       rels: {
         spouses: [],
@@ -164,7 +163,7 @@ const uploadMiddleware = multer({
   storage: uploadStorage,
   limits: { fileSize: MAX_UPLOAD_SIZE },
   fileFilter: (req, file, cb) => {
-
+    
     if (!file.mimetype || !file.mimetype.startsWith('image/')) {
       const error = new Error('UNSUPPORTED_FILE_TYPE')
       error.code = 'UNSUPPORTED_FILE_TYPE'
@@ -798,29 +797,13 @@ function createTreeApi({ canWrite }) {
     }
   })
 
-  router.get('/search', async (req, res) => {
-    try {
-      const query = req.query.q
-      if (!query || typeof query !== 'string' || !query.trim()) {
-        res.json([])
-        return
-      }
-      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20))
-      const results = await searchPersons(query, limit)
-      res.json(results)
-    } catch (error) {
-      console.error('[server] Search failed', error)
-      res.status(500).json({ message: 'Search failed' })
-    }
-  })
-
   router.get('/tree/summary', async (req, res) => {
     try {
       const payload = await readTreeData()
       const normalised = normaliseTreePayloadRoot(payload)
       const persons = Array.isArray(normalised.data) ? normalised.data : []
       const summaries = buildPeopleSummary(persons)
-      const updatedAt = await getLastUpdatedAt()
+  const updatedAt = await getLastUpdatedAt()
 
       res.json({
         total: persons.length,
@@ -875,7 +858,7 @@ function createTreeApi({ canWrite }) {
       }
     })
 
-
+    
     router.post('/admin/import', ensureAdminAuth, jsonParser, async (req, res) => {
       try {
         const body = req.body
@@ -894,7 +877,7 @@ function createTreeApi({ canWrite }) {
           dropIndexes = parseBooleanParam(req.query.dropIndexes, true)
         }
 
-
+        
         let fastImport = false
         if (hasPayloadField && Object.prototype.hasOwnProperty.call(body, 'fastImport')) {
           fastImport = parseBooleanParam(body.fastImport, false)
@@ -912,7 +895,7 @@ function createTreeApi({ canWrite }) {
 
     router.post('/admin/rebuild-fts', ensureAdminAuth, async (req, res) => {
       try {
-        const result = await rebuildFts()
+  const result = await rebuildFts()
         res.json(result)
       } catch (error) {
         console.error('[server] rebuild-fts failed', error)
@@ -921,7 +904,7 @@ function createTreeApi({ canWrite }) {
     })
 
     router.post('/admin/reset-to-seed', ensureAdminAuth, async (req, res) => {
-
+    
       const confirm = req.query.confirm === '1' || req.query.confirm === 'true'
       if (!confirm) {
         res.status(400).json({ message: 'Missing confirm=1 query param to reset database to seed' })
@@ -948,7 +931,7 @@ function createStaticApp(staticFolder, { canWrite }) {
   const staticOptions = { setHeaders: setStaticCacheHeaders }
   app.use('/lib', express.static(DIST_DIR, staticOptions))
   app.use('/assets', express.static(path.resolve(ROOT_DIR, 'src', 'styles'), staticOptions))
-
+  
   app.use('/static', express.static(STATIC_DIR, staticOptions))
   app.use('/document', express.static(DOCUMENT_DIR, { maxAge: '1d' }))
   app.use('/api', createTreeApi({ canWrite }))
@@ -1029,7 +1012,7 @@ function createStaticApp(staticFolder, { canWrite }) {
         })()
       })
     })
-
+    
     // Delete profile image for a person (removes any profil.* files in the person folder)
     app.delete('/api/document', ensureAdminAuth, async (req, res) => {
       try {
