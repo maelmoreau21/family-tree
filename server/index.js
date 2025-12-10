@@ -14,7 +14,6 @@ import {
   setTreePayload,
   getLastUpdatedAt,
   rebuildFts,
-  rebuildFts,
   getDatabaseUrl,
   getTreeSubset
 } from './db.js'
