@@ -242,6 +242,25 @@
     </main>
   </div>
 
+
+  <!-- Selective Import Modal -->
+  <dialog id="importSelectionModal" class="modal">
+    <div class="modal-content">
+      <h3>Sélectionnez la correspondance</h3>
+      <p>L'importation contient plusieurs personnes. Veuillez sélectionner la personne correspondant à : <strong
+          id="importTargetName"></strong></p>
+
+      <input type="text" id="importSearch" class="search-input" placeholder="Rechercher une personne...">
+      <div id="importCandidatesList" class="candidates-list"></div>
+
+      <div class="modal-actions">
+        <button id="cancelImportBtn" class="ghost">Annuler</button>
+        <button id="confirmImportBtn" class="primary" disabled>Confirmer la fusion</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="gedcom.js"></script>
   <script type="module">
     import { initTabs } from '/static/shared/js/tabs.js';
     initTabs('#controlPanel');

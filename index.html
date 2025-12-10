@@ -1,30 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  
+
   <link rel="icon" href="/static/logo.svg" type="image/svg+xml">
   <link rel="shortcut icon" href="/static/logo.svg">
   <meta name="theme-color" content="#ffffff">
   <title>family-tree</title>
 </head>
+
 <body>
 
 
-<script>
-  // Redirect to the builder by default, as the React client is not ready
-  window.location.replace('/static/builder/');
-</script>
-<div style="font-family: sans-serif; padding: 2rem; max-width: 600px; margin: 0 auto;">
-  <h1>Redirection...</h1>
-  <p>Si vous n'êtes pas redirigé automatiquement, choisissez une application :</p>
-  <ul>
-    <li><a href="/static/builder/">Accéder à l'Éditeur (Builder)</a> - Version Stable</li>
-    <li><a href="/static/viewer/">Accéder au Visualiseur (Viewer)</a> - Version Stable</li>
-    <li><a href="/client/">Accéder au Nouveau Client (Client)</a> - En développement (Instable)</li>
-  </ul>
-</div>
+
+  <div style="font-family: sans-serif; padding: 2rem; max-width: 600px; margin: 0 auto; text-align: center;">
+    <h1>Bienvenue sur Family Tree</h1>
+    <p>Ceci est la page d'accueil de développement (Vite).</p>
+    <p>Pour utiliser l'application avec les ports séparés (7920/7921) et l'API fonctionnelle, veuillez utiliser la
+      commande : <code>npm start</code></p>
+
+    <hr style="margin: 2rem 0; border: 0; border-top: 1px solid #ccc;">
+
+    <h2>Accès Rapide (Dev)</h2>
+    <div style="display: flex; gap: 1rem; justify-content: center;">
+      <a href="/static/builder/"
+        style="padding: 1rem; background: #6366f1; color: white; text-decoration: none; border-radius: 8px;">Accéder à
+        l'Éditeur (Builder)</a>
+      <a href="/static/viewer/"
+        style="padding: 1rem; background: #10b981; color: white; text-decoration: none; border-radius: 8px;">Accéder au
+        Visualiseur (Viewer)</a>
+    </div>
+
+    <p style="margin-top: 2rem; color: #666;">Note : Le "Nouveau Client" (React) est en cours de développement et peut
+      être instable.</p>
+  </div>
 
 </body>
+
 </html>
