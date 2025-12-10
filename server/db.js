@@ -584,7 +584,23 @@ export async function createImportBuffer(options = {}) {
       VALUES ${placeholders.join(',')}
       ON CONFLICT DO NOTHING
     `
-    await client.query(sql, values)
+    try {
+      await client.query(sql, values)
+    } catch (batchError) {
+      console.warn('[db] Batch relationship insert failed, falling back to individual inserts', batchError.message)
+      // Fallback: insert one by one to save valid relationships
+      for (const r of relBuffer) {
+        try {
+          await client.query(
+            'INSERT INTO relationships (parent_id, child_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+            [r.parent, r.child]
+          )
+        } catch (indError) {
+          // Ignore FK violations or other errors for individual items
+          // console.debug('[db] Skipping invalid relationship', r.parent, r.child, indError.code)
+        }
+      }
+    }
     relBuffer = []
   }
 

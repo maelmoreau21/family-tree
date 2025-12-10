@@ -1475,6 +1475,9 @@ function attachPanelControls({ chart, card }) {
         <button type="button" class="ghost small" data-action="delete-upload">Supprimer la photo</button>
       </div>
     </div>
+    <div style="margin-top: 10px; font-size: 0.9em; opacity: 0.8;">
+      Clé primaire : <strong data-role="uploader-current-id">—</strong>
+    </div>
   </fieldset>
   `
 
@@ -1560,7 +1563,7 @@ function attachPanelControls({ chart, card }) {
     try {
       const parsed = new URL(rawUrl, window.location.origin)
       if (parsed.origin === window.location.origin) {
-        return `${parsed.pathname}${parsed.search}${parsed.hash}`
+        return `${parsed.pathname}${parsed.search}${parsed.hash} `
       }
       return parsed.toString()
     } catch (error) {
@@ -1612,7 +1615,7 @@ function attachPanelControls({ chart, card }) {
     let datumUpdated = false
 
     if (imageUploaderCurrentForm) {
-      const targetInput = imageUploaderCurrentForm.querySelector(`[name="${escapedFieldId}"]`)
+      const targetInput = imageUploaderCurrentForm.querySelector(`[name = "${escapedFieldId}"]`)
       if (targetInput && targetInput instanceof HTMLInputElement) {
         const storeValue = stripOriginIfSame(absoluteUrl)
         if (targetInput.value !== storeValue) {
@@ -1674,9 +1677,12 @@ function attachPanelControls({ chart, card }) {
     const activeDatum = getActiveDatum()
     const existingValue = activeDatum?.data?.[targetFieldId] || ''
 
+    const idDisplay = imageUploader?.querySelector('[data-role="uploader-current-id"]')
+    if (idDisplay) idDisplay.textContent = activeDatum?.id || '—'
+
     if (!existingValue) {
       clearUploadResult()
-      setUploadFeedback('Formats recommandÃ©s : JPG, PNG, WebP.', 'info')
+      setUploadFeedback('Formats recommandés : JPG, PNG, WebP.', 'info')
       return
     }
 
@@ -1699,7 +1705,7 @@ function attachPanelControls({ chart, card }) {
     }
     imageUploader.classList.remove('is-modal-context')
     clearUploadResult()
-    setUploadFeedback('Importez une image depuis votre ordinateur. Formats recommandÃ©s : JPG, PNG, WebP.', 'info')
+    setUploadFeedback('Importez une image depuis votre ordinateur. Formats recommandés : JPG, PNG, WebP.', 'info')
   }
 
   function injectImageUploaderIntoForm(form) {
@@ -1760,14 +1766,14 @@ function attachPanelControls({ chart, card }) {
         try {
           const id = el.getAttribute('id')
           if (id) {
-            const lbl = form.querySelector(`label[for="${escapeSelector(id)}"]`)
+            const lbl = form.querySelector(`label[for= "${escapeSelector(id)}"]`)
             if (lbl && lbl.textContent) labelText = lbl.textContent.trim().toLowerCase()
           }
         } catch (e) {
           /* ignore */
         }
 
-        const combined = `${name} ${labelText}`
+        const combined = `${name} ${labelText} `
 
         if (/\b(birth|birthday|death|union|marri|wedding|anniv|date)\b/.test(combined)) {
           if (!el.getAttribute('placeholder') || el.getAttribute('placeholder').trim() === '') {
@@ -1873,7 +1879,8 @@ function attachPanelControls({ chart, card }) {
     }
 
     if (file.size > MAX_UPLOAD_SIZE) {
-      setUploadFeedback(`Fichier trop volumineux (${formatBytes(file.size)}). Limite 5 Mo.`, 'error')
+      setUploadFeedback(`Fichier trop volumineux(${formatBytes(file.size)
+        }). Limite 5 Mo.`, 'error')
       return
     }
 
@@ -1894,7 +1901,7 @@ function attachPanelControls({ chart, card }) {
       })
 
       if (!response.ok) {
-        let message = `Erreur serveur (${response.status})`
+        let message = `Erreur serveur(${response.status})`
         try {
           const payload = await response.json()
           if (payload?.message) message = payload.message
@@ -1915,7 +1922,7 @@ function attachPanelControls({ chart, card }) {
     } catch (error) {
       console.error(error)
       setUploadFeedback(error.message || 'Ã‰chec du tÃ©lÃ©versement.', 'error')
-      setStatus(`TÃ©lÃ©versement Ã©chouÃ©: ${error.message || 'Erreur inconnue'}`, 'error')
+      setStatus(`TÃ©lÃ©versement Ã©chouÃ©: ${error.message || 'Erreur inconnue'} `, 'error')
       clearUploadResult()
     }
   }
@@ -2153,7 +2160,7 @@ function attachPanelControls({ chart, card }) {
     }
     const datum = editTreeInstance?.store?.getDatum?.(id) || null
     if (focusSearch) {
-      const label = datum ? buildPersonLabel(datum) : `Profil ${id}`
+      const label = datum ? buildPersonLabel(datum) : `Profil ${id} `
       focusBuilderSearch({ label, select: true, flash: true, preventScroll: source === 'search' })
     }
     if (highlightCard) {
@@ -2194,7 +2201,7 @@ function attachPanelControls({ chart, card }) {
     displayGroups.forEach(group => {
       const list = group.querySelector('.field-list')
       if (!list) return
-      const selector = `[data-field-key="${escapeSelector(fieldKey)}"]`
+      const selector = `[data - field - key= "${escapeSelector(fieldKey)}"]`
       const item = list.querySelector(selector)
       if (!item) return
 
@@ -2230,7 +2237,7 @@ function attachPanelControls({ chart, card }) {
       if (getUnionFieldKind(key)) return
       if (!key) return
       const label = ensureFieldLabel(field, fieldLabelStore.get(key))
-      const selector = `[data-field-key="${escapeSelector(key)}"]`
+      const selector = `[data - field - key= "${escapeSelector(key)}"]`
       if (editableList?.querySelector(selector)) return
       createEditableItem({
         value: field,
@@ -2267,7 +2274,7 @@ function attachPanelControls({ chart, card }) {
     if (!list) return { item: null, isNew: false }
     const key = normalizeFieldKey(value)
     if (HIDDEN_FIELD_KEYS.has(key)) return { item: null, isNew: false }
-    const selector = `[data-field-key="${escapeSelector(key)}"]`
+    const selector = `[data - field - key= "${escapeSelector(key)}"]`
     const displayLabel = ensureFieldLabel(value, label)
     let item = list.querySelector(selector)
 
@@ -2311,7 +2318,7 @@ function attachPanelControls({ chart, card }) {
     const key = normalizeFieldKey(value)
     if (HIDDEN_FIELD_KEYS.has(key)) return
     const displayLabel = ensureFieldLabel(value, label)
-    const selector = `[data-field-key="${escapeSelector(key)}"]`
+    const selector = `[data - field - key= "${escapeSelector(key)}"]`
     let item = editableList.querySelector(selector)
     const isNew = !item
 
@@ -2450,7 +2457,7 @@ function attachPanelControls({ chart, card }) {
       applied = [fallbackField]
       if (editableList) {
         const fallbackKey = normalizeFieldKey(fallbackField)
-        const selector = `[data-field-key="${escapeSelector(fallbackKey)}"] input[type="checkbox"]`
+        const selector = `[data - field - key= "${escapeSelector(fallbackKey)}"]input[type = "checkbox"]`
         const fallbackInput = editableList.querySelector(selector)
         if (fallbackInput) fallbackInput.checked = true
       }
@@ -2730,10 +2737,10 @@ function attachPanelControls({ chart, card }) {
 
     setUploadFeedback('Suppression en cours…', 'saving')
     try {
-      const url = `/api/document?personId=${encodeURIComponent(personId)}`
+      const url = `/ api / document ? personId = ${encodeURIComponent(personId)} `
       const resp = await fetch(url, { method: 'DELETE' })
       if (!resp.ok) {
-        let message = `Erreur serveur (${resp.status})`
+        let message = `Erreur serveur(${resp.status})`
         try {
           const payload = await resp.json()
           if (payload?.message) message = payload.message
@@ -2797,7 +2804,7 @@ async function initialise() {
     setupChart(data)
   } catch (error) {
     console.error(error)
-    setStatus(`Erreur: ${error.message}`, 'error')
+    setStatus(`Erreur: ${error.message} `, 'error')
     setChartLoading(false, 'Erreur')
   }
 }
@@ -2851,7 +2858,7 @@ function openSelectiveImportModal(importedData, targetName, onConfirm) {
     candidatesList.innerHTML = ''
     const filterLower = filter.toLowerCase()
     importedData.forEach(p => {
-      const name = `${p.data['first name'] || ''} ${p.data['last name'] || ''}`.trim() || 'Inconnu'
+      const name = `${p.data['first name'] || ''} ${p.data['last name'] || ''} `.trim() || 'Inconnu'
       const id = p.id
       if (filter && !name.toLowerCase().includes(filterLower)) return
 
@@ -2905,7 +2912,7 @@ const tools = {
     const mainId = store.getMainId()
     if (!mainId) return alert('Veuillez sélectionner une personne d\'abord.')
 
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer la branche ${direction === 'asc' ? 'ascendance' : 'descendance'} de la personne sélectionnée ? Cette action est irréversible.`)) return
+    if (!confirm(`Êtes - vous sûr de vouloir supprimer la branche ${direction === 'asc' ? 'ascendance' : 'descendance'} de la personne sélectionnée ? Cette action est irréversible.`)) return
 
     const data = store.getData()
     const idsToDelete = new Set()
@@ -2953,7 +2960,7 @@ const tools = {
 
     const currentData = store.getData()
     const mainDatum = currentData.find(d => d.id === mainId)
-    const mainName = mainDatum ? `${mainDatum.data['first name']} ${mainDatum.data['last name']}` : mainId
+    const mainName = mainDatum ? `${mainDatum.data['first name']} ${mainDatum.data['last name']} ` : mainId
 
     const input = document.createElement('input')
     input.type = 'file'
@@ -2986,7 +2993,7 @@ const tools = {
             // Refactoring IDs to unique values to be safe
             const idMap = new Map() // Old -> New
             importedData.forEach(d => {
-              const newId = `I${Date.now()}_${Math.floor(Math.random() * 1000)}`
+              const newId = `I${Date.now()}_${Math.floor(Math.random() * 1000)} `
               idMap.set(d.id, newId)
               d.id = newId
             })
@@ -3047,7 +3054,7 @@ const tools = {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `family-tree-${new Date().toISOString().split('T')[0]}.ged`
+    a.download = `family - tree - ${new Date().toISOString().split('T')[0]}.ged`
     a.click()
     URL.revokeObjectURL(url)
   },
@@ -3103,7 +3110,7 @@ function setupToolListeners() {
   }
 
   Object.entries(actions).forEach(([action, handler]) => {
-    const btn = document.querySelector(`[data-action="${action}"]`)
+    const btn = document.querySelector(`[data - action= "${action}"]`)
     if (btn) {
       // Remove existing listeners to avoid duplicates if re-run
       const newBtn = btn.cloneNode(true)

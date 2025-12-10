@@ -868,9 +868,12 @@ function createTreeApi({ canWrite }) {
 
     router.post('/admin/import-gedcom', ensureAdminAuth, uploadGedcom.single('file'), async (req, res) => {
       try {
-        if (!req.file) return res.status(400).json({ message: 'No file uploaded' })
+        if (!req.file) {
+          console.warn('[server] import-gedcom: no file uploaded')
+          return res.status(400).json({ message: 'No file uploaded' })
+        }
 
-        console.log('[server] Starting streaming GEDCOM import:', req.file.path)
+        console.log('[server] Starting streaming GEDCOM import:', req.file.path, 'Size:', req.file.size)
         await importGedcomStream(req.file.path)
 
         // Clean up temp file
