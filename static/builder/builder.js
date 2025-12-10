@@ -2201,7 +2201,7 @@ function attachPanelControls({ chart, card }) {
     displayGroups.forEach(group => {
       const list = group.querySelector('.field-list')
       if (!list) return
-      const selector = `[data - field - key= "${escapeSelector(fieldKey)}"]`
+      const selector = `[data-field-key="${escapeSelector(fieldKey)}"]`
       const item = list.querySelector(selector)
       if (!item) return
 
@@ -2237,7 +2237,7 @@ function attachPanelControls({ chart, card }) {
       if (getUnionFieldKind(key)) return
       if (!key) return
       const label = ensureFieldLabel(field, fieldLabelStore.get(key))
-      const selector = `[data - field - key= "${escapeSelector(key)}"]`
+      const selector = `[data-field-key="${escapeSelector(key)}"]`
       if (editableList?.querySelector(selector)) return
       createEditableItem({
         value: field,
@@ -2274,7 +2274,7 @@ function attachPanelControls({ chart, card }) {
     if (!list) return { item: null, isNew: false }
     const key = normalizeFieldKey(value)
     if (HIDDEN_FIELD_KEYS.has(key)) return { item: null, isNew: false }
-    const selector = `[data - field - key= "${escapeSelector(key)}"]`
+    const selector = `[data-field-key="${escapeSelector(key)}"]`
     const displayLabel = ensureFieldLabel(value, label)
     let item = list.querySelector(selector)
 
