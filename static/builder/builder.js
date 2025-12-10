@@ -2027,66 +2027,10 @@ function attachPanelControls({ chart, card }) {
     mainProfileName.textContent = buildPersonLabel(datum)
   }
 
-  function refreshMainProfileOptions({ keepSelection = true } = {}) {
-    if (!mainProfileSelect) return
-    const persons = getAllPersons()
-    const previousValue = keepSelection ? mainProfileSelect.value : ''
-    clearElement(mainProfileSelect)
-
-    if (!persons.length) {
-      const placeholder = document.createElement('option')
-      placeholder.value = ''
-      placeholder.textContent = 'Aucune personne disponible'
-      mainProfileSelect.append(placeholder)
-      mainProfileSelect.disabled = true
-      updateMainProfileDisplay(null)
-      return
-    }
-
-    const fragment = document.createDocumentFragment()
-    persons.forEach(datum => {
-      if (!datum || !datum.id) return
-      const option = document.createElement('option')
-      option.value = datum.id
-      option.textContent = buildPersonLabel(datum)
-      fragment.append(option)
-    })
-    mainProfileSelect.append(fragment)
-    mainProfileSelect.disabled = false
-
-    const availableIds = new Set(persons.map(d => d.id))
-    const preferred = []
-    if (keepSelection && previousValue && availableIds.has(previousValue)) {
-      preferred.push(previousValue)
-    }
-
-    const configMain = typeof chartConfig.mainId === 'string' ? chartConfig.mainId : ''
-    if (configMain && availableIds.has(configMain)) {
-      preferred.push(configMain)
-    }
-
-
-
-
-    if (!preferred.length) {
-      const storeMainId = chart.store && typeof chart.store.getMainId === 'function' ? chart.store.getMainId() : ''
-      if (storeMainId && availableIds.has(storeMainId)) {
-        preferred.push(storeMainId)
-      }
-    }
-
-    if (!preferred.length && persons[0]?.id) {
-      preferred.push(persons[0].id)
-    }
-
-    const targetValue = preferred.find(Boolean) || ''
-    if (targetValue) {
-      mainProfileSelect.value = targetValue
-    } else {
-      mainProfileSelect.selectedIndex = 0
-    }
-
-    updateMainProfileDisplay(mainProfileSelect.value || null)
+  function refreshMainProfileOptions() {
+    // No-op: Select replaced by Text Input
+    if (mainProfileSelect) mainProfileSelect.disabled = false
+    updateMainProfileDisplay(mainProfileSelect ? mainProfileSelect.value : null)
   }
 
   function syncMainProfileSelection({ scheduleSaveIfChanged = false } = {}) {
@@ -2128,18 +2072,12 @@ function attachPanelControls({ chart, card }) {
     }
 
     if (mainProfileSelect) {
-      if (nextConfigMain && ![...mainProfileSelect.options].some(option => option.value === nextConfigMain)) {
-        refreshMainProfileOptions({ keepSelection: false })
-      }
-
-      if (!nextConfigMain && !mainProfileSelect.options.length) {
-        refreshMainProfileOptions({ keepSelection: false })
-      }
-
       if (nextConfigMain) {
         mainProfileSelect.value = nextConfigMain
-        mainProfileSelect.disabled = false
+      } else {
+        mainProfileSelect.value = ''
       }
+      mainProfileSelect.disabled = false // Always enabled
     }
 
     updateMainProfileDisplay(nextConfigMain || null)
@@ -2160,8 +2098,7 @@ function attachPanelControls({ chart, card }) {
     }
     const persons = getAllPersons()
     if (!persons.some(person => person.id === id)) {
-      refreshMainProfileOptions({ keepSelection: false })
-      return
+      // Allow it anyway, maybe user typed a new ID or invalid one - will fail gracefully later
     }
 
     const configChanged = persistConfig && chartConfig.mainId !== id

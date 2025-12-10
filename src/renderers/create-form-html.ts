@@ -172,7 +172,9 @@ function fields(form_creator: EditDatumFormCreator | NewRelFormCreator) {
         <input type="${field.type}" 
           name="${field.id}" 
           value="${escapeHtml(field.initial_value || '')}"
-          placeholder="${escapeHtml(field.label)}">
+          placeholder="${escapeHtml(field.label)}"
+          ${field.readonly ? 'readonly' : ''}
+          ${field.readonly ? 'class="f3-input-readonly"' : ''}>
       </div>`
     }
     if (field.type === 'textarea') {

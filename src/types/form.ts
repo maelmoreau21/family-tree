@@ -9,19 +9,19 @@ import { EditTree } from "../core/edit"
 export interface LinkExistingRelative {
   title?: string;
   select_placeholder?: string;
-  options: {value: string; label: string}[];
+  options: { value: string; label: string }[];
   onSelect: (e: Event) => void;
 }
 
 export interface FormCreatorSetupProps {
   datum: Datum
   store: Store
-  fields: Array<Field | RelReferenceFieldCreator | SelectFieldCreator | {id: string; type?: string; label?: string}>
+  fields: Array<Field | RelReferenceFieldCreator | SelectFieldCreator | { id: string; type?: string; label?: string }>
   postSubmitHandler: (props?: Record<string, unknown>) => void
   onCancel: () => void
   editFirst: boolean
   no_edit: boolean
-  link_existing_rel_config?: {linkRelLabel: (d: Datum) => string, title?: string, select_placeholder?: string}
+  link_existing_rel_config?: { linkRelLabel: (d: Datum) => string, title?: string, select_placeholder?: string }
   onFormCreation: EditTree['onFormCreation']
   addRelative?: AddRelative
   removeRelative?: RemoveRelative
@@ -68,6 +68,7 @@ export interface Field {
   label: string;
   initial_value: string;
   placeholder?: string;
+  readonly?: boolean;
 }
 
 export interface RelReferenceField extends Field {
@@ -87,7 +88,7 @@ export interface RelReferenceFieldCreator {
 
 export interface SelectField extends Field {
   type: 'select';
-  options: {value: string; label: string}[];
+  options: { value: string; label: string }[];
 }
 
 export interface SelectFieldCreator {
@@ -95,6 +96,6 @@ export interface SelectFieldCreator {
   type: 'select';
   label: string;
   placeholder?: string;
-  options?: {value: string; label: string}[];
-  optionCreator?: (datum: Datum) => {value: string; label: string}[];
+  options?: { value: string; label: string }[];
+  optionCreator?: (datum: Datum) => { value: string; label: string }[];
 }

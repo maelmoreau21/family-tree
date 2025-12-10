@@ -44,8 +44,8 @@ export default (cont: HTMLElement, store: Store) => new EditTree(cont, store)
 export class EditTree {
   cont: HTMLElement
   store: Store
-  
-  fields: Array<{type?: string; label?: string; id: string} | RelReferenceFieldCreator | SelectFieldCreator>
+
+  fields: Array<{ type?: string; label?: string; id: string } | RelReferenceFieldCreator | SelectFieldCreator>
   formCont: {
     el?: HTMLElement,
     populate: (form_element: HTMLElement) => void,
@@ -58,7 +58,7 @@ export class EditTree {
   editFirst: boolean
   postSubmit: ((datum: Datum, data: Data) => void) | null
   link_existing_rel_config?: FormCreatorSetupProps['link_existing_rel_config']
-  onFormCreation: null | ((props: {cont: HTMLElement, form_creator: FormCreator}) => void)
+  onFormCreation: null | ((props: { cont: HTMLElement, form_creator: FormCreator }) => void)
 
   addRelativeInstance: AddRelative
   removeRelativeInstance: RemoveRelative
@@ -72,41 +72,41 @@ export class EditTree {
   onDelete: FormCreatorSetupProps['onDelete']
   canEdit: FormCreatorSetupProps['canEdit']
   canDelete: FormCreatorSetupProps['canDelete']
-  
+
   constructor(cont: HTMLElement, store: Store) {
     this.cont = cont
     this.store = store
-  
+
     this.fields = [
-      {type: 'text', label: 'Prénom', id: 'first name'},
-      {type: 'text', label: 'Prénoms', id: 'first names'},
-      {type: 'text', label: 'Nom', id: 'last name'},
-      {type: 'text', label: 'Date de naissance', id: 'birthday'},
-      {type: 'text', label: 'Avatar', id: 'avatar'}
+      { type: 'text', label: 'Prénom', id: 'first name' },
+      { type: 'text', label: 'Prénoms', id: 'first names' },
+      { type: 'text', label: 'Nom', id: 'last name' },
+      { type: 'text', label: 'Date de naissance', id: 'birthday' },
+      { type: 'text', label: 'Avatar', id: 'avatar' }
     ]
-  
+
     this.is_fixed = true
-  
+
     this.no_edit = false
-  
+
     this.onChange = null
-  
+
     this.editFirst = false
-  
+
     this.postSubmit = null
-    
+
     this.onFormCreation = null
-    
+
     this.createFormEdit = null
     this.createFormNew = null
-  
+
     this.formCont = this.getFormContDefault()
     this.modal = this.setupModal()
     this.addRelativeInstance = this.setupAddRelative()
     this.removeRelativeInstance = this.setupRemoveRelative()
     this.history = this.createHistory()
-  
-    return this 
+
+    return this
   }
 
   open(datum: Datum) {
@@ -161,18 +161,18 @@ export class EditTree {
 
     return addRelative(this.store, () => onActivate(this), (datum: Datum) => cancelCallback(this, datum))
   }
-  
+
   private setupRemoveRelative() {
     const setClass = (cont: HTMLElement, add: boolean) => {
       d3.select(cont).select('#f3Canvas').classed('f3-remove-relative-active', add)
     }
 
-    const onActivate = function(this: EditTree) {
+    const onActivate = function (this: EditTree) {
       if (this.addRelativeInstance.is_active) this.addRelativeInstance.onCancel!()
       setClass(this.cont, true)
     }
 
-    const cancelCallback = function(this: EditTree, datum: Datum) {
+    const cancelCallback = function (this: EditTree, datum: Datum) {
       setClass(this.cont, false)
       this.store.updateMainId(datum.id)
       this.store.updateTree({})
@@ -183,11 +183,11 @@ export class EditTree {
   }
 
   private createHistory() {
-    const historyUpdateTree = function(this: EditTree) {
+    const historyUpdateTree = function (this: EditTree) {
       if (this.addRelativeInstance.is_active) this.addRelativeInstance.onCancel!()
       if (this.removeRelativeInstance.is_active) this.removeRelativeInstance.onCancel!()
-      this.store.updateTree({initial: false})
-  this.history?.controls.updateButtons()
+      this.store.updateTree({ initial: false })
+      this.history?.controls.updateButtons()
       this.openFormWithId(this.store.getMainDatum()?.id)
       if (this.onChange) this.onChange()
     }
@@ -201,9 +201,9 @@ export class EditTree {
     history.changed()
     controls.updateButtons()
 
-    return {...history, controls}
+    return { ...history, controls }
   }
-  
+
   openWithoutRelCancel(datum: Datum) {
     this.cardEditForm(datum)
   }
@@ -232,7 +232,7 @@ export class EditTree {
     this.formCont = formCont
     return this
   }
-  
+
   cardEditForm(datum: Datum) {
     const props: {
       onCancel?: () => void,
@@ -249,11 +249,11 @@ export class EditTree {
       props.deletePerson = () => {
         deletePerson(datum, this.store.getData())
         this.openFormWithId(this.store.getLastAvailableMainDatum().id)
-  
+
         this.store.updateTree({})
       }
     }
-  
+
     const postSubmitHandler = (self: EditTree, props?: Record<string, unknown>) => {
       if (self.addRelativeInstance.is_active) {
         self.addRelativeInstance.onChange!(datum, props)
@@ -273,18 +273,23 @@ export class EditTree {
       }
 
       if (!self.is_fixed) self.closeForm()
-      
+
       self.store.updateTree({})
 
       self.updateHistory()
     }
 
+    const fieldsWithId = [
+      { id: 'id', label: 'Clé primaire (ID)', type: 'text', initial_value: datum.id, readonly: true },
+      ...this.fields
+    ]
+
     const form_creator = formCreatorSetup({
-      store: this.store, 
-      datum, 
+      store: this.store,
+      datum,
       postSubmitHandler: (props?: Record<string, unknown>) => postSubmitHandler(this, props),
-      fields: this.fields, 
-      onCancel: () => {},
+      fields: fieldsWithId,
+      onCancel: () => { },
       editFirst: this.editFirst,
       no_edit: this.no_edit,
       link_existing_rel_config: this.link_existing_rel_config,
@@ -295,41 +300,41 @@ export class EditTree {
       canDelete: this.canDelete,
       ...props
     })
-  
+
     const form_cont = is_new_rel
       ? (this.createFormNew || createFormNew)(form_creator as NewRelFormCreator, this.closeForm.bind(this))
       : (this.createFormEdit || createFormEdit)(form_creator as EditDatumFormCreator, this.closeForm.bind(this))
-  
+
     this.formCont.populate(form_cont)
-  
+
     this.openForm()
-  
-  
+
+
   }
-  
+
   openForm() {
     this.formCont.open()
   }
-  
+
   closeForm() {
     this.formCont.close()
     this.store.updateTree({})
   }
-  
+
   fixed() {
     this.is_fixed = true
     if (this.formCont.el) d3.select(this.formCont.el).style('position', 'relative')
-  
+
     return this
   }
-  
+
   absolute() {
     this.is_fixed = false
     if (this.formCont.el) d3.select(this.formCont.el).style('position', 'absolute')
-  
+
     return this
   }
-  
+
   setCardClickOpen(card: Card) {
     card.setOnCardClick((event: Event, d: TreeDatum) => {
       const mouseEvent = event as MouseEvent
@@ -342,10 +347,10 @@ export class EditTree {
         card.onCardClickDefault(mouseEvent, d)
       }
     })
-  
+
     return this
   }
-  
+
   openFormWithId(d_id: Datum['id']) {
     if (d_id) {
       const d = this.store.getDatum(d_id)
@@ -357,21 +362,21 @@ export class EditTree {
       this.openWithoutRelCancel(d)
     }
   }
-  
+
   setNoEdit() {
     this.no_edit = true
-  
+
     return this
   }
-  
+
   setEdit() {
     this.no_edit = false
-  
+
     return this
   }
-  
-  setFields(fields: Array<string | {id: string; label?: string; type?: string} | RelReferenceFieldCreator | SelectFieldCreator>) {  // todo: Field[]
-    const new_fields: Array<{type?: string; label?: string; id: string} | RelReferenceFieldCreator | SelectFieldCreator> = []
+
+  setFields(fields: Array<string | { id: string; label?: string; type?: string } | RelReferenceFieldCreator | SelectFieldCreator>) {  // todo: Field[]
+    const new_fields: Array<{ type?: string; label?: string; id: string } | RelReferenceFieldCreator | SelectFieldCreator> = []
     if (!Array.isArray(fields)) {
       console.error('fields must be an array')
       return this
@@ -380,36 +385,36 @@ export class EditTree {
       if (typeof field === 'string') {
         const id = field
         const label = FIELD_LABEL_MAP[id] || field
-  new_fields.push({type: 'text', label, id})
+        new_fields.push({ type: 'text', label, id })
       } else if (typeof field === 'object' && field !== null) {
-          if (!('id' in field) || typeof field.id !== 'string' || !field.id) {
-            console.error('fields must be an array of objects with id property')
+        if (!('id' in field) || typeof field.id !== 'string' || !field.id) {
+          console.error('fields must be an array of objects with id property')
+        } else {
+          // Preserve RelReferenceFieldCreator and SelectFieldCreator with extra properties
+          const asAny = field as any
+          if (Object.prototype.hasOwnProperty.call(asAny, 'getRelLabel') ||
+            Object.prototype.hasOwnProperty.call(asAny, 'options') ||
+            Object.prototype.hasOwnProperty.call(asAny, 'optionCreator')) {
+            new_fields.push(asAny)
           } else {
-            // Preserve RelReferenceFieldCreator and SelectFieldCreator with extra properties
-            const asAny = field as any
-            if (Object.prototype.hasOwnProperty.call(asAny, 'getRelLabel') ||
-                Object.prototype.hasOwnProperty.call(asAny, 'options') ||
-                Object.prototype.hasOwnProperty.call(asAny, 'optionCreator')) {
-              new_fields.push(asAny)
-            } else {
-              const fld = field as {id: string; label?: string; type?: string}
-              const label = fld.label || FIELD_LABEL_MAP[fld.id] || fld.id
-              const type = fld.type || 'text'
-              new_fields.push({id: fld.id, label, type})
-            }
+            const fld = field as { id: string; label?: string; type?: string }
+            const label = fld.label || FIELD_LABEL_MAP[fld.id] || fld.id
+            const type = fld.type || 'text'
+            new_fields.push({ id: fld.id, label, type })
           }
+        }
       } else {
         console.error('fields must be an array of strings or objects')
       }
     }
     this.fields = new_fields
-  
+
     return this
   }
-  
+
   setOnChange(fn: EditTree['onChange']) {
     this.onChange = fn
-  
+
     return this
   }
 
@@ -427,62 +432,62 @@ export class EditTree {
     this.addRelativeInstance.setCanAdd(canAdd)
     return this
   }
-  
+
   addRelative(datum: Datum | undefined) {
     if (!datum) datum = this.store.getMainDatum()!
     this.addRelativeInstance.activate(datum)
-  
+
     return this
-  
+
   }
-  
+
   setupModal() {
     return modal(this.cont)
   }
-  
+
   setEditFirst(editFirst: EditTree['editFirst']) {
     this.editFirst = editFirst
-  
+
     return this
   }
-  
+
   isAddingRelative() {
     return this.addRelativeInstance.is_active
   }
-  
+
   isRemovingRelative() {
     return this.removeRelativeInstance.is_active
   }
-  
+
   setAddRelLabels(add_rel_labels: AddRelative['addRelLabels']) {
     this.addRelativeInstance.setAddRelLabels(add_rel_labels)
     return this
   }
-  
+
   setLinkExistingRelConfig(link_existing_rel_config: EditTree['link_existing_rel_config']) {
     this.link_existing_rel_config = link_existing_rel_config
     return this
   }
-  
+
   setOnFormCreation(onFormCreation: EditTree['onFormCreation']) {
     this.onFormCreation = onFormCreation
-  
+
     return this
   }
-  
+
   setCreateFormEdit(createFormEdit: EditTree['createFormEdit']) {
     this.createFormEdit = createFormEdit
     return this
   }
-  
+
   setCreateFormNew(createFormNew: EditTree['createFormNew']) {
     this.createFormNew = createFormNew
     return this
   }
-  
+
   private _getStoreDataCopy() {
     let data = JSON.parse(JSON.stringify(this.store.getData()))  // important to make a deep copy of the data
-    if (this.addRelativeInstance.is_active) data = this.addRelativeInstance.cleanUp(data)    
+    if (this.addRelativeInstance.is_active) data = this.addRelativeInstance.cleanUp(data)
     data = cleanupDataJson(data)
     return data
   }
@@ -497,37 +502,37 @@ export class EditTree {
     data = formatDataForExport(data, this.store.state.legacy_format)
     return data as Data | LegacyDatum[]
   }
-  
+
   getDataJson() {
     return JSON.stringify(this.exportData(), null, 2)
   }
-  
+
   updateHistory() {
     const history = this.history
     if (history) {
       history.changed()
       history.controls.updateButtons()
     }
-  
+
     if (this.onChange) this.onChange()
   }
-  
+
   setPostSubmit(postSubmit: EditTree['postSubmit']) {
     this.postSubmit = postSubmit
-  
+
     return this
   }
-  
+
   setOnSubmit(onSubmit: EditTree['onSubmit']) {
     this.onSubmit = onSubmit
     return this
   }
-  
+
   setOnDelete(onDelete: EditTree['onDelete']) {
     this.onDelete = onDelete
     return this
   }
-  
+
   destroy() {
     if (this.history) {
       this.history.controls.destroy()
@@ -536,7 +541,7 @@ export class EditTree {
     if (this.formCont.el) d3.select(this.formCont.el).remove()
     if (this.addRelativeInstance.onCancel) this.addRelativeInstance.onCancel()
     this.store.updateTree({})
-  
+
     return this
   }
 }

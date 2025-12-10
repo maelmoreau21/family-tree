@@ -10,6 +10,7 @@ export * as icons from './renderers/icons'
 export { default as createChart } from './core/chart'
 export { default as cardSvg } from './core/cards/card-svg'
 export { default as cardHtml } from './core/cards/card-html'
+export { default as createEditTree, EditTree } from "./core/edit"
 
 export { formatData, formatDataForExport } from "./store/format-data"
 
@@ -29,5 +30,5 @@ export { CardSvg as CardSvgClass } from './core/cards/card-svg'
 import * as htmlHandlers from './renderers/html'
 import { setupHtmlSvg, setupReactiveTreeData, getUniqueId } from './features/card-component/handlers'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const htmlHandlersWithDeprecated = Object.assign({}, htmlHandlers, {setupHtmlSvg, setupReactiveTreeData, getUniqueId}) as any
+const htmlHandlersWithDeprecated = Object.assign({}, htmlHandlers, { setupHtmlSvg, setupReactiveTreeData, getUniqueId }) as any
 export { htmlHandlersWithDeprecated as htmlHandlers }
