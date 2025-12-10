@@ -11,8 +11,20 @@
 </head>
 <body>
 
+
 <script>
+  // Redirect to the builder by default, as the React client is not ready
+  window.location.replace('/static/builder/');
 </script>
+<div style="font-family: sans-serif; padding: 2rem; max-width: 600px; margin: 0 auto;">
+  <h1>Redirection...</h1>
+  <p>Si vous n'êtes pas redirigé automatiquement, choisissez une application :</p>
+  <ul>
+    <li><a href="/static/builder/">Accéder à l'Éditeur (Builder)</a> - Version Stable</li>
+    <li><a href="/static/viewer/">Accéder au Visualiseur (Viewer)</a> - Version Stable</li>
+    <li><a href="/client/">Accéder au Nouveau Client (Client)</a> - En développement (Instable)</li>
+  </ul>
+</div>
 
 </body>
 </html>
