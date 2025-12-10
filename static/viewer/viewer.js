@@ -2136,6 +2136,40 @@ function renderChart(payload, options = {}) {
   }).catch(() => { })
 }
 
+// --- Tab System ---
+function setupTabs() {
+  const tabs = document.querySelectorAll('[data-tab]')
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const group = tab.closest('.tabs-nav')
+      if (!group) return
+
+      // Deactivate siblings
+      group.querySelectorAll('[data-tab]').forEach(t => t.classList.remove('active'))
+      tab.classList.add('active')
+
+      const targetName = tab.dataset.tab
+      const container = group.parentElement
+      if (!container) return
+
+      // Note: Viewer index.html has .tab-content elems
+      const contents = container.querySelectorAll('.tab-content')
+      contents.forEach(content => {
+        if (content.dataset.tabContent === targetName) {
+          content.classList.add('active')
+          content.hidden = false
+        } else {
+          content.classList.remove('active')
+          content.hidden = true
+        }
+      })
+    })
+  })
+}
+
+// Initialise Tabs
+setupTabs()
+
 fetchFullTree({ preservePreferences: false, source: 'system' }).catch(() => {
   setStatus('Impossible de charger les données', 'error')
 })

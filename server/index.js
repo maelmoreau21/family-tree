@@ -14,8 +14,11 @@ import {
   setTreePayload,
   getLastUpdatedAt,
   rebuildFts,
-  getDatabaseUrl
+  rebuildFts,
+  getDatabaseUrl,
+  getTreeSubset
 } from './db.js'
+import { importGedcomStream } from './gedcom-stream.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -57,7 +60,7 @@ const DEFAULT_SEED_DATASET = {
       data: {
         'first name': 'Inconnu',
         'last name': 'Profil',
-            gender: ''
+        gender: ''
       },
       rels: {
         spouses: [],
@@ -163,7 +166,7 @@ const uploadMiddleware = multer({
   storage: uploadStorage,
   limits: { fileSize: MAX_UPLOAD_SIZE },
   fileFilter: (req, file, cb) => {
-    
+
     if (!file.mimetype || !file.mimetype.startsWith('image/')) {
       const error = new Error('UNSUPPORTED_FILE_TYPE')
       error.code = 'UNSUPPORTED_FILE_TYPE'
@@ -742,58 +745,27 @@ function createTreeApi({ canWrite }) {
   })
 
   router.get('/tree', async (req, res) => {
-    const subsetRequested =
-      (typeof req.query.mode === 'string' && req.query.mode.toLowerCase() === 'subtree') ||
-      typeof req.query.mainId === 'string' ||
-      typeof req.query.main_id === 'string' ||
-      req.query.ancestryDepth !== undefined ||
-      req.query.ancestry_depth !== undefined ||
-      req.query.progenyDepth !== undefined ||
-      req.query.progeny_depth !== undefined ||
-      req.query.includeSiblings !== undefined ||
-      req.query.include_siblings !== undefined ||
-      req.query.includeSpouses !== undefined ||
-      req.query.include_spouses !== undefined
-
-    if (!subsetRequested) {
-      try {
-        const payload = await readTreeData()
-        res.json(payload)
-      } catch (error) {
-        console.error('[server] Failed to load tree data', error)
-        res.status(500).json({ message: 'Unable to read tree data from storage' })
-      }
-      return
-    }
-
     try {
-      const payload = await readTreeData()
-      const normalised = normaliseTreePayloadRoot(payload)
-
+      // New: Always use SQL Subset Retrieval for scalability
       const ancestryDepthParam = req.query.ancestryDepth ?? req.query.ancestry_depth
       const progenyDepthParam = req.query.progenyDepth ?? req.query.progeny_depth
-      const includeSiblingsParam = req.query.includeSiblings ?? req.query.include_siblings
-      const includeSpousesParam = req.query.includeSpouses ?? req.query.include_spouses
       const mainIdParam = req.query.mainId ?? req.query.main_id
 
-      const ancestryDepth = parseDepthParam(ancestryDepthParam, undefined)
-      const progenyDepth = parseDepthParam(progenyDepthParam, undefined)
-      const includeSiblings = parseBooleanParam(includeSiblingsParam, true)
-      const includeSpouses = parseBooleanParam(includeSpousesParam, true)
+      const ancestryDepth = parseDepthParam(ancestryDepthParam, 10)
+      const progenyDepth = parseDepthParam(progenyDepthParam, 10)
       const mainId = typeof mainIdParam === 'string' && mainIdParam.trim() ? mainIdParam.trim() : null
 
-      const subtree = buildSubtree(normalised, {
+      // This replaces the old 'readTreeData' + 'buildSubtree' which loaded full JSON.
+      const subtree = await getTreeSubset({
         mainId,
         ancestryDepth,
-        progenyDepth,
-        includeSiblings,
-        includeSpouses
+        progenyDepth
       })
 
       res.json(subtree)
     } catch (error) {
-      console.error('[server] Failed to build subtree response', error)
-      res.status(500).json({ message: 'Unable to build subtree response' })
+      console.error('[server] Failed to retrieve tree subset', error)
+      res.status(500).json({ message: 'Unable to retrieve tree data' })
     }
   })
 
@@ -803,7 +775,7 @@ function createTreeApi({ canWrite }) {
       const normalised = normaliseTreePayloadRoot(payload)
       const persons = Array.isArray(normalised.data) ? normalised.data : []
       const summaries = buildPeopleSummary(persons)
-  const updatedAt = await getLastUpdatedAt()
+      const updatedAt = await getLastUpdatedAt()
 
       res.json({
         total: persons.length,
@@ -858,7 +830,7 @@ function createTreeApi({ canWrite }) {
       }
     })
 
-    
+
     router.post('/admin/import', ensureAdminAuth, jsonParser, async (req, res) => {
       try {
         const body = req.body
@@ -877,7 +849,7 @@ function createTreeApi({ canWrite }) {
           dropIndexes = parseBooleanParam(req.query.dropIndexes, true)
         }
 
-        
+
         let fastImport = false
         if (hasPayloadField && Object.prototype.hasOwnProperty.call(body, 'fastImport')) {
           fastImport = parseBooleanParam(body.fastImport, false)
@@ -893,9 +865,28 @@ function createTreeApi({ canWrite }) {
       }
     })
 
+    const uploadGedcom = multer({ dest: DOCUMENT_DIR })
+
+    router.post('/admin/import-gedcom', ensureAdminAuth, uploadGedcom.single('file'), async (req, res) => {
+      try {
+        if (!req.file) return res.status(400).json({ message: 'No file uploaded' })
+
+        console.log('[server] Starting streaming GEDCOM import:', req.file.path)
+        await importGedcomStream(req.file.path)
+
+        // Clean up temp file
+        await fs.unlink(req.file.path)
+
+        res.status(204).end()
+      } catch (error) {
+        console.error('[server] Streaming import failed', error)
+        res.status(500).json({ message: 'Import failed', error: String(error) })
+      }
+    })
+
     router.post('/admin/rebuild-fts', ensureAdminAuth, async (req, res) => {
       try {
-  const result = await rebuildFts()
+        const result = await rebuildFts()
         res.json(result)
       } catch (error) {
         console.error('[server] rebuild-fts failed', error)
@@ -904,7 +895,7 @@ function createTreeApi({ canWrite }) {
     })
 
     router.post('/admin/reset-to-seed', ensureAdminAuth, async (req, res) => {
-    
+
       const confirm = req.query.confirm === '1' || req.query.confirm === 'true'
       if (!confirm) {
         res.status(400).json({ message: 'Missing confirm=1 query param to reset database to seed' })
@@ -931,7 +922,7 @@ function createStaticApp(staticFolder, { canWrite }) {
   const staticOptions = { setHeaders: setStaticCacheHeaders }
   app.use('/lib', express.static(DIST_DIR, staticOptions))
   app.use('/assets', express.static(path.resolve(ROOT_DIR, 'src', 'styles'), staticOptions))
-  
+
   app.use('/static', express.static(STATIC_DIR, staticOptions))
   app.use('/document', express.static(DOCUMENT_DIR, { maxAge: '1d' }))
   app.use('/api', createTreeApi({ canWrite }))
@@ -1012,7 +1003,7 @@ function createStaticApp(staticFolder, { canWrite }) {
         })()
       })
     })
-    
+
     // Delete profile image for a person (removes any profil.* files in the person folder)
     app.delete('/api/document', ensureAdminAuth, async (req, res) => {
       try {

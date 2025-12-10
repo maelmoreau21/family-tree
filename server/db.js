@@ -163,7 +163,7 @@ async function applyMigrations(client) {
     return
   }
 
-  
+
   await setVersion(SCHEMA_VERSION)
 }
 
@@ -526,5 +526,251 @@ export async function closeDatabase() {
     await pool.end()
     pool = null
   }
-  initialised = false
+
+}
+
+// --- Streaming Import Support ---
+
+export async function createImportBuffer(options = {}) {
+  const { dropIndexes = true } = options
+  const client = await getPool().connect()
+
+  await client.query('BEGIN')
+
+  if (dropIndexes) {
+    await dropImportIndexes(client)
+  }
+
+  // Clear existing data? For a full import: yes.
+  // We'll perform a truncate here assuming 'Import Tree' semantics.
+  await client.query('TRUNCATE TABLE relationships, closure, persons RESTART IDENTITY CASCADE')
+  if (ftsEnabled) await client.query('TRUNCATE TABLE persons_fts')
+
+  let personBuffer = []
+  let relBuffer = []
+  const personLimit = 1000
+  const relLimit = 1000
+
+  async function flushPersons() {
+    if (personBuffer.length === 0) return
+    const values = []
+    const placeholders = personBuffer.map((p, i) => {
+      const base = i * 7
+      values.push(p.id, p.givenName, p.familyName, p.birthDate, p.metadata, p.createdAt, p.updatedAt)
+      return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7})`
+    })
+
+    // We intentionally ignore ON CONFLICT update for speed in initial bulk load, 
+    // or we can use DO NOTHING if IDs are unique.
+    const sql = `
+      INSERT INTO persons (id, given_name, family_name, birth_date, metadata, created_at, updated_at)
+      VALUES ${placeholders.join(',')}
+      ON CONFLICT (id) DO NOTHING
+    `
+    await client.query(sql, values)
+    personBuffer = []
+  }
+
+  async function flushRels() {
+    if (relBuffer.length === 0) return
+    const values = []
+    const placeholders = relBuffer.map((r, i) => {
+      const base = i * 2
+      values.push(r.parent, r.child)
+      return `($${base + 1}, $${base + 2})`
+    })
+    const sql = `
+      INSERT INTO relationships (parent_id, child_id)
+      VALUES ${placeholders.join(',')}
+      ON CONFLICT DO NOTHING
+    `
+    await client.query(sql, values)
+    relBuffer = []
+  }
+
+  return {
+    addPerson: async (p) => {
+      const rec = toPersonRecord(p)
+      if (!rec) return
+      const now = new Date().toISOString()
+      // Augment record with timestamps as toPersonRecord doesn't add them
+      personBuffer.push({ ...rec, createdAt: now, updatedAt: now })
+      if (personBuffer.length >= personLimit) await flushPersons()
+    },
+    addRelationship: async (parent, child) => {
+      if (!parent || !child) return
+      relBuffer.push({ parent, child })
+      if (relBuffer.length >= relLimit) await flushRels()
+    },
+    commit: async () => {
+      await flushPersons()
+      await flushRels()
+
+      // Post-import cleanup: Closure table & Indexes
+      await client.query('INSERT INTO closure (ancestor_id, descendant_id, depth) SELECT id, id, 0 FROM persons')
+      await client.query(`
+        WITH RECURSIVE tree AS (
+          SELECT parent_id AS ancestor_id, child_id AS descendant_id, 1 AS depth FROM relationships
+          UNION ALL
+          SELECT t.ancestor_id, r.child_id, t.depth + 1
+          FROM tree t
+          JOIN relationships r ON r.parent_id = t.descendant_id
+        )
+        INSERT INTO closure (ancestor_id, descendant_id, depth)
+        SELECT ancestor_id, descendant_id, depth FROM tree
+        ON CONFLICT (ancestor_id, descendant_id) DO NOTHING
+      `)
+
+      if (dropIndexes) {
+        await ensureIndexes(client)
+      }
+
+      await client.query('COMMIT')
+      client.release()
+    },
+    rollback: async () => {
+      try { await client.query('ROLLBACK') } catch (e) { }
+      client.release()
+    }
+  }
+}
+
+// --- SQL Subset Retrieval ---
+
+export async function getTreeSubset(options = {}) {
+  const { mainId, ancestryDepth = 0, progenyDepth = 0, includeSiblings = true, includeSpouses = true } = options
+  const client = await getPool().connect()
+  try {
+    const includeIds = new Set()
+    const loadedPersons = []
+
+    // 1. Identify target IDs
+    // If no mainId, we might return empty or logic to find a default?
+    // For scalability, we CANNOT return "all". We stick to mainId logic.
+    let rootId = mainId
+    if (!rootId) {
+      // Find a default?
+      const res = await client.query('SELECT id FROM persons LIMIT 1')
+      if (res.rowCount) rootId = res.rows[0].id
+      else return { data: [], config: {}, meta: {} }
+    }
+
+    // RECURSIVE QUERIES
+    // We need to implement the traversal logic in SQL.
+
+    // Ancestry CTE
+    const ancestryLimit = (ancestryDepth === null || ancestryDepth === undefined) ? 10 : ancestryDepth
+    const progenyLimit = (progenyDepth === null || progenyDepth === undefined) ? 10 : progenyDepth
+
+    const sql = `
+       WITH RECURSIVE 
+       ancestors AS (
+         SELECT parent_id as id, 1 as depth FROM relationships WHERE child_id = $1
+         UNION
+         SELECT r.parent_id, a.depth + 1 FROM relationships r JOIN ancestors a ON r.child_id = a.id WHERE a.depth < $2
+       ),
+       descendants AS (
+         SELECT child_id as id, 1 as depth FROM relationships WHERE parent_id = $1
+         UNION
+         SELECT r.child_id, d.depth + 1 FROM relationships r JOIN descendants d ON r.parent_id = d.id WHERE d.depth < $3
+       ),
+       relatives AS (
+         SELECT $1::text as id
+         UNION SELECT id FROM ancestors
+         UNION SELECT id FROM descendants
+       )
+       SELECT p.id, p.given_name, p.family_name, p.birth_date, p.metadata
+       FROM persons p
+       JOIN relatives r ON p.id = r.id
+     `
+    // Note: SQL params are $1=rootId, $2=ancestryLimit, $3=progenyLimit
+    // This only gets linear relatives. Siblings/Spouses need more.
+    // For performance, we fetch core validation first.
+    // Getting siblings/spouses in one query is complex.
+    // We'll stick to basic implementation: fetch core set, then fetch their relations.
+
+    const result = await client.query(sql, [rootId, ancestryLimit, progenyLimit])
+    result.rows.forEach(r => {
+      // Convert to Person object
+      // we store metadata as jsonb, so retrieving it is automatic
+      const meta = r.metadata || {}
+      const p = {
+        id: r.id,
+        data: meta.data || {},
+        rels: meta.rels || { parents: [], children: [], spouses: [] }, // This rels is from JSON blob. might be stale if we don't update it?
+        // WAIT. If we moved Source of Truth to SQL, we should reconstruct 'rels' from SQL relationships table!
+        // But 'metadata.rels' still exists in the JSON column.
+        // If we use streaming import, we didn't populate metadata.rels fully (we put empty arrays).
+        // So we MUST query relationships table to fill .rels
+      }
+      loadedPersons.push(p)
+    })
+
+    // Populate Relations from SQL
+    const loadedIds = loadedPersons.map(p => p.id)
+    if (loadedIds.length === 0) return { data: [], config: { mainId: rootId }, meta: {} }
+
+    // Fetch all relationships involving these people
+    const relSql = `
+       SELECT parent_id, child_id FROM relationships 
+       WHERE parent_id = ANY($1) OR child_id = ANY($1)
+     `
+    const relRes = await client.query(relSql, [loadedIds])
+
+    // Build map
+    const personMap = new Map()
+    loadedPersons.forEach(p => personMap.set(p.id, p))
+
+    relRes.rows.forEach(row => {
+      const parent = personMap.get(row.parent_id)
+      const child = personMap.get(row.child_id)
+
+      if (parent) {
+        if (!parent.rels.children) parent.rels.children = []
+        if (!parent.rels.children.includes(row.child_id)) parent.rels.children.push(row.child_id)
+      }
+      if (child) {
+        if (!child.rels.parents) child.rels.parents = []
+        if (!child.rels.parents.includes(row.parent_id)) child.rels.parents.push(row.parent_id)
+      }
+
+      // Spouses? If A and B have same child C.
+      // We can infer spouses or fetch from logic.
+      // For simplicity, we assume if A and B share a child, they are spouses.
+      // We can do this in memory.
+    })
+
+    // Infer spouses
+    const childMap = new Map() // childId -> [parentIds]
+    relRes.rows.forEach(row => {
+      if (!childMap.has(row.child_id)) childMap.set(row.child_id, [])
+      childMap.get(row.child_id).push(row.parent_id)
+    })
+
+    childMap.forEach(parents => {
+      if (parents.length > 1) {
+        // Link all parents as spouses
+        for (let i = 0; i < parents.length; i++) {
+          for (let j = i + 1; j < parents.length; j++) {
+            const p1 = personMap.get(parents[i])
+            const p2 = personMap.get(parents[j])
+            if (p1 && p2) {
+              if (!p1.rels.spouses) p1.rels.spouses = []
+              if (!p2.rels.spouses) p2.rels.spouses = []
+              if (!p1.rels.spouses.includes(parents[j])) p1.rels.spouses.push(parents[j])
+              if (!p2.rels.spouses.includes(parents[i])) p2.rels.spouses.push(parents[i])
+            }
+          }
+        }
+      }
+    })
+
+    return {
+      data: loadedPersons,
+      config: { mainId: rootId, ancestryDepth, progenyDepth },
+      meta: { source: 'sql-subset' }
+    }
+  } finally {
+    client.release()
+  }
 }

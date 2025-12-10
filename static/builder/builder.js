@@ -1044,10 +1044,16 @@ function applyChartConfigToChart(chart) {
 
 }
 
-async function loadTree() {
+async function loadTree(params = {}) {
   setStatus('Chargement des données…')
   setChartLoading(true, 'Chargement des données…')
-  const response = await fetch('/api/tree', { cache: 'no-store' })
+
+  const url = new URL('/api/tree', window.location.origin)
+  if (params.ancestryDepth !== undefined && params.ancestryDepth !== null) url.searchParams.set('ancestryDepth', params.ancestryDepth)
+  if (params.progenyDepth !== undefined && params.progenyDepth !== null) url.searchParams.set('progenyDepth', params.progenyDepth)
+  if (params.mainId) url.searchParams.set('mainId', params.mainId)
+
+  const response = await fetch(url.toString(), { cache: 'no-store' })
   if (!response.ok) {
     throw new Error(`Échec du chargement (${response.status})`)
   }
@@ -2629,20 +2635,56 @@ function attachPanelControls({ chart, card }) {
     commitConfigUpdate({ cardXSpacing: safeValue })
   })
 
-  ancestryDepthSelect?.addEventListener('change', () => {
+  ancestryDepthSelect?.addEventListener('change', async () => {
     if (isApplyingConfig) return
     const fallback = chartConfig.ancestryDepth ?? DEFAULT_CHART_CONFIG.ancestryDepth ?? null
     const value = parseDepthSelectValue(ancestryDepthSelect, fallback)
     if (value === chartConfig.ancestryDepth) return
-    commitConfigUpdate({ ancestryDepth: value }, { treePosition: 'main_to_middle' })
+
+    chartConfig.ancestryDepth = value
+
+    try {
+      const payload = await loadTree({
+        ancestryDepth: chartConfig.ancestryDepth,
+        progenyDepth: chartConfig.progenyDepth,
+        mainId: chartConfig.mainId
+      })
+      if (activeChartInstance && activeChartInstance.store) {
+        activeChartInstance.store.updateData(payload.data)
+        activeChartInstance.updateTree()
+        const snap = getSnapshot()
+        if (snap) persistChanges(snap)
+      }
+    } catch (e) {
+      console.error(e)
+      alert('Erreur: ' + e.message)
+    }
   })
 
-  progenyDepthSelect?.addEventListener('change', () => {
+  progenyDepthSelect?.addEventListener('change', async () => {
     if (isApplyingConfig) return
     const fallback = chartConfig.progenyDepth ?? DEFAULT_CHART_CONFIG.progenyDepth ?? null
     const value = parseDepthSelectValue(progenyDepthSelect, fallback)
     if (value === chartConfig.progenyDepth) return
-    commitConfigUpdate({ progenyDepth: value }, { treePosition: 'main_to_middle' })
+
+    chartConfig.progenyDepth = value
+
+    try {
+      const payload = await loadTree({
+        ancestryDepth: chartConfig.ancestryDepth,
+        progenyDepth: chartConfig.progenyDepth,
+        mainId: chartConfig.mainId
+      })
+      if (activeChartInstance && activeChartInstance.store) {
+        activeChartInstance.store.updateData(payload.data)
+        activeChartInstance.updateTree()
+        const snap = getSnapshot()
+        if (snap) persistChanges(snap)
+      }
+    } catch (e) {
+      console.error(e)
+      alert('Erreur: ' + e.message)
+    }
   })
 
   miniTreeToggle?.addEventListener('change', () => {
@@ -3073,37 +3115,39 @@ const tools = {
   },
 
   importTree: () => {
-    if (!activeChartInstance) return
     if (!confirm('Attention, cela remplacera tout l\'arbre actuel. Continuer ?')) return
 
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = '.ged'
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
       const file = e.target.files[0]
       if (!file) return
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        try {
-          const content = event.target.result
-          const parser = new GedcomParser()
-          const importedData = parser.parse(content)
 
-          if (!importedData || importedData.length === 0) throw new Error('Fichier vide ou invalide')
+      setStatus('Importation en cours (ceci peut prendre du temps pour les gros fichiers)...', 'saving')
 
-          activeChartInstance.store.updateData(importedData)
-          activeChartInstance.updateTree()
+      const formData = new FormData()
+      formData.append('file', file)
 
-          const snapshot = getSnapshot()
-          if (snapshot) persistChanges(snapshot, { immediate: true })
+      try {
+        const response = await fetch('/api/admin/import-gedcom', {
+          method: 'POST',
+          body: formData
+        })
 
-          alert('Arbre GEDCOM importé avec succès.')
-        } catch (err) {
-          console.error(err)
-          alert('Erreur lors de l\'importation : ' + err.message)
+        if (!response.ok) {
+          const err = await response.json()
+          throw new Error(err.message || response.statusText)
         }
+
+        setStatus('Import réussi ! Rechargement...', 'success')
+        alert('Arbre GEDCOM importé avec succès. La page va se recharger.')
+        window.location.reload()
+      } catch (error) {
+        console.error(error)
+        setStatus('Erreur d\'importation', 'error')
+        alert('Erreur lors de l\'importation : ' + error.message)
       }
-      reader.readAsText(file)
     }
     input.click()
   }
@@ -3131,10 +3175,42 @@ function setupToolListeners() {
   })
 }
 
+// --- Tab System ---
+function setupTabs() {
+  const tabs = document.querySelectorAll('[data-tab]')
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const group = tab.closest('.tabs-nav')
+      if (!group) return
+
+      // Deactivate siblings
+      group.querySelectorAll('[data-tab]').forEach(t => t.classList.remove('active'))
+      tab.classList.add('active')
+
+      const targetName = tab.dataset.tab
+      const container = group.parentElement
+      if (!container) return
+
+      const contents = container.querySelectorAll('.tab-content')
+      contents.forEach(content => {
+        if (content.dataset.tabContent === targetName) {
+          content.classList.add('active')
+        } else {
+          content.classList.remove('active')
+        }
+      })
+    })
+  })
+}
+
 // Initialize tools when DOM is ready
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', setupToolListeners)
+  document.addEventListener('DOMContentLoaded', () => {
+    setupToolListeners()
+    setupTabs()
+  })
 } else {
   setupToolListeners()
+  setupTabs()
 }
 
