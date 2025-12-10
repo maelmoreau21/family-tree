@@ -1,0 +1,74 @@
+/* Functional Styles - Must have! */
+.tab-content {
+  display: none !important; /* Force hide unless active */
+}
+
+.tab-content.active {
+  display: block !important;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Aesthetic Styles */
+.tabs-nav {
+  display: flex;
+  gap: 20px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 20px;
+  padding: 0 10px;
+}
+
+.tabs-nav button {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: #94a3b8; /* text-muted */
+  cursor: pointer;
+  padding: 10px 0;
+  position: relative;
+  transition: color 0.2s ease, transform 0.2s ease;
+  outline: none;
+  /* Reset potentially conflicting styles from .f3-form button */
+  border-radius: 0;
+  box-shadow: none;
+  margin: 0;
+}
+
+.tabs-nav button::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; /* aligns with border-bottom of nav */
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #6366f1; /* accent-primary */
+  transform: scaleX(0);
+  transition: transform 0.2s ease;
+  transform-origin: center;
+}
+
+.tabs-nav button:hover {
+  color: #f8fafc; /* text-main */
+}
+
+.tabs-nav button.active {
+  color: #6366f1; /* accent-primary */
+}
+
+.tabs-nav button.active::after {
+  transform: scaleX(1);
+}
+
+/* Fix for buttons inside .f3-form */
+.f3-form .tabs-nav button {
+  /* Override default button styles in forms */
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}

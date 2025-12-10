@@ -1,4 +1,5 @@
 import * as f3 from '/lib/family-tree.esm.js'
+import { initTabs } from '../../src/utils/tabs'
 
 // Polyfill for structuredClone if missing (or strictly for safe deep cloning)
 window.structuredCloneSafe = function (val) {
@@ -83,7 +84,7 @@ function cssEscape(value) {
       /* fall through */
     }
   }
-  return String(value).replace(/[^a-zA-Z0-9_-]/g, char => `\\${char}`)
+  return String(value).replace(/[^a-zA-Z0-9_-]/g, char => `\\${char} `)
 }
 
 function requestSetMainProfile(id, options) {
@@ -156,7 +157,7 @@ function getCardElementByPersonId(personId) {
   if (!tid) return null
   const container = activeChartInstance.cont || document.querySelector(chartSelector)
   if (!container) return null
-  const selector = `.card[data-id="${cssEscape(tid)}"]`
+  const selector = `.card[data - id= "${cssEscape(tid)}"]`
   return container.querySelector(selector)
 }
 
