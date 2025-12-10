@@ -157,7 +157,7 @@ function getCardElementByPersonId(personId) {
   if (!tid) return null
   const container = activeChartInstance.cont || document.querySelector(chartSelector)
   if (!container) return null
-  const selector = `.card[data - id= "${cssEscape(tid)}"]`
+  const selector = `.card[data-id="${cssEscape(tid)}"]`
   return container.querySelector(selector)
 }
 

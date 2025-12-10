@@ -280,8 +280,8 @@ export class EditTree {
     }
 
     const fieldsWithId = [
-      { id: 'id', label: 'Clé primaire (ID)', type: 'text', initial_value: datum.id, readonly: true },
-      ...this.fields
+      ...this.fields,
+      { id: 'id', label: 'Clé primaire (ID)', type: 'text', initial_value: datum.id, readonly: true }
     ]
 
     const form_creator = formCreatorSetup({
