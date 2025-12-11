@@ -1475,9 +1475,6 @@ function attachPanelControls({ chart, card }) {
         <button type="button" class="ghost small" data-action="delete-upload">Supprimer la photo</button>
       </div>
     </div>
-    <div style="margin-top: 10px; font-size: 0.9em; opacity: 0.8;">
-      Clé primaire : <strong data-role="uploader-current-id">—</strong>
-    </div>
   </fieldset>
   `
 
@@ -1677,8 +1674,7 @@ function attachPanelControls({ chart, card }) {
     const activeDatum = getActiveDatum()
     const existingValue = activeDatum?.data?.[targetFieldId] || ''
 
-    const idDisplay = imageUploader?.querySelector('[data-role="uploader-current-id"]')
-    if (idDisplay) idDisplay.textContent = activeDatum?.id || '—'
+
 
     if (!existingValue) {
       clearUploadResult()
@@ -3069,30 +3065,49 @@ const tools = {
       const file = e.target.files[0]
       if (!file) return
 
-      setStatus('Importation en cours (ceci peut prendre du temps pour les gros fichiers)...', 'saving')
+      setStatus('Lecture du fichier...', 'saving')
+      const reader = new FileReader()
+      reader.onload = async (event) => {
+        try {
+          setStatus('Analyse du GEDCOM...', 'saving')
+          const content = event.target.result
+          // Instantiate parser (assuming loaded via script tag as window.GedcomParser)
+          if (!window.GedcomParser) throw new Error('Le parseur GEDCOM n\'est pas chargé.')
+          const parser = new window.GedcomParser()
+          const data = parser.parse(content)
 
-      const formData = new FormData()
-      formData.append('file', file)
+          setStatus('Envoi des données...', 'saving')
+          const payload = {
+            data: data,
+            config: {},
+            meta: { source: 'gedcom-client-import', filename: file.name }
+          }
 
-      try {
-        const response = await fetch('/api/admin/import-gedcom', {
-          method: 'POST',
-          body: formData
-        })
+          const response = await fetch('/api/admin/import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          })
 
-        if (!response.ok) {
-          const err = await response.json()
-          throw new Error(err.message || response.statusText)
+          if (!response.ok) {
+            const err = await response.json()
+            throw new Error(err.message || response.statusText)
+          }
+
+          setStatus('Import réussi ! Rechargement...', 'success')
+          alert('Arbre GEDCOM importé avec succès. La page va se recharger.')
+          window.location.reload()
+        } catch (error) {
+          console.error(error)
+          setStatus('Erreur d\'importation (Client)', 'error')
+          alert('Erreur lors de l\'importation : ' + error.message)
         }
-
-        setStatus('Import réussi ! Rechargement...', 'success')
-        alert('Arbre GEDCOM importé avec succès. La page va se recharger.')
-        window.location.reload()
-      } catch (error) {
-        console.error(error)
-        setStatus('Erreur d\'importation', 'error')
-        alert('Erreur lors de l\'importation : ' + error.message)
       }
+      reader.onerror = () => {
+        setStatus('Erreur de lecture du fichier', 'error')
+        alert('Impossible de lire le fichier local.')
+      }
+      reader.readAsText(file)
     }
     input.click()
   }
