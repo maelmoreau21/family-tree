@@ -1943,8 +1943,16 @@ function attachPanelControls({ chart, card }) {
       const label = chartConfig.singleParentEmptyCardLabel ?? DEFAULT_CHART_CONFIG.singleParentEmptyCardLabel
       emptyLabel.value = label
     }
-    if (ancestryDepthSelect) ancestryDepthSelect.value = depthToSelectValue(chartConfig.ancestryDepth, DEFAULT_CHART_CONFIG.ancestryDepth)
-    if (progenyDepthSelect) progenyDepthSelect.value = depthToSelectValue(chartConfig.progenyDepth, DEFAULT_CHART_CONFIG.progenyDepth)
+    if (ancestryDepthSelect) {
+      const saved = localStorage.getItem('family-tree-ancestry-depth')
+      const val = saved ? Number(saved) : (chartConfig.ancestryDepth ?? DEFAULT_CHART_CONFIG.ancestryDepth)
+      ancestryDepthSelect.value = depthToSelectValue(val, DEFAULT_CHART_CONFIG.ancestryDepth)
+    }
+    if (progenyDepthSelect) {
+      const saved = localStorage.getItem('family-tree-progeny-depth')
+      const val = saved ? Number(saved) : (chartConfig.progenyDepth ?? DEFAULT_CHART_CONFIG.progenyDepth)
+      progenyDepthSelect.value = depthToSelectValue(val, DEFAULT_CHART_CONFIG.progenyDepth)
+    }
     if (miniTreeToggle) miniTreeToggle.checked = chartConfig.miniTree !== false
 
     setOrientationButtonsState(chartConfig.orientation || DEFAULT_CHART_CONFIG.orientation)
@@ -2583,6 +2591,7 @@ function attachPanelControls({ chart, card }) {
     if (value === chartConfig.ancestryDepth) return
 
     chartConfig.ancestryDepth = value
+    localStorage.setItem('family-tree-ancestry-depth', String(value)) // Sync with viewer
 
     try {
       const payload = await loadTree({
@@ -2609,6 +2618,7 @@ function attachPanelControls({ chart, card }) {
     if (value === chartConfig.progenyDepth) return
 
     chartConfig.progenyDepth = value
+    localStorage.setItem('family-tree-progeny-depth', String(value)) // Sync with viewer
 
     try {
       const payload = await loadTree({
@@ -2796,13 +2806,40 @@ async function initialise() {
   lastSnapshotString = null
 
   try {
-    const data = await loadTree()
+    let data = await loadTree()
+    // Validate and Repair Data before setup
+    data = validateAndRepairData(data)
     setupChart(data)
   } catch (error) {
     console.error(error)
     setStatus(`Erreur: ${error.message} `, 'error')
     setChartLoading(false, 'Erreur')
   }
+}
+
+function validateAndRepairData(data) {
+  if (!Array.isArray(data)) return []
+  const validIds = new Set(data.map(d => d.id))
+  let repairCount = 0
+
+  data.forEach(d => {
+    // Check main rels property
+    if (d.rels) {
+      ['parents', 'children', 'spouses'].forEach(key => {
+        if (Array.isArray(d.rels[key])) {
+          const originalLen = d.rels[key].length
+          d.rels[key] = d.rels[key].filter(id => validIds.has(id))
+          if (d.rels[key].length !== originalLen) repairCount++
+        }
+      })
+    }
+  })
+
+  if (repairCount > 0) {
+    console.warn(`[DataRepair] Removed ${repairCount} invalid relationship links (ghosts).`)
+    setStatus(`Données réparées (${repairCount} liens invalides supprimés)`, 'success')
+  }
+  return data
 }
 
 saveBtn?.addEventListener('click', () => {
