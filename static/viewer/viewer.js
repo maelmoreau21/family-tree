@@ -1365,7 +1365,8 @@ async function fetchSubtreeOnce(params, context = {}) {
     }
 
     const normalised = normaliseTreePayload(payload)
-    const persons = Array.isArray(normalised.data) ? normalised.data : []
+    let persons = Array.isArray(normalised.data) ? normalised.data : []
+    persons = validateAndRepairData(persons)
     const metaInfo = normaliseMeta(normalised.meta, persons.length)
     const cachePayload = {
       data: persons,
@@ -1419,7 +1420,8 @@ function fetchFullTree(context = {}) {
     })
     .then(payload => {
       const normalised = normaliseTreePayload(payload)
-      const persons = Array.isArray(normalised.data) ? normalised.data : []
+      let persons = Array.isArray(normalised.data) ? normalised.data : []
+      persons = validateAndRepairData(persons)
       const metaInfo = normaliseMeta(normalised.meta, persons.length)
       latestMeta = metaInfo
       totalPersons = metaInfo.total
@@ -2173,3 +2175,28 @@ setupTabs()
 fetchFullTree({ preservePreferences: false, source: 'system' }).catch(() => {
   setStatus('Impossible de charger les données', 'error')
 })
+
+function validateAndRepairData(data) {
+  if (!Array.isArray(data)) return []
+  const validIds = new Set(data.map(d => d.id))
+  let repairCount = 0
+
+  data.forEach(d => {
+    if (d.rels) {
+      ['parents', 'children', 'spouses'].forEach(key => {
+        if (Array.isArray(d.rels[key])) {
+          const originalLen = d.rels[key].length
+          d.rels[key] = d.rels[key].filter(id => validIds.has(id))
+          if (d.rels[key].length !== originalLen) {
+            repairCount++
+          }
+        }
+      })
+    }
+  })
+
+  if (repairCount > 0) {
+    console.warn('[Viewer] Repaired ' + repairCount + ' broken relationships in dataset.')
+  }
+  return data
+}

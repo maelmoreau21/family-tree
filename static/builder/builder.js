@@ -2809,6 +2809,16 @@ async function initialise() {
     let data = await loadTree()
     // Validate and Repair Data before setup
     data = validateAndRepairData(data)
+
+    // Ensure mainId is valid after repair
+    if (chartConfig.mainId) {
+      const exists = data.some(d => d.id === chartConfig.mainId)
+      if (!exists) {
+        console.warn(`[Builder] Main ID ${chartConfig.mainId} not found in repaired data. Resetting.`)
+        chartConfig.mainId = data[0]?.id || null
+      }
+    }
+
     setupChart(data)
   } catch (error) {
     console.error(error)
