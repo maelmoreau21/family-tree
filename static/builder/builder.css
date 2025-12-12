@@ -2832,3 +2832,74 @@ select:focus {
   color: var(--text-main);
   padding: 0.5rem;
 }
+
+/* --- UI Refinement: Full Width Search --- */
+.search-panel .f3-autocomplete-input-cont,
+.search-panel .f3-autocomplete-input-cont input {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* --- UI Refinement: Builder Right Panel Layout --- */
+
+/* 1. Reset Container Layout */
+.f3-form-cont {
+  display: flex !important;
+  flex-direction: column !important;
+  padding-top: 60px !important;
+  /* Space for Row 1 items + Tabs (Row 2 height) */
+  position: relative !important;
+}
+
+/* 2. Row 1 Items (Absolute Positioning) */
+
+/* Close Button: Top LEFT */
+.f3-close-btn {
+  position: absolute !important;
+  top: 15px !important;
+  left: 15px !important;
+  /* Row 1 Left */
+  right: auto !important;
+  z-index: 20 !important;
+}
+
+/* Add Person Button: Top RIGHT */
+/* Assuming .f3-add-btn or [data-action="add"] */
+.f3-form-cont [data-action="add"],
+.f3-form-cont .f3-add-btn {
+  position: absolute !important;
+  top: 15px !important;
+  right: 15px !important;
+  /* Row 1 Right */
+  left: auto !important;
+  margin: 0 !important;
+  z-index: 20 !important;
+  display: inline-flex !important;
+}
+
+/* 3. Row 2: Tabs (Centered/Full Width below Row 1) */
+.f3-form-cont .tabs-nav {
+  position: absolute !important;
+  top: 55px !important;
+  /* Below Row 1 buttons */
+  left: 0 !important;
+  right: 0 !important;
+  width: auto !important;
+  padding: 0 var(--space-md) !important;
+  display: flex !important;
+  justify-content: center !important;
+  z-index: 10 !important;
+  order: unset !important;
+  /* Reset order logic since we use absolute */
+  margin: 0 !important;
+}
+
+/* 4. The Content Form (Row 3+) */
+.f3-form {
+  margin-top: 40px !important;
+  /* Extra space for Tabs */
+  flex: 1 !important;
+  overflow-y: auto !important;
+  padding-top: var(--space-sm) !important;
+}

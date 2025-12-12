@@ -1833,6 +1833,7 @@ margin: var(--space-sm) 0;
 }
 
 @media (max-width: 768px) {
+
   /* Close Button Styling */
   .f3-close-btn {
     color: var(--text-muted) !important;
@@ -1905,4 +1906,12 @@ g[data-icon='chevron-up'] circle {
   min-height: 0;
   display: flex;
   flex-direction: column;
+}
+
+/* --- UI Refinement: Full Width Search --- */
+.search-block .f3-autocomplete-input-cont,
+.search-block .f3-autocomplete-input-cont input {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
 }
