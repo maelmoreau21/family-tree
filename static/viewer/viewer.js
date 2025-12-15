@@ -2179,24 +2179,38 @@ fetchFullTree({ preservePreferences: false, source: 'system' }).catch(() => {
 function validateAndRepairData(data) {
   if (!Array.isArray(data)) return []
   const validIds = new Set(data.map(d => d.id))
-  let repairCount = 0
+  const newStubs = []
 
   data.forEach(d => {
     if (d.rels) {
       ['parents', 'children', 'spouses'].forEach(key => {
         if (Array.isArray(d.rels[key])) {
-          const originalLen = d.rels[key].length
-          d.rels[key] = d.rels[key].filter(id => validIds.has(id))
-          if (d.rels[key].length !== originalLen) {
-            repairCount++
-          }
+          d.rels[key].forEach(relId => {
+            if (!validIds.has(relId)) {
+              // Instead of removing, create a stub if it doesn't already exist in our stubs list
+              // Check if we already created a stub for this ID invalid this batch
+              if (!newStubs.some(s => s.id === relId)) {
+                newStubs.push({
+                  id: relId,
+                  data: {
+                    'first name': '...',
+                    'last name': '' // Visual indicator of partial load
+                  },
+                  rels: {} // Stubs have no edges initially
+                })
+                // Add to validIds so we don't duplicate
+                validIds.add(relId)
+              }
+            }
+          })
         }
       })
     }
   })
 
-  if (repairCount > 0) {
-    console.warn('[Viewer] Repaired ' + repairCount + ' broken relationships in dataset.')
+  if (newStubs.length > 0) {
+    console.debug('[Viewer] Created ' + newStubs.length + ' stubs for off-screen relationships.')
+    return [...data, ...newStubs]
   }
   return data
 }
