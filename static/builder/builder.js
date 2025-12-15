@@ -2822,19 +2822,21 @@ async function initialise() {
   lastSnapshotString = null
 
   try {
-    let data = await loadTree({
+    let payload = await loadTree({
       mainId: chartConfig.mainId,
       ancestryDepth: chartConfig.ancestryDepth,
       progenyDepth: chartConfig.progenyDepth
     })
-    // Validate and Repair Data before setup
-    data = validateAndRepairData(data)
 
-    // Ensure mainId is valid after repair
+    // Validate and Repair Data (data is inside payload.data usually)
+    let persons = Array.isArray(payload.data) ? payload.data : []
+    persons = validateAndRepairData(persons)
+    payload.data = persons
+
     // Ensure mainId is valid after repair. If missing or invalid, default to first person.
-    if (data.length > 0) {
-      if (!chartConfig.mainId || !data.some(d => d.id === chartConfig.mainId)) {
-        const newMain = data[0].id
+    if (persons.length > 0) {
+      if (!chartConfig.mainId || !persons.some(d => d.id === chartConfig.mainId)) {
+        const newMain = persons[0].id
         console.warn(`[Builder] Main ID ${chartConfig.mainId} invalid or missing. Resetting to ${newMain}.`)
         chartConfig.mainId = newMain
       }
@@ -2843,7 +2845,11 @@ async function initialise() {
       chartConfig.mainId = null
     }
 
-    setupChart(data)
+    // Sync payload config with our local valid chartConfig to prevent setupChart from overwriting it with stale data
+    if (!payload.config) payload.config = {}
+    payload.config.mainId = chartConfig.mainId
+
+    setupChart(payload)
   } catch (error) {
     console.error(error)
     setStatus(`Erreur: ${error.message} `, 'error')
