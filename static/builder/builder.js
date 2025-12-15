@@ -2831,12 +2831,16 @@ async function initialise() {
     data = validateAndRepairData(data)
 
     // Ensure mainId is valid after repair
-    if (chartConfig.mainId) {
-      const exists = data.some(d => d.id === chartConfig.mainId)
-      if (!exists) {
-        console.warn(`[Builder] Main ID ${chartConfig.mainId} not found in repaired data. Resetting.`)
-        chartConfig.mainId = data[0]?.id || null
+    // Ensure mainId is valid after repair. If missing or invalid, default to first person.
+    if (data.length > 0) {
+      if (!chartConfig.mainId || !data.some(d => d.id === chartConfig.mainId)) {
+        const newMain = data[0].id
+        console.warn(`[Builder] Main ID ${chartConfig.mainId} invalid or missing. Resetting to ${newMain}.`)
+        chartConfig.mainId = newMain
       }
+    } else {
+      // Empty data
+      chartConfig.mainId = null
     }
 
     setupChart(data)
