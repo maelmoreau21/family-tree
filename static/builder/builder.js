@@ -2822,11 +2822,7 @@ async function initialise() {
   lastSnapshotString = null
 
   try {
-    let payload = await loadTree({
-      mainId: chartConfig.mainId,
-      ancestryDepth: chartConfig.ancestryDepth,
-      progenyDepth: chartConfig.progenyDepth
-    })
+    let payload = await loadTree()
 
     // Validate and Repair Data (data is inside payload.data usually)
     let persons = Array.isArray(payload.data) ? payload.data : []
