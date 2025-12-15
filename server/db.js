@@ -694,10 +694,21 @@ export async function getTreeSubset(options = {}) {
          SELECT $1::text as id
          UNION SELECT id FROM ancestors
          UNION SELECT id FROM descendants
+       ),
+       spouses AS (
+         SELECT jsonb_array_elements_text(p.metadata->'rels'->'spouses') as id
+         FROM persons p
+         JOIN relatives r ON p.id = r.id
+         WHERE p.metadata->'rels'->'spouses' IS NOT NULL AND jsonb_typeof(p.metadata->'rels'->'spouses') = 'array'
+       ),
+       final_ids AS (
+         SELECT id FROM relatives
+         UNION
+         SELECT id FROM spouses WHERE ${includeSpouses}
        )
        SELECT p.id, p.given_name, p.family_name, p.birth_date, p.metadata
        FROM persons p
-       JOIN relatives r ON p.id = r.id
+       JOIN final_ids r ON p.id = r.id
      `
     // Note: SQL params are $1=rootId, $2=ancestryLimit, $3=progenyLimit
     // This only gets linear relatives. Siblings/Spouses need more.
