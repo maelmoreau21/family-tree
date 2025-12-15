@@ -1344,7 +1344,7 @@ function setupChart(payload) {
   } catch (e) {
     console.debug('[Builder] No main datum found (empty tree?)', e)
   }
-  renderBreadcrumbTrail(chart.store?.getMainId?.() || initialMainId || null)
+  renderBreadcrumbTrail(chart.store?.getMainId?.() || chartConfig.mainId || null)
 
   const initialSnapshot = getSnapshot()
   lastSnapshotString = initialSnapshot ? JSON.stringify(initialSnapshot) : null
@@ -2822,7 +2822,11 @@ async function initialise() {
   lastSnapshotString = null
 
   try {
-    let data = await loadTree()
+    let data = await loadTree({
+      mainId: chartConfig.mainId,
+      ancestryDepth: chartConfig.ancestryDepth,
+      progenyDepth: chartConfig.progenyDepth
+    })
     // Validate and Repair Data before setup
     data = validateAndRepairData(data)
 
