@@ -29,7 +29,7 @@ const DOCUMENT_DIR = path.resolve(ROOT_DIR, 'document')
 
 const TREE_DATA_DIR = path.resolve(process.env.TREE_DATA_DIR || path.join(ROOT_DIR, 'data'))
 const TREE_BACKUP_DIR = path.resolve(process.env.TREE_BACKUP_DIR || path.join(TREE_DATA_DIR, 'backups'))
-const TREE_BACKUP_LIMIT = Math.max(0, Number.parseInt(process.env.TREE_BACKUP_LIMIT || '50', 10))
+const TREE_BACKUP_LIMIT = Math.max(0, Number.parseInt(process.env.TREE_BACKUP_LIMIT || '10', 10))
 const VIEWER_PORT = Number.parseInt(process.env.VIEWER_PORT || '7920', 10)
 const BUILDER_PORT = Number.parseInt(process.env.BUILDER_PORT || '7921', 10)
 const DEFAULT_MAX_UPLOAD_MB = Math.max(1, Number.parseInt(process.env.TREE_MAX_UPLOAD_MB || '5', 10))

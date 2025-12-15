@@ -1335,9 +1335,14 @@ function setupChart(payload) {
 
   chart.updateTree({ initial: true, tree_position: 'fit' })
 
-  const mainDatum = chart.getMainDatum()
-  if (mainDatum) {
-    editTreeInstance.open(mainDatum)
+  let mainDatum = null
+  try {
+    mainDatum = chart.getMainDatum()
+    if (mainDatum) {
+      editTreeInstance.open(mainDatum)
+    }
+  } catch (e) {
+    console.debug('[Builder] No main datum found (empty tree?)', e)
   }
   renderBreadcrumbTrail(chart.store?.getMainId?.() || initialMainId || null)
 
@@ -1377,7 +1382,11 @@ function setupChart(payload) {
         }
         chart.store.updateData([newPerson])
         chart.updateTree({ initial: true })
-        editTreeInstance.open(chart.getMainDatum())
+        try {
+          editTreeInstance.open(chart.getMainDatum())
+        } catch (e) {
+          console.warn('[Builder] Could not open new root person', e)
+        }
         setStatus('Nouvel arbre créé', 'success')
       })
     }
@@ -2484,8 +2493,15 @@ function attachPanelControls({ chart, card }) {
 
     updateCardDisplay({ suppressSave })
 
-    const datum = editTreeInstance.store.getMainDatum()
-    if (datum) editTreeInstance.open(datum)
+    try {
+      if (editTreeInstance && editTreeInstance.store) {
+        const datum = editTreeInstance.store.getMainDatum()
+        if (datum) editTreeInstance.open(datum)
+      }
+    } catch (e) {
+      // Ignore if main datum is missing (e.g. empty tree)
+      console.warn('[Builder] Could not open main datum in editor:', e.message)
+    }
   }
 
   function requestFieldDefinition() {
