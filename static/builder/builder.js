@@ -150,7 +150,7 @@ function setChartLoading(isLoading, message = '') {
     chartLoadingEl.classList.remove('is-hidden')
     chartLoadingEl.setAttribute('aria-hidden', 'false')
     if (chartLoadingLabel) {
-      chartLoadingLabel.textContent = message || 'ChargementÃ¢â‚¬Â¦'
+      chartLoadingLabel.textContent = message || 'Chargement...'
     }
   } else {
     const hide = () => {
@@ -286,7 +286,7 @@ function renderBreadcrumbTrail(mainId) {
   if (!mainId || !activeChartInstance?.store?.getTreeDatum) {
     const placeholder = document.createElement('span')
     placeholder.className = 'breadcrumb-empty'
-    placeholder.textContent = 'SÃƒÂ©lectionnez une personne pour afficher son parcours.'
+    placeholder.textContent = 'Sélectionnez une personne pour afficher son parcours.'
     breadcrumbRoot.append(placeholder)
     return
   }
@@ -414,22 +414,22 @@ if (panelToggleBtn) {
 }
 
 const DISPLAY_FIELD_LABELS = new Map([
-  ['first name', 'PrÃ©nom'],
-  ['first names', 'PrÃ©noms'],
+  ['first name', 'Prénom'],
+  ['first names', 'Prénoms'],
   ['last name', 'Nom'],
   ['birthday', 'Date de naissance'],
-  ['death', 'Date de DÃ©cÃ¨s'],
+  ['death', 'Date de Décès'],
   ['gender', 'Genre'],
   ['avatar', 'Photo de profil'],
   ['photo', 'Photo'],
   ['picture', 'Portrait'],
   ['bio', 'Biographie'],
-  ['metiers', 'MÃ©tiers'],
-  ['nationality', 'NationalitÃ©'],
+  ['metiers', 'Métiers'],
+  ['nationality', 'Nationalité'],
   ['occupation', 'Profession'],
-  ['location', 'Lieu de rÃ©sidence'],
+  ['location', 'Lieu de résidence'],
   ['birthplace', 'Lieu de naissance'],
-  ['deathplace', 'Lieu de dÃ©cÃ¨s'],
+  ['deathplace', 'Lieu de décès'],
   ['union date', "Date d'union"],
   ['union place', "Lieu d'union"],
   ['union paragraph', "Paragraphe d'union"],
@@ -458,25 +458,25 @@ const DISPLAY_DEFAULTS = {
   ],
   2: [
     { value: 'birthday', checked: true },
-    { value: 'death', label: 'Date de DÃ©cÃ¨s', checked: false },
+    { value: 'death', label: 'Date de Décès', checked: false },
     { value: 'avatar', checked: false },
     { value: 'gender', checked: false }
   ]
 }
 
 const EDITABLE_DEFAULTS = [
-  { value: 'first name', label: 'PrÃ©nom', checked: true },
-  { value: 'first names', label: 'PrÃ©noms', checked: true },
+  { value: 'first name', label: 'Prénom', checked: true },
+  { value: 'first names', label: 'Prénoms', checked: true },
   { value: 'last name', label: 'Nom', checked: true },
   { value: 'maiden name', label: 'Nom de naissance', checked: true },
   { value: 'birthday', label: 'Date de naissance', checked: true },
-  { value: 'death', label: 'Date de DÃ©cÃ¨s', checked: true },
+  { value: 'death', label: 'Date de Décès', checked: true },
   { value: 'birthplace', label: 'Lieu de naissance', checked: true },
-  { value: 'deathplace', label: 'Lieu de DÃ©cÃ¨s', checked: true },
+  { value: 'deathplace', label: 'Lieu de Décès', checked: true },
   { value: 'avatar', label: 'Avatar', checked: true },
   { value: 'gender', label: 'Genre', checked: true },
-  { value: 'nationality', label: 'NationalitÃ©', checked: true },
-  { value: 'metiers', label: 'MÃ©tiers', checked: true },
+  { value: 'nationality', label: 'Nationalité', checked: true },
+  { value: 'metiers', label: 'Métiers', checked: true },
   { value: 'bio', label: 'Biographie', checked: false }
 ]
 
@@ -632,7 +632,7 @@ function createSearchOptionFromDatum(datum) {
       return
     }
     if (key === 'death') {
-      addMeta(`Ã¢Å“Â ${trimmed}`)
+      addMeta(`âÅ“ ${trimmed}`)
       return
     }
     if (key === 'maiden name') {
@@ -659,7 +659,7 @@ function createSearchOptionFromDatum(datum) {
     searchText,
     optionHtml: (option) => {
       const safeMetaParts = metaParts.map(part => escapeHtml(part))
-      const meta = safeMetaParts.length ? `<small>${safeMetaParts.join(' Ã‚Â· ')}</small>` : ''
+      const meta = safeMetaParts.length ? `<small>${safeMetaParts.join(' à‚· ')}</small>` : ''
       const safeLabel = option.label_html || escapeHtml(option.label)
       return `<div>${safeLabel}${meta ? `<div class="f3-autocomplete-meta">${meta}</div>` : ''}</div>`
     }
@@ -1057,8 +1057,8 @@ function applyChartConfigToChart(chart) {
 }
 
 async function loadTree(params = {}) {
-  setStatus('Chargement des donnÃ©esâ€¦')
-  setChartLoading(true, 'Chargement des donnÃ©esâ€¦')
+  setStatus('Chargement des donnéesâ€¦')
+  setChartLoading(true, 'Chargement des donnéesâ€¦')
 
   const url = new URL('/api/tree', window.location.origin)
   if (params.ancestryDepth !== undefined && params.ancestryDepth !== null) url.searchParams.set('ancestryDepth', params.ancestryDepth)
@@ -1067,7 +1067,7 @@ async function loadTree(params = {}) {
 
   const response = await fetch(url.toString(), { cache: 'no-store' })
   if (!response.ok) {
-    throw new Error(`Ã‰chec du chargement (${response.status})`)
+    throw new Error(`à‰chec du chargement (${response.status})`)
   }
   return response.json()
 }
@@ -1087,7 +1087,7 @@ async function persistChanges(snapshot, { immediate = false } = {}) {
 
   if (isSaving) {
     queuedSave = { snapshot: payload, immediate }
-    setStatus('Sauvegarde dÃ©jÃ  en coursâ€¦', 'saving')
+    setStatus('Sauvegarde déjà en coursâ€¦', 'saving')
     return
   }
 
@@ -1102,11 +1102,11 @@ async function persistChanges(snapshot, { immediate = false } = {}) {
     })
 
     if (!response.ok && response.status !== 204) {
-      throw new Error(`Serveur a retournÃ© ${response.status}`)
+      throw new Error(`Serveur a retourné ${response.status}`)
     }
 
     lastSnapshotString = JSON.stringify(payload)
-    setStatus('Modifications enregistrÃ©es âœ…', 'success')
+    setStatus('Modifications enregistrées âœ…', 'success')
   } catch (error) {
     console.error(error)
     setStatus(`Erreur d'enregistrement: ${error.message}`, 'error')
@@ -1139,7 +1139,7 @@ function getSnapshot() {
 
 function scheduleAutoSave() {
   destroyTimer()
-  setStatus('Modification dÃ©tectÃ©eâ€¦ sauvegarde automatique imminente', 'saving')
+  setStatus('Modification détectéeâ€¦ sauvegarde automatique imminente', 'saving')
   autoSaveTimer = setTimeout(() => {
     const snapshot = getSnapshot()
     if (!snapshot) return
@@ -1276,7 +1276,7 @@ function setupChart(payload) {
       })
     }
   } catch (e) {
-    console.warn('builder: impossible dâ€™attacher les gestionnaires de clic sur les cartes', e)
+    console.warn('builder: impossible d’attacher les gestionnaires de clic sur les cartes', e)
   }
 
   let panelControlAPI = null
@@ -1375,8 +1375,8 @@ function setupChart(payload) {
   const totalPersons = dataArray.length
   setStatus(
     totalPersons > 0
-      ? `Ã‰diteur prÃªt âœ… â€“ ${totalPersons} personne(s) chargÃ©e(s)`
-      : 'Fichier de donnÃ©es vide',
+      ? `à‰diteur prêt âœ… â€“ ${totalPersons} personne(s) chargée(s)`
+      : 'Fichier de données vide',
     totalPersons > 0 ? 'success' : 'error'
   )
   setChartLoading(false)
@@ -1390,7 +1390,7 @@ function setupChart(payload) {
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
-            CrÃ©er un nouvel arbre
+            Créer un nouvel arbre
           </button>
         </div>
       `
@@ -1411,7 +1411,7 @@ function setupChart(payload) {
         } catch (e) {
           console.warn('[Builder] Could not open new root person', e)
         }
-        setStatus('Nouvel arbre crÃ©Ã©', 'success')
+        setStatus('Nouvel arbre créé', 'success')
       })
     }
   }
@@ -1496,14 +1496,14 @@ function attachPanelControls({ chart, card }) {
   <fieldset class="media-tools" data-role="image-uploader">
     <legend>Images</legend>
     <p class="group-hint">Importez une image depuis votre ordinateur. Taille max&nbsp;: 5&nbsp;Mo.</p>
-    <label for="assetUpload" class="file-label">TÃ©lÃ©verser une image</label>
+    <label for="assetUpload" class="file-label">Téléverser une image</label>
     <input type="file" id="assetUpload" accept="image/*">
-    <p class="hint" data-role="upload-feedback" data-status="info">Formats recommandÃ©s&nbsp;: JPG, PNG, WebP.</p>
+    <p class="hint" data-role="upload-feedback" data-status="info">Formats recommandés&nbsp;: JPG, PNG, WebP.</p>
     <div class="upload-result hidden" data-role="upload-result" data-url="">
-      <span class="upload-label">Image disponible Ã &nbsp;:</span>
+      <span class="upload-label">Image disponible à&nbsp;:</span>
       <code class="upload-url" data-role="upload-url"></code>
       <div class="upload-actions">
-        <button type="button" class="ghost small" data-action="copy-upload-url">Copier lâ€™URL</button>
+        <button type="button" class="ghost small" data-action="copy-upload-url">Copier l’URL</button>
         <a class="ghost small hidden" data-role="open-upload" href="#" target="_blank" rel="noopener">Ouvrir</a>
         <button type="button" class="ghost small" data-action="delete-upload">Supprimer la photo</button>
       </div>
@@ -1574,7 +1574,7 @@ function attachPanelControls({ chart, card }) {
     try {
       return editTreeInstance.store.getDatum(imageUploaderCurrentDatumId) || null
     } catch (error) {
-      console.error('Impossible de rÃƒÂ©cupÃƒÂ©rer le profil actif pour le tÃƒÂ©lÃƒÂ©versement', error)
+      console.error('Impossible de récupérer le profil actif pour le téléversement', error)
       return null
     }
   }
@@ -1634,8 +1634,8 @@ function attachPanelControls({ chart, card }) {
     if (!absoluteUrl) return
 
     if (!isSafeImageUrl(absoluteUrl)) {
-      setUploadFeedback('URL dâ€™image non sÃ»re ou format non supportÃ©.', 'error')
-      setStatus('URL dâ€™image non sÃ»re', 'error')
+      setUploadFeedback('URL d’image non sûre ou format non supporté.', 'error')
+      setStatus('URL d’image non sûre', 'error')
       return
     }
 
@@ -1677,7 +1677,7 @@ function attachPanelControls({ chart, card }) {
       try {
         chart.updateTree({ initial: false, tree_position: 'inherit' })
       } catch (error) {
-        console.error('Impossible de rafraÃ®chir le graphique aprÃ¨s mise Ã  jour de lâ€™image', error)
+        console.error('Impossible de rafraîchir le graphique après mise à jour de l’image', error)
       }
       scheduleAutoSave()
     }
@@ -1688,17 +1688,17 @@ function attachPanelControls({ chart, card }) {
     if (origin === 'upload') {
       if (appliedSomewhere) {
         const sizeMessage = sizeBytes ? ` (${formatBytes(sizeBytes)})` : ''
-        setUploadFeedback(`Image tÃ©lÃ©versÃ©e${sizeMessage} et appliquÃ©e au profil.`, 'success')
-        setStatus('Image appliquÃ©e au profil âœ…', 'success')
+        setUploadFeedback(`Image téléversée${sizeMessage} et appliquée au profil.`, 'success')
+        setStatus('Image appliquée au profil âœ…', 'success')
       } else {
         const sizeMessage = sizeBytes ? ` (${formatBytes(sizeBytes)})` : ''
-        setUploadFeedback(`Image tÃ©lÃ©versÃ©e${sizeMessage}. SÃ©lectionnez un profil Ã©ditable pour lâ€™appliquer.`, 'info')
+        setUploadFeedback(`Image téléversée${sizeMessage}. Sélectionnez un profil éditable pour l’appliquer.`, 'info')
       }
     } else if (appliedSomewhere) {
-      setUploadFeedback('Image appliquÃ©e au profil.', 'success')
-      setStatus('Image appliquÃƒÂ©e au profil Ã¢Å“â€¦', 'success')
+      setUploadFeedback('Image appliquée au profil.', 'success')
+      setStatus('Image appliquée au profil ✅', 'success')
     } else {
-      setUploadFeedback('SÃƒÂ©lectionnez un profil ÃƒÂ©ditable pour appliquer lÃ¢â‚¬â„¢image.', 'info')
+      setUploadFeedback('Sélectionnez un profil éditable pour appliquer lââ‚¬â„¢image.', 'info')
     }
   }
 
@@ -1711,13 +1711,13 @@ function attachPanelControls({ chart, card }) {
 
     if (!existingValue) {
       clearUploadResult()
-      setUploadFeedback('Formats recommandÃ©s : JPG, PNG, WebP.', 'info')
+      setUploadFeedback('Formats recommandés : JPG, PNG, WebP.', 'info')
       return
     }
 
     const absoluteUrl = showUploadResult(existingValue, { silent: true })
-    // manual URL input removed Ã¢â‚¬â€ nothing to update
-    setUploadFeedback('Image actuelle du profil chargÃƒÂ©e.', 'info')
+    // manual URL input removed ââ‚¬â€ nothing to update
+    setUploadFeedback('Image actuelle du profil chargée.', 'info')
   }
 
   function restoreImageUploaderToPanel() {
@@ -1734,7 +1734,7 @@ function attachPanelControls({ chart, card }) {
     }
     imageUploader.classList.remove('is-modal-context')
     clearUploadResult()
-    setUploadFeedback('Importez une image depuis votre ordinateur. Formats recommandÃ©s : JPG, PNG, WebP.', 'info')
+    setUploadFeedback('Importez une image depuis votre ordinateur. Formats recommandés : JPG, PNG, WebP.', 'info')
   }
 
   function injectImageUploaderIntoForm(form) {
@@ -1864,15 +1864,15 @@ function attachPanelControls({ chart, card }) {
       }
     }
     assetUploadResult.classList.remove('hidden')
-    // manual URL input removed Ã¢â‚¬â€ nothing to update
-    if (!silent) setUploadFeedback('Image prÃƒÂªte ÃƒÂ  ÃƒÂªtre appliquÃƒÂ©e.', 'info')
+    // manual URL input removed ââ‚¬â€ nothing to update
+    if (!silent) setUploadFeedback('Image pràªte à  àªtre appliquée.', 'info')
 
     return absoluteUrl
   }
 
-  async function copyToClipboard(value, { successMessage = 'CopiÃƒÂ© dans le presse-papiers Ã¢Å“â€¦', errorMessage = 'Impossible de copier.' } = {}) {
+  async function copyToClipboard(value, { successMessage = 'Copié dans le presse-papiers ✅', errorMessage = 'Impossible de copier.' } = {}) {
     if (!value) {
-      setUploadFeedback('Aucune URL ÃƒÂ  copier.', 'error')
+      setUploadFeedback('Aucune URL à  copier.', 'error')
       return
     }
     try {
@@ -1903,7 +1903,7 @@ function attachPanelControls({ chart, card }) {
     clearUploadResult()
 
     if (!file.type || !file.type.startsWith('image/')) {
-      setUploadFeedback('Format non pris en charge. SÃƒÂ©lectionnez une image (JPEG, PNG, WebPÃ¢â‚¬Â¦).', 'error')
+      setUploadFeedback('Format non pris en charge. Sélectionnez une image (JPEG, PNG, WebP...).', 'error')
       return
     }
 
@@ -1913,15 +1913,15 @@ function attachPanelControls({ chart, card }) {
       return
     }
 
-    setUploadFeedback('TÃƒÂ©lÃƒÂ©versement en coursÃ¢â‚¬Â¦', 'saving')
-    setStatus('TÃƒÂ©lÃƒÂ©versement de lÃ¢â‚¬â„¢imageÃ¢â‚¬Â¦', 'saving')
+    setUploadFeedback('Téléversement en cours...', 'saving')
+    setStatus('Téléversement de lââ‚¬â„¢image...', 'saving')
 
     const formData = new FormData()
     formData.append('file', file, file.name)
     if (imageUploaderCurrentDatumId) {
       formData.append('personId', imageUploaderCurrentDatumId)
     }
-    // No need to send field anymore Ã¢â‚¬â€ server will store the upload as /document/<personId>/profil.<ext>
+    // No need to send field anymore ââ‚¬â€ server will store the upload as /document/<personId>/profil.<ext>
 
     try {
       const response = await fetch('/api/document', {
@@ -1943,22 +1943,22 @@ function attachPanelControls({ chart, card }) {
       const payload = await response.json()
       const uploadedUrl = payload?.url
       if (!uploadedUrl) {
-        throw new Error('RÃƒÂ©ponse du serveur invalide (URL manquante).')
+        throw new Error('Réponse du serveur invalide (URL manquante).')
       }
 
       const absoluteUrl = showUploadResult(uploadedUrl)
       applyImageToActiveProfile(absoluteUrl, { origin: 'upload', sizeBytes: file.size })
     } catch (error) {
       console.error(error)
-      setUploadFeedback(error.message || 'Ãƒâ€°chec du tÃƒÂ©lÃƒÂ©versement.', 'error')
-      setStatus(`TÃƒÂ©lÃƒÂ©versement ÃƒÂ©chouÃƒÂ©: ${error.message || 'Erreur inconnue'} `, 'error')
+      setUploadFeedback(error.message || 'àâ€°chec du téléversement.', 'error')
+      setStatus(`Téléversement échoué: ${error.message || 'Erreur inconnue'} `, 'error')
       clearUploadResult()
     }
   }
 
   clearUploadResult()
   if (assetUploadFeedback) {
-    setUploadFeedback(assetUploadFeedback.textContent || 'Formats recommandÃƒÂ©s : JPG, PNG, WebP.', 'info')
+    setUploadFeedback(assetUploadFeedback.textContent || 'Formats recommandés : JPG, PNG, WebP.', 'info')
   }
 
   function setOrientationButtonsState(orientation) {
@@ -2061,12 +2061,12 @@ function attachPanelControls({ chart, card }) {
   function updateMainProfileDisplay(id) {
     if (!mainProfileName) return
     if (!id) {
-      mainProfileName.textContent = 'Ã¢â‚¬â€'
+      mainProfileName.textContent = 'ââ‚¬â€'
       return
     }
     const datum = editTreeInstance?.store?.getDatum?.(id)
     if (!datum) {
-      mainProfileName.textContent = 'Ã¢â‚¬â€'
+      mainProfileName.textContent = 'ââ‚¬â€'
       return
     }
     mainProfileName.textContent = buildPersonLabel(datum)
@@ -2193,7 +2193,7 @@ function attachPanelControls({ chart, card }) {
         chart.updateTree({ initial: false, tree_position: 'main_to_middle' })
       }
     } catch (error) {
-      console.error('Impossible de recentrer le graphique aprÃƒÂ¨s sÃƒÂ©lection du profil', error)
+      console.error('Impossible de recentrer le graphique après sélection du profil', error)
     }
     const datum = editTreeInstance?.store?.getDatum?.(id) || null
     if (focusSearch) {
@@ -2529,14 +2529,14 @@ function attachPanelControls({ chart, card }) {
   }
 
   function requestFieldDefinition() {
-    const rawValue = prompt('Nom du champ (clÃ© dans vos donnÃ©es) ?')
+    const rawValue = prompt('Nom du champ (clé dans vos données) ?')
     if (!rawValue) return null
     const value = rawValue.trim()
     if (!value) return null
 
     const key = normalizeFieldKey(value)
     const suggestedLabel = fieldLabelStore.get(key) || value
-    const labelInput = prompt('LibellÃ© affichÃ© pour ce champ ?', suggestedLabel)
+    const labelInput = prompt('Libellé affiché pour ce champ ?', suggestedLabel)
     const displayLabel = (labelInput ?? suggestedLabel).trim() || value
 
     return { value, label: displayLabel, key }
@@ -2765,8 +2765,8 @@ function attachPanelControls({ chart, card }) {
     const storedUrl = assetUploadResult?.dataset?.url || assetUploadUrlOutput?.textContent?.trim()
     if (storedUrl) applyImageToActiveProfile(storedUrl, { origin: 'manual' })
     copyToClipboard(storedUrl, {
-      successMessage: 'URL du tÃ©lÃ©versement copiÃ©e âœ…',
-      errorMessage: 'Impossible de copier lâ€™URL du tÃ©lÃ©versement.'
+      successMessage: 'URL du téléversement copiée âœ…',
+      errorMessage: 'Impossible de copier l’URL du téléversement.'
     })
   })
 
@@ -2774,7 +2774,7 @@ function attachPanelControls({ chart, card }) {
     const datum = getActiveDatum()
     const personId = imageUploaderCurrentDatumId || (datum && datum.id)
     if (!personId) {
-      setUploadFeedback('SÃ©lectionnez un profil Ã©ditable pour supprimer sa photo.', 'error')
+      setUploadFeedback('Sélectionnez un profil éditable pour supprimer sa photo.', 'error')
       return
     }
 
@@ -2796,7 +2796,7 @@ function attachPanelControls({ chart, card }) {
 
       // Clear uploader UI and remove image from active datum
       clearUploadResult()
-      setUploadFeedback('Photo supprimÃ©e.', 'success')
+      setUploadFeedback('Photo supprimée.', 'success')
       // If the active datum had the image URL in its data, remove it
       try {
         const targetFieldId = getActiveImageFieldId()
@@ -2810,7 +2810,7 @@ function attachPanelControls({ chart, card }) {
       }
     } catch (error) {
       console.error(error)
-      setUploadFeedback(error.message || 'Ã‰chec de la suppression.', 'error')
+      setUploadFeedback(error.message || 'à‰chec de la suppression.', 'error')
     }
   })
 
@@ -2909,7 +2909,7 @@ function validateAndRepairData(data) {
 
   if (newStubs.length > 0) {
     console.warn(`[DataRepair] Created ${newStubs.length} stubs for off-screen relationships.`)
-    setStatus(`Chargement partiel (${newStubs.length} personnes masquÃ©es)`, 'success')
+    setStatus(`Chargement partiel (${newStubs.length} personnes masquées)`, 'success')
     return [...data, ...newStubs]
   }
   return data
@@ -3019,9 +3019,9 @@ const tools = {
     if (!activeChartInstance) return
     const store = activeChartInstance.store
     const mainId = store.getMainId()
-    if (!mainId) return alert('Veuillez sÃ©lectionner une personne d\'abord.')
+    if (!mainId) return alert('Veuillez sélectionner une personne d\'abord.')
 
-    if (!confirm(`ÃŠtes - vous sÃ»r de vouloir supprimer la branche ${direction === 'asc' ? 'ascendance' : 'descendance'} de la personne sÃ©lectionnÃ©e ? Cette action est irrÃ©versible.`)) return
+    if (!confirm(`àŠtes - vous sûr de vouloir supprimer la branche ${direction === 'asc' ? 'ascendance' : 'descendance'} de la personne sélectionnée ? Cette action est irréversible.`)) return
 
     const data = store.getData()
     const idsToDelete = new Set()
@@ -3058,7 +3058,7 @@ const tools = {
     const snapshot = getSnapshot()
     if (snapshot) persistChanges(snapshot, { immediate: true })
 
-    alert('Branche supprimÃ©e avec succÃ¨s.')
+    alert('Branche supprimée avec succès.')
   },
 
   importBranch: () => {
@@ -3066,13 +3066,13 @@ const tools = {
     if (!activeChartInstance) return
     const store = activeChartInstance.store
     const mainId = store.getMainId()
-    if (!mainId) return alert('Veuillez sÃ©lectionner une personne d\'abord.')
+    if (!mainId) return alert('Veuillez sélectionner une personne d\'abord.')
 
     const currentData = store.getData()
     const mainDatum = currentData.find(d => d.id === mainId)
     const mainName = mainDatum ? `${mainDatum.data['first name']} ${mainDatum.data['last name']} ` : mainId
 
-    setStatus('SÃ©lection du fichier...', 'saving')
+    setStatus('Sélection du fichier...', 'saving')
 
     const input = document.createElement('input')
     input.type = 'file'
@@ -3085,7 +3085,7 @@ const tools = {
         try {
           const content = event.target.result
 
-          if (!window.GedcomParser) throw new Error('Le parseur GEDCOM n\'est pas chargÃ©.')
+          if (!window.GedcomParser) throw new Error('Le parseur GEDCOM n\'est pas chargé.')
           const parser = new window.GedcomParser()
           const importedData = parser.parse(content)
 
@@ -3112,7 +3112,7 @@ const tools = {
             // Update relationships with new IDs
             importedData.forEach(d => {
               if (d.rels) {
-                if (d.rels.parents) d.rels.parents = d.rels.parents.map(pid => idMap.get(pid) || pid).filter(id => idMap.has(pid) || true)
+                if (d.rels.parents) d.rels.parents = d.rels.parents.map(pid => idMap.get(pid) || pid)
                 if (d.rels.children) d.rels.children = d.rels.children.map(cid => idMap.get(cid) || cid)
                 if (d.rels.spouses) d.rels.spouses = d.rels.spouses.map(sid => idMap.get(sid) || sid)
               }
@@ -3156,7 +3156,7 @@ const tools = {
             const snapshot = getSnapshot()
             if (snapshot) persistChanges(snapshot, { immediate: true })
 
-            setStatus('Branche fusionnÃ©e et sauvegardÃ©e !', 'success')
+            setStatus('Branche fusionnée et sauvegardée !', 'success')
           })
 
         } catch (err) {
@@ -3202,11 +3202,11 @@ const tools = {
           setStatus('Analyse du GEDCOM...', 'saving')
           const content = event.target.result
           // Instantiate parser (assuming loaded via script tag as window.GedcomParser)
-          if (!window.GedcomParser) throw new Error('Le parseur GEDCOM n\'est pas chargÃ©.')
+          if (!window.GedcomParser) throw new Error('Le parseur GEDCOM n\'est pas chargé.')
           const parser = new window.GedcomParser()
           const data = parser.parse(content)
 
-          setStatus('Envoi des donnÃ©es...', 'saving')
+          setStatus('Envoi des données...', 'saving')
           const payload = {
             data: data,
             config: {},
@@ -3224,8 +3224,8 @@ const tools = {
             throw new Error(err.message || response.statusText)
           }
 
-          setStatus('Import rÃ©ussi ! Rechargement...', 'success')
-          alert('Arbre GEDCOM importÃ© avec succÃ¨s. La page va se recharger.')
+          setStatus('Import réussi ! Rechargement...', 'success')
+          alert('Arbre GEDCOM importé avec succès. La page va se recharger.')
           window.location.reload()
         } catch (error) {
           console.error(error)
