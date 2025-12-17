@@ -2975,9 +2975,11 @@ function openSelectiveImportModal(importedData, targetName, onConfirm) {
 
   confirmBtn.onclick = () => {
     if (selectedId) {
-      onConfirm(selectedId)
+      const direction = document.querySelector('input[name="importDirection"]:checked').value
+      onConfirm(selectedId, direction)
       cleanup()
     }
+    // ... code continues
   }
 
   cancelBtn.onclick = () => {
@@ -3035,7 +3037,7 @@ const tools = {
     alert('Branche supprimée avec succès.')
   },
 
-  importBranch: (direction) => {
+  importBranch: () => {
     if (!activeChartInstance) return
     const store = activeChartInstance.store
     const mainId = store.getMainId()
@@ -3044,6 +3046,8 @@ const tools = {
     const currentData = store.getData()
     const mainDatum = currentData.find(d => d.id === mainId)
     const mainName = mainDatum ? `${mainDatum.data['first name']} ${mainDatum.data['last name']} ` : mainId
+
+    setStatus('Sélection du fichier...', 'saving')
 
     const input = document.createElement('input')
     input.type = 'file'
@@ -3055,56 +3059,69 @@ const tools = {
       reader.onload = (event) => {
         try {
           const content = event.target.result
-          const parser = new GedcomParser()
+
+          if (!window.GedcomParser) throw new Error('Le parseur GEDCOM n\'est pas chargé.')
+          const parser = new window.GedcomParser()
           const importedData = parser.parse(content)
+
+          setStatus('Analyse de la branche...', 'saving')
 
           if (!importedData || importedData.length === 0) throw new Error('Fichier GEDCOM vide ou invalide')
 
           // Open Modal to select the link target in the imported file
-          openSelectiveImportModal(importedData, mainName, (selectedImportId) => {
+          openSelectiveImportModal(importedData, mainName, (selectedImportId, direction) => {
             // Logic to merge based on selection
             const importedRoot = importedData.find(d => d.id === selectedImportId)
             if (!importedRoot) return
 
-            const currentIds = new Set(currentData.map(d => d.id))
-            // Filter duplicates but allow updates? For now, simplistic merge: avoid ID collisions or overwrite?
-            // Simple: add only IDs that don't exist. 
-            // BETTER: Generate new UUIDs for imported to avoid collision? 
-            // GEDCOM IDs are often @I1@. If both files have @I1@ but different people, we have a problem.
-            // For this task, we will assume user wants to ADD. We should ideally re-ID imported data.
+            // Refactoring IDs to UUIDs to avoid any collision
+            // We must rewrite ALL IDs in the imported set
+            const idMap = new Map() // Old ID -> New UUID
 
-            // Refactoring IDs to unique values to be safe
-            const idMap = new Map() // Old -> New
             importedData.forEach(d => {
-              const newId = `I${Date.now()}_${Math.floor(Math.random() * 1000)} `
+              const newId = crypto.randomUUID()
               idMap.set(d.id, newId)
               d.id = newId
             })
 
-            // Update rels with new IDs
+            // Update relationships with new IDs
             importedData.forEach(d => {
-              if (d.rels.parents) d.rels.parents = d.rels.parents.map(pid => idMap.get(pid) || pid)
-              if (d.rels.children) d.rels.children = d.rels.children.map(cid => idMap.get(cid) || cid)
-              if (d.rels.spouses) d.rels.spouses = d.rels.spouses.map(sid => idMap.get(sid) || sid)
+              if (d.rels) {
+                if (d.rels.parents) d.rels.parents = d.rels.parents.map(pid => idMap.get(pid) || pid).filter(id => idMap.has(pid) || true)
+                if (d.rels.children) d.rels.children = d.rels.children.map(cid => idMap.get(cid) || cid)
+                if (d.rels.spouses) d.rels.spouses = d.rels.spouses.map(sid => idMap.get(sid) || sid)
+              }
             })
 
             const remappedRootId = idMap.get(selectedImportId)
             const remappedRoot = importedData.find(d => d.id === remappedRootId)
 
             if (direction === 'asc') {
-              // Link remappedRoot as PARENT of mainDatum
+              // LINK: Imported Root is ASCENDANT (Parent) of Selected Person
+              // 1. Add remappedRoot as parent of mainDatum
               if (!mainDatum.rels.parents) mainDatum.rels.parents = []
-              mainDatum.rels.parents.push(remappedRootId)
+              if (!mainDatum.rels.parents.includes(remappedRootId)) {
+                mainDatum.rels.parents.push(remappedRootId)
+              }
 
+              // 2. Add mainDatum as child of remappedRoot
               if (!remappedRoot.rels.children) remappedRoot.rels.children = []
-              remappedRoot.rels.children.push(mainId)
+              if (!remappedRoot.rels.children.includes(mainId)) {
+                remappedRoot.rels.children.push(mainId)
+              }
             } else {
-              // Link remappedRoot as CHILD of mainDatum
+              // LINK: Imported Root is DESCENDANT (Child) of Selected Person
+              // 1. Add remappedRoot as child of mainDatum
               if (!mainDatum.rels.children) mainDatum.rels.children = []
-              mainDatum.rels.children.push(remappedRootId)
+              if (!mainDatum.rels.children.includes(remappedRootId)) {
+                mainDatum.rels.children.push(remappedRootId)
+              }
 
+              // 2. Add mainDatum as parent of remappedRoot
               if (!remappedRoot.rels.parents) remappedRoot.rels.parents = []
-              remappedRoot.rels.parents.push(mainId)
+              if (!remappedRoot.rels.parents.includes(mainId)) {
+                remappedRoot.rels.parents.push(mainId)
+              }
             }
 
             const combinedData = [...currentData, ...importedData]
@@ -3114,11 +3131,12 @@ const tools = {
             const snapshot = getSnapshot()
             if (snapshot) persistChanges(snapshot, { immediate: true })
 
-            alert('Branche importée et fusionnée avec succès.')
+            setStatus('Branche fusionnée et sauvegardée !', 'success')
           })
 
         } catch (err) {
           console.error(err)
+          setStatus('Erreur d\'importation', 'error')
           alert('Erreur lors de l\'importation GEDCOM : ' + err.message)
         }
       }
@@ -3205,8 +3223,9 @@ function setupToolListeners() {
   const actions = {
     'delete-branch-asc': () => tools.deleteBranch('asc'),
     'delete-branch-desc': () => tools.deleteBranch('desc'),
-    'import-branch-asc': () => tools.importBranch('asc'),
-    'import-branch-desc': () => tools.importBranch('desc'),
+    'delete-branch-asc': () => tools.deleteBranch('asc'),
+    'delete-branch-desc': () => tools.deleteBranch('desc'),
+    'import-branch': () => tools.importBranch(),
     'import-tree': () => tools.importTree(),
     'export-tree': () => tools.exportTree()
   }

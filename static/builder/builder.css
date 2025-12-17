@@ -2903,3 +2903,49 @@ select:focus {
   overflow-y: auto !important;
   padding-top: var(--space-sm) !important;
 }
+
+/* Tool Cards for Import/Export UI */
+.tool-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tool-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.tool-card h3 {
+  margin: 0 0 var(--space-sm) 0;
+  font-size: 1rem;
+  color: var(--text-main);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.tool-card p {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin: 0 0 var(--space-md) 0;
+  line-height: 1.4;
+}
+
+.tool-card.danger {
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.tool-card.danger h3 {
+  color: #f87171;
+}
+
+.tool-card.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
