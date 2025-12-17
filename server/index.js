@@ -38,7 +38,7 @@ const MAX_UPLOAD_SIZE = process.env.TREE_MAX_UPLOAD_SIZE
   : DEFAULT_MAX_UPLOAD_MB * 1024 * 1024
 const MAX_UPLOAD_SIZE_MB = Math.round(MAX_UPLOAD_SIZE / 1024 / 1024)
 const TREE_PAYLOAD_LIMIT = process.env.TREE_PAYLOAD_LIMIT || '25mb'
-const DEFAULT_SUBTREE_DEPTH = 4
+const DEFAULT_SUBTREE_DEPTH = 3
 const TREE_DATA_PRETTY = /^(1|true|yes)$/i.test(process.env.TREE_DATA_PRETTY || '')
 const RAW_ALLOWED_ORIGINS = (process.env.TREE_ALLOWED_ORIGINS || '').split(',').map(origin => origin.trim()).filter(Boolean)
 const ALLOWED_ORIGINS = RAW_ALLOWED_ORIGINS.filter(origin => origin !== '*')

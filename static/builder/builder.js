@@ -3075,7 +3075,6 @@ const tools = {
   },
 
   importBranch: () => {
-    console.log('Builder: importBranch clicked')
     if (!activeChartInstance) return
     const store = activeChartInstance.store
     const mainId = store.getMainId()
@@ -3112,17 +3111,34 @@ const tools = {
             const importedRoot = importedData.find(d => d.id === selectedImportId)
             if (!importedRoot) return
 
-            // Refactoring IDs to UUIDs to avoid any collision
-            // We must rewrite ALL IDs in the imported set
-            const idMap = new Map() // Old ID -> New UUID
-
-            importedData.forEach(d => {
-              const newId = generateUUID()
-              idMap.set(d.id, newId)
-              d.id = newId
+            // Smart Merge: Check for existing IDs to preserve valid links
+            const currentData = store.getData()
+            // Create a normalized map for fuzzy matching (ignore dashes/case/@ wrappers)
+            const normalizeId = (id) => String(id).replace(/[^a-zA-Z0-9]/g, '').toLowerCase()
+            const existingIdMap = new Map()
+            currentData.forEach(d => {
+              if (d.id) existingIdMap.set(normalizeId(d.id), d.id)
             })
 
-            // Update relationships with new IDs
+            const idMap = new Map()
+
+            // 1. Map IDs (Preserve if exists, Generate New if not)
+            importedData.forEach(d => {
+              const norm = normalizeId(d.id)
+              if (existingIdMap.has(norm)) {
+                // FOUND MATCH!
+                // Map the imported (probably @...@) ID to the REAL existing Store ID
+                const realId = existingIdMap.get(norm)
+                idMap.set(d.id, realId)
+                d.id = realId // Restore the correct system ID
+              } else {
+                const newId = generateUUID()
+                idMap.set(d.id, newId)
+                d.id = newId // Update ID in place
+              }
+            })
+
+            // 2. Remap relationships within imported data
             importedData.forEach(d => {
               if (d.rels) {
                 if (d.rels.parents) d.rels.parents = d.rels.parents.map(pid => idMap.get(pid) || pid)
@@ -3134,42 +3150,52 @@ const tools = {
             const remappedRootId = idMap.get(selectedImportId)
             const remappedRoot = importedData.find(d => d.id === remappedRootId)
 
+            // 3. Link the imported root to the selected main person
             if (direction === 'asc') {
-              // LINK: Imported Root is ASCENDANT (Parent) of Selected Person
-              // 1. Add remappedRoot as parent of mainDatum
+              // ... (Same logic as before, ensuring arrays exist)
               if (!mainDatum.rels.parents) mainDatum.rels.parents = []
-              if (!mainDatum.rels.parents.includes(remappedRootId)) {
-                mainDatum.rels.parents.push(remappedRootId)
-              }
+              if (!mainDatum.rels.parents.includes(remappedRootId)) mainDatum.rels.parents.push(remappedRootId)
 
-              // 2. Add mainDatum as child of remappedRoot
               if (!remappedRoot.rels.children) remappedRoot.rels.children = []
-              if (!remappedRoot.rels.children.includes(mainId)) {
-                remappedRoot.rels.children.push(mainId)
-              }
+              if (!remappedRoot.rels.children.includes(mainId)) remappedRoot.rels.children.push(mainId)
             } else {
-              // LINK: Imported Root is DESCENDANT (Child) of Selected Person
-              // 1. Add remappedRoot as child of mainDatum
               if (!mainDatum.rels.children) mainDatum.rels.children = []
-              if (!mainDatum.rels.children.includes(remappedRootId)) {
-                mainDatum.rels.children.push(remappedRootId)
-              }
+              if (!mainDatum.rels.children.includes(remappedRootId)) mainDatum.rels.children.push(remappedRootId)
 
-              // 2. Add mainDatum as parent of remappedRoot
               if (!remappedRoot.rels.parents) remappedRoot.rels.parents = []
-              if (!remappedRoot.rels.parents.includes(mainId)) {
-                remappedRoot.rels.parents.push(mainId)
-              }
+              if (!remappedRoot.rels.parents.includes(mainId)) remappedRoot.rels.parents.push(mainId)
             }
 
-            const combinedData = [...currentData, ...importedData]
-            store.updateData(combinedData)
+            // 4. Merge Data (Combine importedData into currentData)
+            const mergedMap = new Map()
+            currentData.forEach(d => mergedMap.set(d.id, d))
+
+            importedData.forEach(d => {
+              if (mergedMap.has(d.id)) {
+                // Merge logic for existing person
+                const existing = mergedMap.get(d.id)
+                // Merge data fields (Import takes priority or simply adds?) -> Let's shallow merge
+                existing.data = { ...existing.data, ...d.data }
+
+                // Union relationships
+                const mergeRel = (a, b) => [...new Set([...(a || []), ...(b || [])])]
+                existing.rels.parents = mergeRel(existing.rels.parents, d.rels.parents)
+                existing.rels.children = mergeRel(existing.rels.children, d.rels.children)
+                existing.rels.spouses = mergeRel(existing.rels.spouses, d.rels.spouses)
+              } else {
+                // New person
+                mergedMap.set(d.id, d)
+              }
+            })
+
+            const finalData = Array.from(mergedMap.values())
+            store.updateData(finalData)
             activeChartInstance.updateTree()
 
             const snapshot = getSnapshot()
             if (snapshot) persistChanges(snapshot, { immediate: true })
 
-            setStatus('Branche fusionnée et sauvegardée !', 'success')
+            setStatus('Branche fusionnée (Smart Import) avec succès !', 'success')
           })
 
         } catch (err) {
@@ -3258,7 +3284,6 @@ const tools = {
 
 // Event Listeners for Tools
 function setupToolListeners() {
-  console.log('Builder: setupToolListeners called')
   const actions = {
     'delete-branch-asc': () => tools.deleteBranch('asc'),
     'delete-branch-desc': () => tools.deleteBranch('desc'),

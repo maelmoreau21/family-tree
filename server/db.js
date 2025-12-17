@@ -661,11 +661,27 @@ export async function getTreeSubset(options = {}) {
     const loadedPersons = []
 
     // 1. Identify target IDs
-    // If no mainId, we might return empty or logic to find a default?
-    // For scalability, we CANNOT return "all". We stick to mainId logic.
     let rootId = mainId
     if (!rootId) {
-      // Find a default?
+      // Attempt to find configured mainId from dataset payload
+      const dataset = await getTreePayload()
+      if (dataset && dataset.config && typeof dataset.config.mainId === 'string' && dataset.config.mainId.trim()) {
+        rootId = dataset.config.mainId.trim()
+      }
+    }
+
+    if (!rootId) {
+      // Still no rootId? Fallback to ANY person in the DB to avoid returning empty
+      const res = await client.query('SELECT id FROM persons LIMIT 1')
+      if (res.rowCount) rootId = res.rows[0].id
+      else return { data: [], config: {}, meta: {} }
+    }
+
+    // Verify rootId actually exists in persons table
+    const checkRes = await client.query('SELECT 1 FROM persons WHERE id = $1', [rootId])
+    if (checkRes.rowCount === 0) {
+      // The specific rootId (whether passed or from config) is invalid.
+      // Fallback to ANY person again.
       const res = await client.query('SELECT id FROM persons LIMIT 1')
       if (res.rowCount) rootId = res.rows[0].id
       else return { data: [], config: {}, meta: {} }
