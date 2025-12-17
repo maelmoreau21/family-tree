@@ -1297,7 +1297,17 @@ function setupChart(payload) {
 
   if (editTreeInstance && panelControlAPI.handleFormCreation) {
     if (typeof editTreeInstance.setOnFormCreation === 'function') {
-      editTreeInstance.setOnFormCreation(panelControlAPI.handleFormCreation)
+      const originalHandler = panelControlAPI.handleFormCreation
+      editTreeInstance.setOnFormCreation((args) => {
+        originalHandler(args)
+        // Hook for File Management
+        if (args && args.form_creator && args.form_creator.datum_id) {
+          window.builderCurrentPersonId = args.form_creator.datum_id
+          if (typeof loadBuilderFiles === 'function' && document.querySelector('[data-tab="files"].active')) {
+            loadBuilderFiles(args.form_creator.datum_id)
+          }
+        }
+      })
     }
   }
 
@@ -3278,5 +3288,128 @@ if (document.readyState === 'loading') {
 } else {
   setupToolListeners()
   setupTabs()
+  setupFileManagement()
+}
+
+// --- File Management System ---
+// Tracks the person currently being edited (set via handleFormCreation hook)
+window.builderCurrentPersonId = null
+
+async function loadBuilderFiles(personId) {
+  const container = document.getElementById('builderFilesList')
+  const empty = document.getElementById('builderFilesEmpty')
+  if (!container || !empty) return
+
+  if (!personId) {
+    container.innerHTML = ''
+    empty.textContent = 'Aucun profil sélectionné.'
+    empty.classList.remove('hidden')
+    return
+  }
+
+  container.innerHTML = '<div class="loader">Chargement...</div>'
+  empty.classList.add('hidden')
+
+  try {
+    const res = await fetch(`/api/documents/${personId}`)
+    if (!res.ok) throw new Error('Erreur réseau')
+    const files = await res.json()
+
+    container.innerHTML = ''
+    if (files.length === 0) {
+      empty.textContent = 'Aucun fichier associé.'
+      empty.classList.remove('hidden')
+    } else {
+      files.forEach(file => {
+        const div = document.createElement('div')
+        div.className = 'file-item'
+        const icon = file.isProfile ? '🖼️' : '📄'
+        div.innerHTML = `
+           <a href="${file.url}" target="_blank" class="file-link" title="${file.name}">
+             ${icon} ${file.name}
+           </a>
+           <button class="delete-btn" type="button" aria-label="Supprimer">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+           </button>
+         `
+        div.querySelector('.delete-btn').addEventListener('click', (e) => {
+          e.stopPropagation()
+          deleteBuilderFile(personId, file.name)
+        })
+        container.appendChild(div)
+      })
+    }
+  } catch (e) {
+    console.error(e)
+    container.innerHTML = '<div class="error">Impossible de charger les fichiers.</div>'
+  }
+}
+
+async function uploadBuilderFile(file) {
+  const personId = window.builderCurrentPersonId || activeChartInstance?.store?.getMainId()
+
+  if (!personId) return alert('Veuillez sélectionner une personne dans l\'arbre.')
+
+  setStatus('Téléversement...', 'saving')
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('personId', personId)
+  formData.append('isProfile', 'false')
+
+  try {
+    const res = await fetch('/api/document', { method: 'POST', body: formData })
+    if (!res.ok) throw new Error('Erreur lors du téléversement')
+    setStatus('Fichier ajouté !', 'success')
+    loadBuilderFiles(personId)
+  } catch (e) {
+    setStatus('Erreur: ' + e.message, 'error')
+  }
+}
+
+async function deleteBuilderFile(personId, filename) {
+  if (!confirm(`Voulez-vous vraiment supprimer ${filename} ?`)) return
+  try {
+    const res = await fetch(`/api/document?personId=${personId}&filename=${encodeURIComponent(filename)}`, { method: 'DELETE' })
+    if (!res.ok) throw new Error('Erreur lors de la suppression')
+    loadBuilderFiles(personId)
+  } catch (e) {
+    alert(e.message)
+  }
+}
+
+function setupFileManagement() {
+  const btn = document.querySelector('[data-action="upload-file"]')
+  const input = document.getElementById('fileInputHidden')
+
+  if (btn && input) {
+    btn.addEventListener('click', () => {
+      const pid = window.builderCurrentPersonId || activeChartInstance?.store?.getMainId()
+      if (!pid) {
+        alert('Veuillez d\'abord sélectionner une personne affichée.')
+        return
+      }
+      input.click()
+    })
+    input.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        Array.from(e.target.files).forEach(uploadBuilderFile)
+        input.value = ''
+      }
+    })
+  }
+
+  const filesTab = document.querySelector('[data-tab="files"]')
+  if (filesTab) {
+    filesTab.addEventListener('click', () => {
+      const pid = window.builderCurrentPersonId || activeChartInstance?.store?.getMainId()
+      loadBuilderFiles(pid)
+    })
+  }
+
+  // Also hook into initial DOMContentLoaded to setup default ID if needed?
+  // Not strictly necessary as click handles it.
 }
 

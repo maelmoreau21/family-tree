@@ -797,6 +797,37 @@ function createTreeApi({ canWrite }) {
     }
   })
 
+  // List documents for a person
+  router.get('/documents/:personId', async (req, res) => {
+    try {
+      const { personId } = req.params
+      if (!personId) return res.status(400).json({ message: 'Person ID required' })
+
+      const safeId = sanitizeFileName(personId) || 'unknown'
+      const dir = path.join(DOCUMENT_DIR, safeId)
+
+      try {
+        await fs.access(dir)
+      } catch {
+        return res.json([]) // No folder = no files
+      }
+
+      const entries = await fs.readdir(dir, { withFileTypes: true })
+      const files = entries
+        .filter(e => e.isFile())
+        .map(e => ({
+          name: e.name,
+          url: `/document/${safeId}/${e.name}`,
+          isProfile: /^profil\./i.test(e.name)
+        }))
+
+      res.json(files)
+    } catch (error) {
+      console.error('[server] List documents failed', error)
+      res.status(500).json({ message: 'Unable to list documents' })
+    }
+  })
+
   router.get('/backups/:name', async (req, res) => {
     try {
       const backupPath = await resolveBackupPath(req.params.name)
@@ -964,7 +995,18 @@ function createStaticApp(staticFolder, { canWrite }) {
 
               const ext = path.extname(req.file.filename) || resolveFileExtension(req.file) || ''
               const tempPath = req.file.path || path.join(req.file.destination || DOCUMENT_DIR, req.file.filename)
-              const targetPath = path.join(targetDir, `profil${ext}`)
+
+              const isProfile = (req.body && (req.body.isProfile === 'true' || req.body.isProfile === true)) ||
+                (req.query && (req.query.isProfile === 'true' || req.query.isProfile === true))
+
+              let targetName
+              if (isProfile) {
+                targetName = `profil${ext}`
+              } else {
+                targetName = sanitizeFileName(path.parse(req.file.originalname).name) + (ext || path.extname(req.file.originalname).toLowerCase())
+              }
+
+              const targetPath = path.join(targetDir, targetName)
 
               try {
                 await fs.rename(tempPath, targetPath)
@@ -979,7 +1021,7 @@ function createStaticApp(staticFolder, { canWrite }) {
                 }
               }
 
-              publicPath = `/document/${safeId}/profil${ext}`
+              publicPath = `/document/${safeId}/${targetName}`
             } else {
               // If no personId, try to resolve any subfolder used by multer
               try {
@@ -1029,14 +1071,27 @@ function createStaticApp(staticFolder, { canWrite }) {
 
         const foundFiles = []
 
+        const filename = (req.query?.filename) || (req.body && req.body.filename)
+
         for (const safeId of candidates) {
           const candidateDir = path.join(DOCUMENT_DIR, safeId)
           try {
-            const entries = await fs.readdir(candidateDir, { withFileTypes: true })
-            const profilFiles = entries
-              .filter(e => e.isFile() && /^profil\./i.test(e.name))
-              .map(e => path.join(candidateDir, e.name))
-            if (profilFiles.length) foundFiles.push(...profilFiles)
+            if (filename) {
+              // Delete specific file
+              const safeFilename = path.basename(filename) // prevent directory traversal
+              const filePath = path.join(candidateDir, safeFilename)
+              try {
+                await fs.unlink(filePath)
+                foundFiles.push(filePath)
+              } catch (e) { /* ignore if not found */ }
+            } else {
+              // Backward compat: delete profile image
+              const entries = await fs.readdir(candidateDir, { withFileTypes: true })
+              const profilFiles = entries
+                .filter(e => e.isFile() && /^profil\./i.test(e.name))
+                .map(e => path.join(candidateDir, e.name))
+              if (profilFiles.length) foundFiles.push(...profilFiles)
+            }
           } catch (err) {
             if (err && err.code === 'ENOENT') {
               // folder doesn't exist — continue with next candidate

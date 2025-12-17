@@ -48,6 +48,7 @@
         <div class="tabs-nav">
           <button type="button" class="active" data-tab="data">Données</button>
           <button type="button" data-tab="appearance">Apparence</button>
+          <button type="button" data-tab="files">Fichiers</button>
           <button type="button" data-tab="tools">Outils</button>
         </div>
 
@@ -202,6 +203,29 @@
               <button id="resetDimensions" class="ghost" type="button">Réinitialiser</button>
             </div>
           </details>
+        </div>
+
+        <!-- Tab: Fichiers -->
+        <div class="tab-content" data-tab-content="files">
+          <div class="panel-section">
+            <h3>Documents et Médias</h3>
+            <p class="hint">Ces fichiers sont stockés dans le dossier personnel du profil.</p>
+
+            <div id="builderFilesList" class="file-list"></div>
+            <p id="builderFilesEmpty" class="empty-state">Aucun fichier associé.</p>
+
+            <div class="upload-controls" style="margin-top: 1rem;">
+              <button type="button" data-action="upload-file" class="primary full-width">
+                <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                Ajouter un fichier
+              </button>
+              <input type="file" id="fileInputHidden" multiple style="display:none">
+            </div>
+          </div>
         </div>
 
         <!-- Tab: Outils -->
