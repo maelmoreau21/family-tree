@@ -3048,6 +3048,7 @@ const tools = {
   },
 
   importBranch: () => {
+    console.log('Builder: importBranch clicked')
     if (!activeChartInstance) return
     const store = activeChartInstance.store
     const mainId = store.getMainId()
@@ -3230,9 +3231,8 @@ const tools = {
 
 // Event Listeners for Tools
 function setupToolListeners() {
+  console.log('Builder: setupToolListeners called')
   const actions = {
-    'delete-branch-asc': () => tools.deleteBranch('asc'),
-    'delete-branch-desc': () => tools.deleteBranch('desc'),
     'delete-branch-asc': () => tools.deleteBranch('asc'),
     'delete-branch-desc': () => tools.deleteBranch('desc'),
     'import-branch': () => tools.importBranch(),
@@ -3284,6 +3284,7 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     setupToolListeners()
     setupTabs()
+    setupFileManagement()
   })
 } else {
   setupToolListeners()
