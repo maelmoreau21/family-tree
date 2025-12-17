@@ -48,7 +48,7 @@
         <div class="tabs-nav">
           <button type="button" class="active" data-tab="data">Données</button>
           <button type="button" data-tab="appearance">Apparence</button>
-          <button type="button" data-tab="files">Fichiers</button>
+
           <button type="button" data-tab="tools">Outils</button>
         </div>
 
@@ -205,17 +205,16 @@
           </details>
         </div>
 
-        <!-- Tab: Fichiers -->
-        <div class="tab-content" data-tab-content="files">
-          <div class="panel-section">
-            <h3>Documents et Médias</h3>
-            <p class="hint">Ces fichiers sont stockés dans le dossier personnel du profil.</p>
+        <!-- FileManager Template (Cloned into Edit Form) -->
+        <div id="fileManagerTemplate" class="hidden">
+          <div class="panel-section"
+            style="border-top: 1px solid var(--panel-border); margin-top: 1rem; padding-top: 1rem;">
+            <h4 style="margin: 0 0 0.5rem 0; font-size: 0.9rem;">Documents et Médias</h4>
+            <div class="file-list-container file-list"></div>
+            <p class="empty-state-msg empty-state">Aucun fichier associé.</p>
 
-            <div id="builderFilesList" class="file-list"></div>
-            <p id="builderFilesEmpty" class="empty-state">Aucun fichier associé.</p>
-
-            <div class="upload-controls" style="margin-top: 1rem;">
-              <button type="button" data-action="upload-file" class="primary full-width">
+            <div class="upload-controls" style="margin-top: 0.5rem;">
+              <button type="button" class="upload-file-btn primary full-width small">
                 <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                   <polyline points="17 8 12 3 7 8"></polyline>
@@ -223,7 +222,7 @@
                 </svg>
                 Ajouter un fichier
               </button>
-              <input type="file" id="fileInputHidden" multiple style="display:none">
+              <input type="file" class="file-input-hidden" multiple style="display:none">
             </div>
           </div>
         </div>
