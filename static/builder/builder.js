@@ -3298,69 +3298,69 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     setupToolListeners()
     setupTabs()
-    setupFileManagement()
   })
 } else {
   setupToolListeners()
   setupTabs()
+}
 
 
-  // --- File Management System (Injected) ---
+// --- File Management System (Injected) ---
 
-  function injectFileManagerIntoForm(form, datumId) {
-    const tpl = document.getElementById('fileManagerTemplate')
-    if (!tpl || !form) return
+function injectFileManagerIntoForm(form, datumId) {
+  const tpl = document.getElementById('fileManagerTemplate')
+  if (!tpl || !form) return
 
-    // Clone template
-    const clone = tpl.cloneNode(true)
-    clone.id = '' // remove template ID
-    clone.classList.remove('hidden')
-    clone.classList.add('injected-file-manager')
+  // Clone template
+  const clone = tpl.cloneNode(true)
+  clone.id = '' // remove template ID
+  clone.classList.remove('hidden')
+  clone.classList.add('injected-file-manager')
 
-    // Setup Upload Listener
-    const btn = clone.querySelector('.upload-file-btn')
-    const input = clone.querySelector('.file-input-hidden')
+  // Setup Upload Listener
+  const btn = clone.querySelector('.upload-file-btn')
+  const input = clone.querySelector('.file-input-hidden')
 
-    if (btn && input) {
-      btn.addEventListener('click', () => input.click())
-      input.addEventListener('change', (e) => {
-        if (e.target.files && e.target.files.length > 0) {
-          Array.from(e.target.files).forEach(file => uploadBuilderFile(file, datumId, clone))
-          input.value = ''
-        }
-      })
-    }
-
-    form.appendChild(clone)
-    loadBuilderFiles(datumId, clone)
+  if (btn && input) {
+    btn.addEventListener('click', () => input.click())
+    input.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        Array.from(e.target.files).forEach(file => uploadBuilderFile(file, datumId, clone))
+        input.value = ''
+      }
+    })
   }
 
-  async function loadBuilderFiles(personId, container) {
-    if (!container) return
-    const list = container.querySelector('.file-list-container')
-    const empty = container.querySelector('.empty-state-msg')
-    if (!list || !empty) return
+  form.appendChild(clone)
+  loadBuilderFiles(datumId, clone)
+}
 
-    list.innerHTML = '<div class="loader">Chargement...</div>'
-    empty.classList.add('hidden')
-    list.classList.remove('hidden')
+async function loadBuilderFiles(personId, container) {
+  if (!container) return
+  const list = container.querySelector('.file-list-container')
+  const empty = container.querySelector('.empty-state-msg')
+  if (!list || !empty) return
 
-    try {
-      const res = await fetch(`/api/documents/${personId}`)
-      if (!res.ok) throw new Error('Erreur rÃ©seau')
-      const files = await res.json()
+  list.innerHTML = '<div class="loader">Chargement...</div>'
+  empty.classList.add('hidden')
+  list.classList.remove('hidden')
 
-      list.innerHTML = ''
-      if (files.length === 0) {
-        empty.textContent = 'Aucun fichier associÃ©.'
-        empty.classList.remove('hidden')
-        list.classList.add('hidden')
-      } else {
-        files.forEach(file => {
-          const div = document.createElement('div')
-          div.className = 'file-item'
-          const icon = file.isProfile ? 'ðŸ–¼ï¸' : 'ðŸ“„'
-          div.innerHTML = `
+  try {
+    const res = await fetch(`/api/documents/${personId}`)
+    if (!res.ok) throw new Error('Erreur réseau')
+    const files = await res.json()
+
+    list.innerHTML = ''
+    if (files.length === 0) {
+      empty.textContent = 'Aucun fichier associé.'
+      empty.classList.remove('hidden')
+      list.classList.add('hidden')
+    } else {
+      files.forEach(file => {
+        const div = document.createElement('div')
+        div.className = 'file-item'
+        const icon = file.isProfile ? 'ðŸ–¼ï¸' : 'ðŸ“„'
+        div.innerHTML = `
            <a href="${file.url}" target="_blank" class="file-link" title="${file.name}">
              ${icon} ${file.name}
            </a>
@@ -3371,45 +3371,45 @@ if (document.readyState === 'loading') {
               </svg>
            </button>
          `
-          div.querySelector('.delete-btn').addEventListener('click', (e) => {
-            e.stopPropagation()
-            deleteBuilderFile(personId, file.name, container)
-          })
-          list.appendChild(div)
+        div.querySelector('.delete-btn').addEventListener('click', (e) => {
+          e.stopPropagation()
+          deleteBuilderFile(personId, file.name, container)
         })
-      }
-    } catch (e) {
-      console.error(e)
-      list.innerHTML = '<div class="error">Impossible de charger les fichiers.</div>'
+        list.appendChild(div)
+      })
     }
+  } catch (e) {
+    console.error(e)
+    list.innerHTML = '<div class="error">Impossible de charger les fichiers.</div>'
   }
+}
 
-  async function uploadBuilderFile(file, personId, container) {
-    if (!personId) return
+async function uploadBuilderFile(file, personId, container) {
+  if (!personId) return
 
-    setStatus('TÃ©lÃ©versement...', 'saving')
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('personId', personId)
-    formData.append('isProfile', 'false')
+  setStatus('Téléversement...', 'saving')
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('personId', personId)
+  formData.append('isProfile', 'false')
 
-    try {
-      const res = await fetch('/api/document', { method: 'POST', body: formData })
-      if (!res.ok) throw new Error('Erreur lors du tÃ©lÃ©versement')
-      setStatus('Fichier ajoutÃ© !', 'success')
-      loadBuilderFiles(personId, container)
-    } catch (e) {
-      setStatus('Erreur: ' + e.message, 'error')
-    }
+  try {
+    const res = await fetch('/api/document', { method: 'POST', body: formData })
+    if (!res.ok) throw new Error('Erreur lors du téléversement')
+    setStatus('Fichier ajouté !', 'success')
+    loadBuilderFiles(personId, container)
+  } catch (e) {
+    setStatus('Erreur: ' + e.message, 'error')
   }
+}
 
-  async function deleteBuilderFile(personId, filename, container) {
-    if (!confirm(`Voulez-vous vraiment supprimer ${filename} ?`)) return
-    try {
-      const res = await fetch(`/api/document?personId=${personId}&filename=${encodeURIComponent(filename)}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('Erreur lors de la suppression')
-      loadBuilderFiles(personId, container)
-    } catch (e) {
-      alert(e.message)
-    }
+async function deleteBuilderFile(personId, filename, container) {
+  if (!confirm(`Voulez-vous vraiment supprimer ${filename} ?`)) return
+  try {
+    const res = await fetch(`/api/document?personId=${personId}&filename=${encodeURIComponent(filename)}`, { method: 'DELETE' })
+    if (!res.ok) throw new Error('Erreur lors de la suppression')
+    loadBuilderFiles(personId, container)
+  } catch (e) {
+    alert(e.message)
   }
+}
