@@ -48,14 +48,9 @@ export function getHtmlEdit(form_creator: EditDatumFormCreator) {
 
         <hr>
         ${deleteBtn(form_creator)}
-
-        ${removeRelativeBtn(form_creator)}
       </div>
 
       <div class="tab-content" data-tab-content="files">
-        <div class="f3-files-placeholder" style="padding: 1rem; text-align: center; color: #666;">
-            <p>Documents liés à la personne (Bientôt disponible)</p>
-        </div>
       </div>
     </form>
   `)
@@ -71,15 +66,7 @@ function deleteBtn(form_creator: EditDatumFormCreator) {
   `)
 }
 
-function removeRelativeBtn(form_creator: EditDatumFormCreator) {
-  return (`
-    <div>
-      <button type="button" class="f3-remove-relative-btn${form_creator.removeRelativeActive ? ' active' : ''}">
-        ${form_creator.removeRelativeActive ? 'Annuler la suppression du lien' : 'Supprimer le lien'}
-      </button>
-    </div>
-  `)
-}
+
 
 function addRelativeBtn(form_creator: EditDatumFormCreator) {
   return (`

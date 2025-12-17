@@ -1545,11 +1545,24 @@ function attachPanelControls({ chart, card }) {
         }
 
         if (bioLabel) {
-          // Found Bio label, find its container (usually a div wrapping label and input)
-          // We want to insert AFTER this container
+          // Found Bio label
           const container = bioLabel.closest('div')
           if (container && container.parentElement) {
-            if (!container.parentElement.contains(imageUploader)) {
+            const filesTab = container.closest('form')?.querySelector('[data-tab-content="files"]')
+            if (filesTab) {
+              // Clear previous "Bientôt disponible" text if present (though we removed it from src, double check)
+              if (filesTab.innerHTML.includes('Bientôt disponible')) {
+                filesTab.innerHTML = ''
+              }
+              if (!filesTab.contains(imageUploader)) {
+                filesTab.appendChild(imageUploader)
+                // Also inject the File Manager (list) here!
+                // Wait, this function is injectImageUploaderIntoForm, not InjectFileManager.
+                // We need to coordinate them.
+                // The user wants "Documents et Médias" (File Manager) + Uploader in "Fichiers".
+              }
+            } else if (!container.parentElement.contains(imageUploader)) {
+              // Fallback
               container.parentElement.insertBefore(imageUploader, container.nextSibling)
             }
           }
@@ -3331,7 +3344,18 @@ function injectFileManagerIntoForm(form, datumId) {
     })
   }
 
-  form.appendChild(clone)
+  const filesTab = form.querySelector('[data-tab-content="files"]')
+  if (filesTab) {
+    // Inject into Files tab
+    if (filesTab.innerHTML.includes('Bientôt disponible')) {
+      filesTab.innerHTML = ''
+    }
+    filesTab.appendChild(clone)
+  } else {
+    // Fallback
+    form.appendChild(clone)
+  }
+
   loadBuilderFiles(datumId, clone)
 }
 
